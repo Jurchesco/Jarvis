@@ -24,7 +24,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
-      setError("Please enter email and password.");
+      setError("Podaj adres e-mail i hasło.");
       return;
     }
     setError(null);
@@ -52,13 +52,13 @@ export default function LoginScreen() {
             <Text className="text-5xl mb-2">🏋️</Text>
             <Text className="text-text-primary text-4xl font-bold">Stravio</Text>
             <Text className="text-text-secondary text-base mt-2">
-              Track your workouts, anywhere.
+              Śledź swoje treningi, gdziekolwiek jesteś.
             </Text>
           </View>
 
           {/* Form */}
           <View className="bg-surface rounded-2xl p-5 border border-border">
-            <Text className="text-text-primary text-xl font-bold mb-5">Login</Text>
+            <Text className="text-text-primary text-xl font-bold mb-5">Logowanie</Text>
 
             <Text className="text-text-secondary text-sm mb-1.5">Email</Text>
             <TextInput
@@ -68,12 +68,10 @@ export default function LoginScreen() {
               value={email}
               onChangeText={setEmail}
               autoCapitalize="none"
-              autoComplete="email"
               keyboardType="email-address"
-              textContentType="emailAddress"
             />
 
-            <Text className="text-text-secondary text-sm mb-1.5">Password</Text>
+            <Text className="text-text-secondary text-sm mb-1.5">Hasło</Text>
             <TextInput
               className="bg-background text-text-primary rounded-xl px-4 py-3 text-base border border-border mb-4"
               placeholder="••••••••"
@@ -81,36 +79,30 @@ export default function LoginScreen() {
               value={password}
               onChangeText={setPassword}
               secureTextEntry
-              autoCapitalize="none"
-              textContentType="password"
-              onSubmitEditing={handleLogin}
             />
 
             {error && (
-              <View className="bg-danger/10 rounded-xl px-4 py-3 mb-4">
-                <Text className="text-danger text-sm">{error}</Text>
-              </View>
+              <Text className="text-red-500 text-sm mb-4">{error}</Text>
             )}
 
             <TouchableOpacity
-              className={`rounded-xl py-3.5 items-center ${loading ? "bg-primary/50" : "bg-primary"}`}
+              className="bg-primary rounded-xl py-3.5 items-center"
               onPress={handleLogin}
               disabled={loading}
-              activeOpacity={0.8}
             >
               {loading ? (
                 <ActivityIndicator color="#fff" />
               ) : (
-                <Text className="text-white font-bold text-base">Sign In</Text>
+                <Text className="text-white font-bold text-base">Zaloguj się</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {/* Link to signup */}
           <View className="flex-row justify-center mt-6">
-            <Text className="text-text-secondary text-sm">Don't have an account? </Text>
+            <Text className="text-text-secondary">Nie masz konta? </Text>
             <TouchableOpacity onPress={() => router.push("/auth/signup")}>
-              <Text className="text-primary text-sm font-bold">Sign Up</Text>
+              <Text className="text-primary font-bold">Zarejestruj się</Text>
             </TouchableOpacity>
           </View>
         </ScrollView>
