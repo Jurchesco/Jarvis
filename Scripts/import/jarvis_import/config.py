@@ -20,6 +20,7 @@ class Config:
     supabase_url: str | None
     supabase_secret_key: str | None
     default_days: int
+    import_start_date: date
     request_delay_sec: float
 
 
@@ -75,6 +76,7 @@ def load_config(env_file: Path | None = None) -> Config:
         supabase_url=os.getenv("SUPABASE_URL"),
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY"),
         default_days=int(os.getenv("DEFAULT_DAYS", "7")),
+        import_start_date=date.fromisoformat(os.getenv("IMPORT_START_DATE", "2020-01-01")),
         request_delay_sec=float(os.getenv("REQUEST_DELAY_SEC", "0.4")),
     )
 
@@ -85,3 +87,10 @@ def date_range(days: int, end: date | None = None) -> tuple[date, date]:
     end_date = end or date.today()
     start_date = end_date - timedelta(days=days - 1)
     return start_date, end_date
+
+
+def date_range_from_start(start: date, end: date | None = None) -> tuple[date, date]:
+    end_date = end or date.today()
+    if start > end_date:
+        raise ValueError("Data początkowa importu jest późniejsza niż dziś")
+    return start, end_date

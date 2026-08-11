@@ -4,7 +4,7 @@ import argparse
 import sys
 from datetime import datetime
 
-from .config import date_range, load_config
+from .config import date_range, date_range_from_start, load_config
 from .garmin import GarminClient
 from .last_import import get_last_import_label, save_last_import
 from .importers import ImportContext
@@ -62,6 +62,11 @@ def build_parser() -> argparse.ArgumentParser:
         help="Ile dni wstecz importować (pomija pytanie interaktywne)",
     )
     parser.add_argument(
+        "--all",
+        action="store_true",
+        help="Importuj od IMPORT_START_DATE (domyślnie 2020-01-01) do dziś — ignoruje --days",
+    )
+    parser.add_argument(
         "--no-prompt",
         action="store_true",
         help="Bez pytania — użyj DEFAULT_DAYS z .env (dla harmonogramu zadań)",
@@ -116,9 +121,14 @@ def run() -> int:
         return 1
 
     days = resolve_days(args, config.default_days)
-    if days < 1:
-        print("Błąd: liczba dni musi być >= 1")
-        return 1
+    if args.all:
+        start_date, end_date = date_range_from_start(config.import_start_date)
+        days = (end_date - start_date).days + 1
+    else:
+        if days < 1:
+            print("Błąd: liczba dni musi być >= 1")
+            return 1
+        start_date, end_date = date_range(days)
 
     try:
         importers = resolve_importers(args.only, args.skip)
@@ -130,11 +140,11 @@ def run() -> int:
         print("Błąd: nie wybrano żadnego modułu do importu")
         return 1
 
-    start_date, end_date = date_range(days)
-
     print("=" * 70)
     print("JARVIS IMPORT")
     print(f"Start: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    if args.all:
+        print(f"Tryb: pełny import od {config.import_start_date}")
     print(f"Zakres: {start_date} – {end_date} ({days} dni)")
     print(f"Moduły: {', '.join(importers)}")
     print("=" * 70)

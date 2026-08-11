@@ -6,6 +6,11 @@ on:
     - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
+      import_all:
+        description: "Importuj wszystko od początku (ignoruje pole „dni”)"
+        type: boolean
+        required: false
+        default: false
       days:
         description: "Ile dni wstecz importować"
         required: false
@@ -25,7 +30,7 @@ concurrency:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 360
 
     defaults:
       run:
@@ -39,6 +44,7 @@ jobs:
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
       GARMIN_TOKEN_DIR: .garminconnect
       DEFAULT_DAYS: "2"
+      IMPORT_START_DATE: "2020-01-01"
       REQUEST_DELAY_SEC: "0.4"
 
     steps:
@@ -80,9 +86,14 @@ jobs:
 
       - name: Uruchom import
         run: |
-          DAYS="${{ github.event.inputs.days || env.DEFAULT_DAYS }}"
           SKIP="${{ github.event.inputs.skip_modules || '' }}"
-          ARGS=(--no-prompt --days "$DAYS")
+          if [ "${{ github.event.inputs.import_all }}" = "true" ]; then
+            echo "Tryb: pełny import od ${IMPORT_START_DATE}"
+            ARGS=(--no-prompt --all)
+          else
+            DAYS="${{ github.event.inputs.days || env.DEFAULT_DAYS }}"
+            ARGS=(--no-prompt --days "$DAYS")
+          fi
           if [ -n "$SKIP" ]; then
             ARGS+=(--skip "$SKIP")
           fi

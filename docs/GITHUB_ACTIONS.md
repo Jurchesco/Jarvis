@@ -42,6 +42,14 @@ Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 3. **Actions → Jarvis Import → Run workflow** — test ręczny z `days: 7`.
 4. Harmonogram: **co godzinę** (`cron: 0 * * * *` w workflow). Runy z harmonogramu importują ostatnie **2 dni** (`DEFAULT_DAYS`).
 
+### Pełny import od początku
+
+W **Run workflow** zaznacz checkbox **„Importuj wszystko od początku”** — ignoruje pole „dni” i pobiera dane od `IMPORT_START_DATE` (domyślnie `2020-01-01`).
+
+Pełny import może trwać **kilka godzin** (Garmin: jedno zapytanie na dzień × moduł). Timeout joba: 360 min. Przy pierwszym pełnym imporcie rozważ `--skip silownia` jeśli Stravio jest puste.
+
+Lokalnie: `run.bat --no-prompt --all`
+
 ### Dostosowanie częstotliwości
 
 Edytuj `.github/workflows/jarvis-import.yml`:

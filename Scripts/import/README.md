@@ -62,6 +62,7 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 |-------|------|
 | *(brak)* | Interaktywny prompt — wpisz liczbę dni |
 | `--days N` | Pomiń prompt, importuj N dni |
+| `--all` | Import od `IMPORT_START_DATE` do dziś (ignoruje `--days`) |
 | `--no-prompt` | Bez promptu, użyj `DEFAULT_DAYS` z `.env` |
 | `--only a,b` | Tylko wybrane moduły |
 | `--skip a,b` | Pomiń moduły |
