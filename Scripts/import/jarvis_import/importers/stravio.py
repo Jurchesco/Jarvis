@@ -6,7 +6,7 @@ from google.oauth2.service_account import Credentials
 import gspread
 from supabase import create_client
 
-from ..sheets import ImportResult
+from ..sheets import ImportResult, batch_update_rows
 from . import ImportContext
 
 
@@ -165,19 +165,17 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     existing_rows = get_existing_rows_map(worksheet)
     updated_count = 0
     appended_rows = []
+    pending_updates: list[tuple[int, list]] = []
 
     for row in rows_to_upsert:
         key = make_key(row)
         if key in existing_rows:
-            row_number = existing_rows[key]
-            worksheet.update(
-                range_name=f"A{row_number}:L{row_number}",
-                values=[row],
-                value_input_option="USER_ENTERED",
-            )
-            updated_count += 1
+            pending_updates.append((existing_rows[key], row))
         else:
             appended_rows.append(row)
+
+    batch_update_rows(worksheet, pending_updates, "L")
+    updated_count = len(pending_updates)
 
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")

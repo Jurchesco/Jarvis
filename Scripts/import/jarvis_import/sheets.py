@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import time
 from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
 import gspread
+from gspread.exceptions import APIError
+
+BATCH_UPDATE_CHUNK = 100
 
 
 @dataclass
@@ -55,3 +59,36 @@ def get_existing_rows_by_key(
         rows_map[key] = entry
 
     return rows_map
+
+
+def batch_update_rows(
+    worksheet,
+    updates: list[tuple[int, list]],
+    last_column: str,
+    *,
+    chunk_size: int = BATCH_UPDATE_CHUNK,
+) -> None:
+    """Jeden lub kilka batch_update zamiast setek pojedynczych update (limit 60/min)."""
+    if not updates:
+        return
+
+    for offset in range(0, len(updates), chunk_size):
+        chunk = updates[offset : offset + chunk_size]
+        payload = [
+            {"range": f"A{row_number}:{last_column}{row_number}", "values": [values]}
+            for row_number, values in chunk
+        ]
+        _batch_update_with_retry(worksheet, payload)
+
+
+def _batch_update_with_retry(worksheet, payload: list[dict], max_retries: int = 6) -> None:
+    for attempt in range(max_retries):
+        try:
+            worksheet.batch_update(payload, value_input_option="USER_ENTERED")
+            return
+        except APIError as error:
+            if "429" not in str(error) or attempt >= max_retries - 1:
+                raise
+            wait_sec = min(60, 15 * (2**attempt))
+            print(f"    Limit Google Sheets (429) — czekam {wait_sec}s...")
+            time.sleep(wait_sec)

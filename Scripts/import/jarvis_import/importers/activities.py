@@ -4,7 +4,7 @@ from datetime import datetime
 
 from ..dates import combine_date_time
 from ..garmin import GarminClient
-from ..sheets import ImportResult, get_existing_rows_by_key
+from ..sheets import ImportResult, batch_update_rows, get_existing_rows_by_key
 from . import ImportContext
 
 
@@ -199,6 +199,7 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
 
     updated_count = 0
     appended_rows = []
+    pending_updates: list[tuple[int, list]] = []
 
     for activity in recent_activities:
         activity_id = str(val(activity, "activityId"))
@@ -210,17 +211,14 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
         row_values = build_row(activity, existing_note=existing_note)
 
         if activity_id in existing_rows:
-            row_number = existing_rows[activity_id]["row_number"]
-            worksheet.update(
-                range_name=f"A{row_number}:AG{row_number}",
-                values=[row_values],
-                value_input_option="USER_ENTERED",
-            )
-            updated_count += 1
+            pending_updates.append((existing_rows[activity_id]["row_number"], row_values))
         else:
             appended_rows.append(row_values)
 
         garmin.pause(0.2)
+
+    batch_update_rows(worksheet, pending_updates, "AG")
+    updated_count = len(pending_updates)
 
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")

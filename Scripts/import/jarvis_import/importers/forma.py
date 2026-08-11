@@ -4,7 +4,7 @@ from datetime import datetime
 
 from ..dates import date_key, format_day_with_time
 from ..garmin import GarminClient, iter_days
-from ..sheets import ImportResult, get_existing_rows_by_key
+from ..sheets import ImportResult, batch_update_rows, get_existing_rows_by_key
 from . import ImportContext
 
 
@@ -58,6 +58,7 @@ def import_forma(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
 
     updated_count = 0
     appended_rows = []
+    pending_updates: list[tuple[int, list]] = []
 
     for day, _ in iter_days(ctx.start_date, ctx.end_date):
         print(f"  Pobieram {day}...")
@@ -76,17 +77,14 @@ def import_forma(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
             ]
 
         if day in existing_rows:
-            row_number = existing_rows[day]["row_number"]
-            worksheet.update(
-                range_name=f"A{row_number}:N{row_number}",
-                values=[row_values],
-                value_input_option="USER_ENTERED",
-            )
-            updated_count += 1
+            pending_updates.append((existing_rows[day]["row_number"], row_values))
         else:
             appended_rows.append(row_values)
 
         garmin.pause()
+
+    batch_update_rows(worksheet, pending_updates, "N")
+    updated_count = len(pending_updates)
 
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
