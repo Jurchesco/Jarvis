@@ -11,7 +11,6 @@ Record of key technical decisions made during development.
 
 We use npm workspaces (not Turborepo/Nx) for simplicity. The monorepo has:
 - `apps/mobile` – Expo universal app
-- `apps/backend` – Fastify API (now deprecated, kept for reference)
 - `packages/shared` – Shared TypeScript types
 - `packages/react-native-worklets-stub` – NativeWind compat shim
 
@@ -86,7 +85,6 @@ NativeWind lets us use Tailwind CSS classes in React Native. Requires:
 
 **Trade-offs**:
 - Route params no longer need `parseInt()`
-- `apps/backend/` code has type mismatches (deprecated, not a concern)
 - UUIDs are longer but globally unique (important for eventual sync)
 
 ---

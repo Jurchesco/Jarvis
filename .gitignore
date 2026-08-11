@@ -6,7 +6,6 @@ dist/
 .env.*
 !.env.example
 data/
-apps/backend/data/
 *.apk
 eas.json.bak
 .vercel

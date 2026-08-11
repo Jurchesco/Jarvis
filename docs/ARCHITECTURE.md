@@ -8,7 +8,6 @@ apps/mobile/          ← Expo universal app (Android APK + Vercel web SPA)
   src/api/            ← Supabase API client (client.ts) + React Query hooks (hooks.ts)
   src/contexts/       ← AuthContext (session state, profile)
   src/lib/            ← Supabase client init (platform-aware storage)
-apps/backend/         ← DEPRECATED Fastify + SQLite API, kept for reference only
 packages/shared/      ← TypeScript types shared across the monorepo
 packages/react-native-worklets-stub/  ← no-op shim for NativeWind + RN 0.76 compat
 supabase/             ← Postgres schema + RLS migrations

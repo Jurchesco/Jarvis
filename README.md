@@ -167,7 +167,6 @@ stravio/
 │   │       ├── api/         # Supabase API client + React Query hooks
 │   │       ├── contexts/    # AuthContext (auth state management)
 │   │       └── lib/         # Supabase client configuration
-│   └── backend/             # [Deprecated] Fastify + SQLite API
 ├── packages/
 │   ├── shared/              # TypeScript types shared across apps
 │   └── react-native-worklets-stub/
@@ -216,6 +215,8 @@ Place your app screenshots in `docs/screenshots/`:
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and data flow
+- [Jarvis ecosystem (PL)](docs/JARVIS_ARCHITECTURE.md) — Data pipeline to Google Sheets + Gem
+- [Jarvis setup (PL)](docs/JARVIS_SETUP.md) — Step-by-step configuration
 - [Gem instructions (PL)](docs/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
 - [Decisions](docs/DECISIONS.md) — Technical decision records
 - [Changelog](docs/CHANGELOG.md) — Version history
