@@ -92,3 +92,14 @@ def _batch_update_with_retry(worksheet, payload: list[dict], max_retries: int = 
             wait_sec = min(60, 15 * (2**attempt))
             print(f"    Limit Google Sheets (429) — czekam {wait_sec}s...")
             time.sleep(wait_sec)
+
+
+def ensure_column_header(worksheet, header: str, *, column: str = "A") -> None:
+    """Ustaw nagłówek kolumny (np. Data → Data importu), jeśli jeszcze się różni."""
+    cell = f"{column}1"
+    try:
+        current = worksheet.acell(cell).value
+    except Exception:
+        current = None
+    if (current or "").strip() != header:
+        worksheet.update(cell, [[header]], value_input_option="USER_ENTERED")

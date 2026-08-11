@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 from google.oauth2.service_account import Credentials
 import gspread
 from supabase import create_client
 
+from ..dates import format_datetime, utc_iso_to_local
 from ..sheets import ImportResult, batch_update_rows
 from . import ImportContext
 
@@ -99,9 +98,9 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         if not session:
             continue
 
-        session_date = datetime.fromisoformat(session["started_at"].replace("Z", "+00:00"))
+        session_date = utc_iso_to_local(session["started_at"], ctx.config.timezone)
         date_str = session_date.strftime("%Y-%m-%d")
-        data_value = session_date.strftime("%Y-%m-%d %H:%M:%S")
+        data_value = format_datetime(session_date)
         weight = log["weight_kg"] or 0
         reps = log["reps"] or 0
         exercise_id = log["exercise_id"]
@@ -120,7 +119,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
             split_name = session["workout_sheets"].get("name", "Brak")
 
         exercise_name = exercises.get(exercise_id, "Nieznane cwiczenie")
-        set_time = datetime.fromisoformat(log["completed_at"].replace("Z", "+00:00")).strftime("%H:%M")
+        set_time = utc_iso_to_local(log["completed_at"], ctx.config.timezone).strftime("%H:%M")
         note_key = f"{log['session_id']}:{exercise_id}"
 
         rows_to_upsert.append([

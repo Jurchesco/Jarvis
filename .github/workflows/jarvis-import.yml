@@ -45,6 +45,7 @@ jobs:
       GARMIN_TOKEN_DIR: .garminconnect
       DEFAULT_DAYS: "1"
       IMPORT_START_DATE: "2026-07-09"
+      TIMEZONE: "Europe/Warsaw"
       REQUEST_DELAY_SEC: "0.4"
 
     steps:

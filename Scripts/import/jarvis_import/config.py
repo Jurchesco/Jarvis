@@ -4,8 +4,11 @@ import os
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
+
+from .dates import resolve_timezone
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PACKAGE_DIR.parent
@@ -21,6 +24,7 @@ class Config:
     supabase_secret_key: str | None
     default_days: int
     import_start_date: date
+    timezone: ZoneInfo
     request_delay_sec: float
 
 
@@ -77,6 +81,7 @@ def load_config(env_file: Path | None = None) -> Config:
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY"),
         default_days=int(os.getenv("DEFAULT_DAYS", "7")),
         import_start_date=date.fromisoformat(os.getenv("IMPORT_START_DATE", "2026-07-09")),
+        timezone=resolve_timezone(os.getenv("TIMEZONE")),
         request_delay_sec=float(os.getenv("REQUEST_DELAY_SEC", "0.4")),
     )
 

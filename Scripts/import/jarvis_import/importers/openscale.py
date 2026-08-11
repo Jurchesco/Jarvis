@@ -3,10 +3,9 @@ from __future__ import annotations
 import sqlite3
 import tempfile
 import zipfile
-from datetime import datetime
 from pathlib import Path
 
-from ..dates import date_key
+from ..dates import date_key, format_datetime, timestamp_ms_to_local, utc_iso_to_local
 from ..openscale_source import resolve_openscale_backup
 from ..sheets import ImportResult, batch_update_rows
 from . import ImportContext
@@ -77,9 +76,7 @@ def extract_db_path(backup_path: Path) -> Path:
     raise RuntimeError(f"Nieobsługiwany format backupu openScale: {backup_path}")
 
 
-def read_measurements_from_db(db_path: Path) -> list[list]:
-    local_tz = datetime.now().astimezone().tzinfo
-
+def read_measurements_from_db(db_path: Path, tz) -> list[list]:
     query = """
         SELECT
             m.id,
@@ -128,8 +125,8 @@ def read_measurements_from_db(db_path: Path) -> list[list]:
             impedance,
             comment,
         ) in cur.execute(query):
-            dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=local_tz)
-            datetime_value = dt.strftime("%Y-%m-%d %H:%M:%S")
+            dt = timestamp_ms_to_local(timestamp_ms, tz)
+            datetime_value = format_datetime(dt)
             rows.append([
                 datetime_value,
                 dt.strftime("%H:%M:%S"),
@@ -153,22 +150,25 @@ def read_measurements_from_db(db_path: Path) -> list[list]:
         con.close()
 
 
-def read_openscale_rows(source: Path) -> list[list]:
+def read_openscale_rows(source: Path, tz) -> list[list]:
     extracted = source.suffix.lower() == ".zip"
     db_path = extract_db_path(source)
     try:
-        return read_measurements_from_db(db_path)
+        return read_measurements_from_db(db_path, tz)
     finally:
         if extracted and db_path.exists():
             db_path.unlink(missing_ok=True)
 
 
-def make_key(datetime_value, weight, source):
+def make_row_key(datetime_value, weight, source, *, fuzzy: bool = False):
     try:
         normalized_weight = f"{float(str(weight).replace(',', '.')):.4f}"
     except (TypeError, ValueError):
         normalized_weight = str(weight).strip()
-    return (str(datetime_value).strip(), normalized_weight, str(source).strip().lower())
+    source_key = str(source).strip().lower()
+    if fuzzy:
+        return (date_key(str(datetime_value)), normalized_weight, source_key)
+    return (str(datetime_value).strip(), normalized_weight, source_key)
 
 
 def get_existing_rows_map(worksheet):
@@ -181,15 +181,25 @@ def get_existing_rows_map(worksheet):
             f"Nagłówki w '{WORKSHEET_NAME}' nie są zgodne.\n"
             f"Oczekiwane: {SHEET_HEADERS}\nZnalezione: {actual_headers}"
         )
-    rows_map = {}
+    exact_map: dict[tuple, int] = {}
+    fuzzy_map: dict[tuple, int] = {}
     for row_number, row in enumerate(values[1:], start=2):
         datetime_value = row[2].strip() if len(row) > 2 else ""
         weight = row[3].strip() if len(row) > 3 else ""
         source = row[15].strip() if len(row) > 15 else ""
         if not datetime_value or not weight or not source:
             continue
-        rows_map[make_key(datetime_value, weight, source)] = row_number
-    return rows_map
+        exact_map[make_row_key(datetime_value, weight, source)] = row_number
+        fuzzy_map[make_row_key(datetime_value, weight, source, fuzzy=True)] = row_number
+    return exact_map, fuzzy_map
+
+
+def resolve_existing_row(existing_exact, existing_fuzzy, row) -> int | None:
+    exact = make_row_key(row[2], row[3], row[15])
+    if exact in existing_exact:
+        return existing_exact[exact]
+    fuzzy = make_row_key(row[2], row[3], row[15], fuzzy=True)
+    return existing_fuzzy.get(fuzzy)
 
 
 def import_openscale(ctx: ImportContext) -> ImportResult:
@@ -202,7 +212,7 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     print(f"\n[CIALO] Zakres: {ctx.start_date} – {ctx.end_date}")
     print(f"  Backup: {backup_path}")
 
-    all_rows = read_openscale_rows(backup_path)
+    all_rows = read_openscale_rows(backup_path, ctx.config.timezone)
     filtered_rows = [
         row for row in all_rows
         if ctx.start_date.isoformat() <= date_key(row[0]) <= ctx.end_date.isoformat()
@@ -210,7 +220,7 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     print(f"  Odczytano {len(all_rows)} pomiarów, w zakresie: {len(filtered_rows)}")
 
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
-    existing_rows = get_existing_rows_map(worksheet)
+    existing_exact, existing_fuzzy = get_existing_rows_map(worksheet)
 
     updated_count = 0
     appended_rows = []
@@ -219,14 +229,15 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     seen_keys = set()
 
     for row in filtered_rows:
-        key = make_key(row[2], row[3], row[15])
+        key = make_row_key(row[2], row[3], row[15])
         if key in seen_keys:
             skipped_count += 1
             continue
         seen_keys.add(key)
 
-        if key in existing_rows:
-            pending_updates.append((existing_rows[key], row))
+        row_number = resolve_existing_row(existing_exact, existing_fuzzy, row)
+        if row_number is not None:
+            pending_updates.append((row_number, row))
         else:
             appended_rows.append(row)
 
