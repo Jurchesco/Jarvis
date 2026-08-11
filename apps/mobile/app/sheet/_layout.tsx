@@ -11,7 +11,7 @@ export default function SheetLayout() {
         contentStyle: { backgroundColor: "#0b1220" },
       }}
     >
-      <Stack.Screen name="[id]" options={{ title: "Sheet", headerBackTitle: "Home" }} />
+          <Stack.Screen name="[id]" options={{ title: "Arkusz", headerBackTitle: "Główna" }} />
     </Stack>
   );
 }

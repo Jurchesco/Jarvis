@@ -34,8 +34,8 @@ export default function SettingsScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="px-5 pt-3">
         <ScreenHeader
-          title="Settings"
-          subtitle="Tune reminders and keep your routine consistent."
+          title="Ustawienia"
+          subtitle="Dostosuj przypomnienia i utrzymuj regularność."
           icon={Settings2}
         />
 
@@ -46,11 +46,11 @@ export default function SettingsScreen() {
                 <BellRing size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
               </View>
               <View className="flex-1">
-                <Text className="text-text-primary text-base font-semibold">Daily workout reminder</Text>
+                <Text className="text-text-primary text-base font-semibold">Codzienne przypomnienie o treningu</Text>
                 <Text className="text-text-secondary text-sm mt-1">
                   {Platform.OS === "web"
-                    ? "Notifications are not available on web."
-                    : "Scheduled every day at 9:00 AM."}
+                    ? "Powiadomienia nie są dostępne w wersji webowej."
+                    : "Zaplanowane codziennie o 9:00."}
                 </Text>
               </View>
             </View>
@@ -67,8 +67,8 @@ export default function SettingsScreen() {
 
         {Platform.OS === "web" ? (
           <StateBlock
-            title="Mobile-only reminders"
-            description="Open the app on iOS or Android to enable scheduled notifications."
+            title="Przypomnienia tylko na urządzeniach mobilnych"
+            description="Otwórz aplikację na iOS lub Android, aby włączyć zaplanowane powiadomienia."
             icon={Globe}
             className="mt-4"
           />

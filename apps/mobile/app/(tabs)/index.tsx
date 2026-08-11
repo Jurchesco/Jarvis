@@ -70,8 +70,8 @@ export default function HomeScreen() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    const title = "Delete sheet";
-    const message = `Delete \"${name}\"? This cannot be undone.`;
+    const title = "Usuń plan";
+          const message = `Usuń "${name}"? Tej operacji nie można cofnąć.`;
 
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) {
@@ -79,9 +79,9 @@ export default function HomeScreen() {
       }
     } else {
       Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
+        { text: "Anuluj", style: "cancel" },
         {
-          text: "Delete",
+          text: "Usuń",
           style: "destructive",
           onPress: () => deleteSheet.mutate(id),
         },
@@ -109,11 +109,11 @@ export default function HomeScreen() {
       {
         onSuccess: () => setEditingSheetId(null),
         onError: (err) => {
-          const msg = err instanceof Error ? err.message : "Could not rename sheet";
+          const msg = err instanceof Error ? err.message : "Nie można zmienić nazwy planu";
           if (Platform.OS === "web") {
             window.alert(msg);
           } else {
-            Alert.alert("Rename failed", msg);
+            Alert.alert("Zmiana nazwy nie powiodła się", msg);
           }
         },
       },
@@ -141,7 +141,7 @@ export default function HomeScreen() {
                   delayLongPress={180}
                   disabled={reorderSheets.isPending}
                   className="mr-1 h-9 w-8 items-center justify-center"
-                  accessibilityLabel="Hold and drag to reorder sheet"
+                  accessibilityLabel="Przytrzymaj i przeciągnij, aby zmienić kolejność"
                   accessibilityRole="button"
                 >
                   <GripVertical size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
@@ -153,7 +153,7 @@ export default function HomeScreen() {
                   <Input
                     value={renameDraft}
                     onChangeText={setRenameDraft}
-                    placeholder="Sheet name"
+                    placeholder="Nazwa planu"
                     editable={!updateSheet.isPending}
                     onSubmitEditing={applyRename}
                     containerClassName="flex-1"
@@ -164,7 +164,7 @@ export default function HomeScreen() {
                     onPress={applyRename}
                     disabled={updateSheet.isPending}
                     className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                    accessibilityLabel="Save sheet name"
+                    accessibilityLabel="Zapisz nazwę planu"
                   >
                     <Check size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#22c55e" />
                   </TouchableOpacity>
@@ -175,7 +175,7 @@ export default function HomeScreen() {
                     <Text className="text-text-primary text-lg font-bold" numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text className="text-text-muted text-xs mt-1">Tap to open workout plan</Text>
+                    <Text className="text-text-muted text-xs mt-1">Dotknij, aby otworzyć plan treningowy</Text>
                   </View>
 
                   <View
@@ -188,7 +188,7 @@ export default function HomeScreen() {
                         beginRename(item);
                       }}
                       className="mr-2 h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                      accessibilityLabel="Rename sheet"
+                      accessibilityLabel="Zmień nazwę planu"
                     >
                       <PencilLine size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
                     </TouchableOpacity>
@@ -209,14 +209,14 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="px-5 pt-3 pb-2">
         <ScreenHeader
-          title="My Sheets"
-          subtitle="Create your plan, drag to reorder, long press a title to delete."
+          title="Moje plany"
+          subtitle="Stwórz swój plan, przeciągnij aby zmienić kolejność, przytrzymaj tytuł aby usunąć."
           icon={SquarePen}
-          rightAction={<Button label="Sign out" icon={LogOut} size="sm" variant="ghost" onPress={signOut} />}
+          rightAction={<Button label="Wyloguj" icon={LogOut} size="sm" variant="ghost" onPress={signOut} />}
         />
 
         <Button
-          label="Create sheet"
+          label="Utwórz plan"
           icon={Plus}
           onPress={() => setShowCreate(true)}
           className="mt-4"
@@ -225,13 +225,13 @@ export default function HomeScreen() {
 
       {isLoading ? (
         <View className="flex-1 px-5 pt-8">
-          <StateBlock title="Loading your sheets" description="Syncing your latest workout plans." />
+          <StateBlock title="Wczytywanie planów" description="Synchronizowanie Twoich planów treningowych." />
         </View>
       ) : error ? (
         <View className="flex-1 px-5 pt-8">
           <StateBlock
-            title="Could not load sheets"
-            description="Check your connection and Supabase configuration."
+            title="Nie można wczytać planów"
+            description="Sprawdź swoje połączenie i konfigurację Supabase."
             tone="danger"
           />
         </View>
@@ -250,9 +250,9 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 140 }}
           ListEmptyComponent={
             <StateBlock
-              title="No sheets yet"
-              description="Create your first sheet to start planning workouts."
-              actionLabel="Create sheet"
+              title="Brak planów"
+              description="Utwórz swój pierwszy plan, aby zacząć planować treningi."
+              actionLabel="Utwórz plan"
               onAction={() => setShowCreate(true)}
               className="mt-8"
             />
@@ -263,15 +263,15 @@ export default function HomeScreen() {
       {showCreate ? (
         <View className="absolute bottom-24 left-5 right-5">
           <Card padding="lg" className="border border-border">
-            <Text className="text-text-primary text-lg font-bold">Create a new sheet</Text>
+            <Text className="text-text-primary text-lg font-bold">Utwórz nowy plan</Text>
             <Text className="text-text-secondary text-sm mt-1">
-              Give it a clear name so you can find it fast before training.
+              Nadaj mu czytelną nazwę, abyś szybko go znalazł przed treningiem.
             </Text>
 
             <Input
               value={newSheetName}
               onChangeText={setNewSheetName}
-              placeholder="Example: Push Day"
+              placeholder="Np. Trening klatki piersiowej"
               onSubmitEditing={handleCreate}
               containerClassName="mt-4"
               autoFocus
@@ -280,13 +280,13 @@ export default function HomeScreen() {
 
             <View className="mt-4 flex-row gap-3">
               <Button
-                label="Cancel"
+                label="Anuluj"
                 variant="secondary"
                 onPress={() => setShowCreate(false)}
                 className="flex-1"
               />
               <Button
-                label="Create"
+                label="Utwórz"
                 icon={Plus}
                 onPress={handleCreate}
                 className="flex-1"
@@ -301,7 +301,7 @@ export default function HomeScreen() {
         className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-action-primary border border-action-primary-press"
         onPress={() => setShowCreate(true)}
         accessibilityRole="button"
-        accessibilityLabel="Create a new sheet"
+        accessibilityLabel="Utwórz nowy plan"
         activeOpacity={0.85}
       >
         <Plus size={22} strokeWidth={2.4} color="#ffffff" />

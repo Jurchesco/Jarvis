@@ -27,7 +27,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Home",
+          title: "Główna",
           tabBarIcon: ({ color }) => (
             <House size={ICON_SIZE} strokeWidth={ICON_STROKE} color={color} />
           ),
@@ -36,7 +36,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="history"
         options={{
-          title: "History",
+          title: "Historia",
           tabBarIcon: ({ color }) => (
             <HistoryIcon size={ICON_SIZE} strokeWidth={ICON_STROKE} color={color} />
           ),
@@ -45,7 +45,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="stats"
         options={{
-          title: "Stats",
+          title: "Statystyki",
           tabBarIcon: ({ color }) => (
             <BarChart3 size={ICON_SIZE} strokeWidth={ICON_STROKE} color={color} />
           ),
@@ -54,7 +54,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
+          title: "Ustawienia",
           tabBarIcon: ({ color }) => (
             <Settings2 size={ICON_SIZE} strokeWidth={ICON_STROKE} color={color} />
           ),

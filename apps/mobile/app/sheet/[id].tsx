@@ -94,11 +94,11 @@ export default function SheetDetailScreen() {
       {
         onSuccess: () => setIsEditingSheetName(false),
         onError: (err) => {
-          const msg = err instanceof Error ? err.message : "Could not rename sheet";
+          const msg = err instanceof Error ? err.message : "Nie można zmienić nazwy planu";
           if (Platform.OS === "web") {
             window.alert(msg);
           } else {
-            Alert.alert("Rename failed", msg);
+            Alert.alert("Zmiana nazwy nie powiodła się", msg);
           }
         },
       },
@@ -124,8 +124,8 @@ export default function SheetDetailScreen() {
   };
 
   const handleDeleteExercise = (exerciseId: string, name: string) => {
-    const title = "Delete exercise";
-    const message = `Delete \"${name}\" from this sheet?`;
+    const title = "Usuń ćwiczenie";
+    const message = `Usuń "${name}" z tego planu?`;
 
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) {
@@ -133,8 +133,8 @@ export default function SheetDetailScreen() {
       }
     } else {
       Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteExercise.mutate(exerciseId) },
+                  { text: "Anuluj", style: "cancel" },
+                  { text: "Usuń", style: "destructive", onPress: () => deleteExercise.mutate(exerciseId) },
       ]);
     }
   };
@@ -213,7 +213,7 @@ export default function SheetDetailScreen() {
           <View className="px-5 pt-3 pb-3">
             <ScreenHeader
               title={sheet.name}
-              subtitle="Plan your sets, then start the session when ready."
+                          subtitle="Zaplanuj swoje serie, a następnie zacznij sesję, gdy będziesz gotowy."
               rightAction={
                 <Button
                   label="Start"
@@ -230,7 +230,7 @@ export default function SheetDetailScreen() {
                 <Input
                   value={sheetNameDraft}
                   onChangeText={setSheetNameDraft}
-                  placeholder="Sheet name"
+                  placeholder="Nazwa planu"
                   editable={!updateSheet.isPending}
                   onSubmitEditing={applySheetName}
                   containerClassName="flex-1"
@@ -252,10 +252,10 @@ export default function SheetDetailScreen() {
                 onPress={beginEditSheetName}
                 className="mt-4 flex-row items-center self-start rounded-xl border border-border bg-action-secondary px-3 py-2"
                 accessibilityRole="button"
-                accessibilityLabel="Rename sheet"
+                accessibilityLabel="Zmień nazwę planu"
               >
                 <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-                <Text className="ml-2 text-text-secondary text-sm font-semibold">Rename sheet</Text>
+                <Text className="ml-2 text-text-secondary text-sm font-semibold">Zmień nazwę planu</Text>
               </TouchableOpacity>
             )}
           </View>
@@ -264,15 +264,15 @@ export default function SheetDetailScreen() {
           <View className="px-5 pb-4">
             {showAddExercise ? (
               <Card padding="lg" className="mb-3">
-                <Text className="text-text-primary text-lg font-bold">Add exercise</Text>
+                <Text className="text-text-primary text-lg font-bold">Dodaj ćwiczenie</Text>
                 <Text className="text-text-secondary text-sm mt-1">
-                  Add one movement at a time, then fill your set template.
+                  Dodawaj ćwiczenia pojedynczo, a następnie uzupełnij szablon serii.
                 </Text>
 
                 <Input
                   value={newExerciseName}
                   onChangeText={setNewExerciseName}
-                  placeholder="Example: Incline dumbbell press"
+                  placeholder="Przykład: Wyciskanie hantli na skośni"
                   onSubmitEditing={handleAddExercise}
                   containerClassName="mt-4"
                   autoFocus
@@ -281,13 +281,13 @@ export default function SheetDetailScreen() {
 
                 <View className="mt-4 flex-row gap-3">
                   <Button
-                    label="Cancel"
+              label="Anuluj"
                     variant="secondary"
                     onPress={() => setShowAddExercise(false)}
                     className="flex-1"
                   />
                   <Button
-                    label="Add"
+                    label="Dodaj"
                     icon={Plus}
                     onPress={handleAddExercise}
                     className="flex-1"
@@ -297,7 +297,7 @@ export default function SheetDetailScreen() {
               </Card>
             ) : (
               <Button
-                label="Add exercise"
+                label="Dodaj ćwiczenie"
                 icon={Plus}
                 variant="secondary"
                 onPress={() => setShowAddExercise(true)}
@@ -309,9 +309,9 @@ export default function SheetDetailScreen() {
         ListEmptyComponent={
           <View className="px-5 py-4">
             <StateBlock
-              title="No exercises yet"
-              description="Add your first exercise to start building this sheet."
-              actionLabel="Add exercise"
+              title="Brak jeszcze ćwiczeń"
+              description="Dodaj pierwsze ćwiczenie, aby zacząć budować ten plan."
+              actionLabel="Dodaj ćwiczenie"
               onAction={() => setShowAddExercise(true)}
             />
           </View>
@@ -363,7 +363,7 @@ function ExerciseCard({
             delayLongPress={180}
             disabled={isPendingReorder}
             className="mr-1 h-9 w-8 items-center justify-center"
-            accessibilityLabel="Hold and drag to reorder exercise"
+                          accessibilityLabel="Przytrzymaj i przeciągnij, aby zmienić kolejność"
             accessibilityRole="button"
           >
             <GripVertical size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
@@ -375,7 +375,7 @@ function ExerciseCard({
             onPress={onDelete}
             className="h-9 w-9 items-center justify-center rounded-xl bg-danger/15 border border-danger/30"
             accessibilityRole="button"
-            accessibilityLabel={`Delete ${exercise.name}`}
+                          accessibilityLabel={`Usuń ${exercise.name}`}
           >
             <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
           </TouchableOpacity>
@@ -387,7 +387,7 @@ function ExerciseCard({
             onChangeText={setNotes}
             onBlur={handleBlurNotes}
             leftIcon={NotebookPen}
-            placeholder="Add cues, tempo, or setup reminders"
+            placeholder="Dodaj wskazówki, tempo lub przypomnienia"
             multiline
             autoFocus
             containerClassName="mb-3"
@@ -400,7 +400,7 @@ function ExerciseCard({
             <View className="flex-row items-start">
               <NotebookPen size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
               <Text className="ml-2 flex-1 text-sm text-text-muted">
-                {exercise.notes || "Add exercise notes (tempo, setup, focus cues)."}
+                {exercise.notes || "Dodaj notatki do ćwiczenia (tempo, ustawienie, wskazówki)."}
               </Text>
             </View>
           </TouchableOpacity>
@@ -408,10 +408,10 @@ function ExerciseCard({
 
         {exercise.sets.length > 0 ? (
           <View className="mb-2 flex-row px-1">
-            <Text className="w-10 text-text-muted text-xs font-semibold">SET</Text>
-            <Text className="flex-1 text-center text-text-muted text-xs font-semibold">KG</Text>
-            <Text className="flex-1 text-center text-text-muted text-xs font-semibold">REPS</Text>
-            <Text className="flex-1 text-center text-text-muted text-xs font-semibold">REST</Text>
+                      <Text className="w-10 text-text-muted text-xs font-semibold">SERIA</Text>
+                      <Text className="flex-1 text-center text-text-muted text-xs font-semibold">KG</Text>
+                    <Text className="flex-1 text-center text-text-muted text-xs font-semibold">POWT.</Text>
+                    <Text className="flex-1 text-center text-text-muted text-xs font-semibold">ODP.</Text>
             <View className="w-8" />
           </View>
         ) : null}
@@ -426,7 +426,7 @@ function ExerciseCard({
         ))}
 
         <Button
-          label="Add set"
+                  label="Dodaj serię"
           icon={Plus}
           variant="secondary"
           size="sm"
@@ -520,7 +520,7 @@ function SetRow({
           keyboardType="numeric"
         />
 
-        <TouchableOpacity onPress={handleSave} className="w-8 items-center" accessibilityLabel="Save set values">
+                <TouchableOpacity onPress={handleSave} className="w-8 items-center" accessibilityLabel="Zapisz serię">
           <Check size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
         </TouchableOpacity>
       </View>
@@ -538,7 +538,7 @@ function SetRow({
         className="flex-1 flex-row items-center"
         onPress={() => setIsEditing(true)}
         accessibilityRole="button"
-        accessibilityLabel={`Edit set ${set.setNumber}`}
+                  accessibilityLabel={`Edytuj serię ${set.setNumber}`}
       >
         <Text className="w-10 text-text-secondary text-sm font-semibold">{set.setNumber}</Text>
         <Text className="flex-1 text-center text-text-primary text-sm">{set.weightKg}</Text>
@@ -550,7 +550,7 @@ function SetRow({
         className="w-8 items-center"
         onPress={onDelete}
         accessibilityRole="button"
-        accessibilityLabel={`Delete set ${set.setNumber}`}
+                accessibilityLabel={`Usuń serię ${set.setNumber}`}
       >
         <Trash2 size={14} strokeWidth={ICON_STROKE} color="#ef4444" />
       </TouchableOpacity>

@@ -13,7 +13,7 @@ export default function SessionDetailScreen() {
   if (isLoading) {
     return (
       <SafeAreaView className="flex-1 bg-background px-5 pt-8" edges={["bottom"]}>
-        <StateBlock title="Loading session" description="Fetching workout details." />
+        <StateBlock title="Wczytywanie sesji" description="Pobieranie szczegółów treningu." />
       </SafeAreaView>
     );
   }
@@ -22,8 +22,8 @@ export default function SessionDetailScreen() {
     return (
       <SafeAreaView className="flex-1 bg-background px-5 pt-8" edges={["bottom"]}>
         <StateBlock
-          title="Session not found"
-          description="This workout might have been deleted."
+          title="Nie znaleziono sesji"
+          description="Ten trening mógł zostać usunięty."
           tone="danger"
         />
       </SafeAreaView>
@@ -41,7 +41,7 @@ export default function SessionDetailScreen() {
           <View className="mt-3 flex-row items-center">
             <CalendarDays size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
             <Text className="ml-2 text-text-secondary text-sm">
-              {date.toLocaleDateString("en-US", {
+              {date.toLocaleDateString("pl-PL", {
                 weekday: "long",
                 day: "numeric",
                 month: "long",
@@ -53,7 +53,7 @@ export default function SessionDetailScreen() {
           <View className="mt-1 flex-row items-center">
             <Clock3 size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
             <Text className="ml-2 text-text-muted text-sm">
-              {date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
+              {date.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
             </Text>
           </View>
         </Card>
@@ -67,9 +67,9 @@ export default function SessionDetailScreen() {
               </View>
 
               <View className="mb-2 flex-row px-2">
-                <Text className="w-12 text-text-muted text-xs font-semibold">SET</Text>
+                <Text className="w-12 text-text-muted text-xs font-semibold">SERIA</Text>
                 <Text className="flex-1 text-center text-text-muted text-xs font-semibold">KG</Text>
-                <Text className="flex-1 text-center text-text-muted text-xs font-semibold">REPS</Text>
+                <Text className="flex-1 text-center text-text-muted text-xs font-semibold">POWT.</Text>
               </View>
 
               {exercise.sets.map((set, index) => (
@@ -88,8 +88,7 @@ export default function SessionDetailScreen() {
             </Card>
           ))
         ) : (
-          <StateBlock title="No exercises recorded" description="There are no logged sets in this session." />
-        )}
+        <StateBlock title="Brak zarejestrowanych ćwiczeń" description="W tej sesji nie zapisano żadnych serii." />        )}
       </ScrollView>
     </SafeAreaView>
   );
