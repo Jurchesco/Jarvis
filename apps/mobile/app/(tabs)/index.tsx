@@ -71,7 +71,7 @@ export default function HomeScreen() {
 
   const handleDelete = (id: string, name: string) => {
     const title = "Usuń plan";
-    const message = `Delete \"${name}\"? Tej operacji nie można cofnąć.`;
+          const message = `Usuń "${name}"? Tej operacji nie można cofnąć.`;
 
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) {
