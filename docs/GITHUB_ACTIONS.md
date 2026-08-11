@@ -40,7 +40,7 @@ Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 1. Repo na GitHubie (zalecane **private**).
 2. Wklej sekrety w Settings → Secrets → Actions.
 3. **Actions → Jarvis Import → Run workflow** — test ręczny z `days: 7`.
-4. Harmonogram: **co godzinę** (`cron: 0 * * * *` w workflow). Runy z harmonogramu importują ostatnie **2 dni** (`DEFAULT_DAYS`).
+4. Harmonogram: **co godzinę** (`cron: 0 * * * *` w workflow). Runy z harmonogramu importują **dzisiejszy dzień** (`DEFAULT_DAYS: 1`).
 
 ### Pełny import od początku
 
