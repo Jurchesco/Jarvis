@@ -99,5 +99,5 @@ Write-Host "  3. git push -u origin main"
 Write-Host "  4. Wklej sekrety w Settings -> Secrets -> Actions"
 Write-Host "  5. Actions -> Jarvis Import -> Run workflow"
 Write-Host ""
-Write-Host "Szczegoly: docs\GITHUB_ACTIONS.md"
+Write-Host "Szczegoly: docs\jarvis\GITHUB_ACTIONS.md"
 Write-Host "Pliki tymczasowe: $OutDir (usun po uzyciu)" -ForegroundColor DarkGray

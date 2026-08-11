@@ -4,7 +4,7 @@
 **Cel:** jakość danych w Google Sheets dla Gemini Gema (Trener AI)  
 **Repozytorium:** `c:\Jarvis\Stravio` · GitHub `Jurchesco/stravio`
 
-> **Dla agenta / kolejnych sesji:** przy każdej naprawie odwołuj się do tego pliku (`@docs/PLAN_NAPRAWCZY.md`). Po ukończeniu zadania zmień status na `done` i dopisz datę w kolumnie „Ukończono”.
+> **Dla agenta / kolejnych sesji:** przy każdej naprawie odwołuj się do tego pliku (`@docs/jarvis/PLAN_NAPRAWCZY.md`). Po ukończeniu zadania zmień status na `done` i dopisz datę w kolumnie „Ukończono”.
 
 ---
 
@@ -46,7 +46,7 @@ Bez nowych funkcji w aplikacji. Najwyższy ROI dla Gema.
 | **0.2** | `todo` | Notatki ćwiczenia → kolumna `Uwagi`; `Bol / Niggle` zostawić puste (brak źródła bólu w appce) | `importers/stravio.py:125-137` | Po imporcie: `Uwagi` = tekst z sesji ćwiczenia, `Bol / Niggle` puste | **Wysoki** |
 | **0.3** | `todo` | PR po **Est. 1RM (Brzycki)**, nie max ciężar; klucz PR po **nazwie ćwiczenia**, nie `exercise_id` | `importers/stravio.py:92-111` | Seria 95×8 dostaje PR po serii 100×1 jeśli Est. 1RM wyższe | **Wysoki** |
 | **0.4** | `todo` | Wiersz błędu w `daily.py` — upewnić się, że ma **21 pól** (Uwagi w kolumnie U) | `importers/daily.py:75-78` | Przy symulowanym błędzie Garmin komunikat w kolumnie U | Średni |
-| **0.5** | `todo` | Aktualizacja `GEM_INSTRUKCJA.md` według sekcji E audytu + **wklejenie do Gema** | `docs/GEM_INSTRUKCJA.md`, Gem UI | Gem nie alarmuje o „kontuzji” z notatek technicznych; zna PR/typy Sen | **Wysoki** |
+| **0.5** | `todo` | Aktualizacja `GEM_INSTRUKCJA.md` według sekcji E audytu + **wklejenie do Gema** | `docs/jarvis/GEM_INSTRUKCJA.md`, Gem UI | Gem nie alarmuje o „kontuzji” z notatek technicznych; zna PR/typy Sen | **Wysoki** |
 | **0.6** | `todo` | `DEFAULT_DAYS: "3"` w workflow (bufor samonaprawy) | `.github/workflows/jarvis-import.yml:46` | Po 2-dniowej przerwie CI uzupełnia luki | Średni |
 
 ### Szczegóły implementacji 0.1
@@ -88,7 +88,7 @@ rows_to_upsert.append([
 | **1.1** | `blocked` | Filtr `STRAVIO_USER_ID` / `user_id` w importerze | `config.py`, `stravio.py`, `.env.example`, workflow | Sesja obcego konta nie trafia do arkusza | **Wysoki** (jeśli Vercel publiczny) |
 | **1.2** | `todo` | Odporny `date_key` na lokalizację PL + normalizacja `Czas serii` w kluczu upsert | `dates.py`, `stravio.py:26-32` | Dwa kolejne importy → `dopisano 0` | **Wysoki** (jeśli D-2 potwierdzone) |
 | **1.3** | `todo` | `restlessMomentsCount` z Garmina zamiast własnego liczenia | `importers/sleep.py:114-119` | Kolumna `Niespokojne momenty` > 0 gdy Garmin raportuje | Średni |
-| **1.4** | `todo` | Rename nagłówka `Tętno min. średnie`; guard Brzycki `reps > 15`; tempo `"5:30 /km"` | `daily.py`, `stravio.py`, `activities.py`, `GEM_INSTRUKCJA.md` | Brak absurdalnych Est. 1RM; tempo nie jako godzina w Sheets | Średni |
+| **1.4** | `todo` | Rename nagłówka `Tętno min. średnie`; guard Brzycki `reps > 15`; tempo `"5:30 /km"` | `daily.py`, `stravio.py`, `activities.py`, `docs/jarvis/GEM_INSTRUKCJA.md` | Brak absurdalnych Est. 1RM; tempo nie jako godzina w Sheets | Średni |
 | **1.5** | `todo` | `date.today()` → data w `Europe/Warsaw`; filtr `<= end_date` w aktywnościach; `utcfromtimestamp` → `fromtimestamp(tz=utc)` | `config.py`, `activities.py`, `sleep.py` | Brak DeprecationWarning w CI | Niski |
 | **1.6** | `todo` | Early break paginacji aktywności (przerwa gdy strona starsza niż `start_date`) | `importers/activities.py:179-188` | Mniej wywołań API; log 1–2 paczek zamiast 20 | Średni |
 
@@ -99,7 +99,7 @@ rows_to_upsert.append([
 | ID | Status | Zadanie | Pliki / sposób | Kryterium „done” | Wpływ |
 |----|--------|---------|----------------|------------------|-------|
 | **2.1** | `todo` | Zakładka **Meta** — log importów (moduł, czas, updated/appended/skipped, błąd) | nowy `importers/meta.py` lub rozszerzenie `cli.py` | Gem widzi datę ostatniego sync | **Wysoki** |
-| **2.2** | `todo` | Zakładka **Samopoczucie** (ręczna lub Form): Data, Energia 1–5, Nastrój, Motywacja, Ból, Notatka | arkusz + `GEM_INSTRUKCJA.md` | Gem ma subiektywny kontekst | **Wysoki** |
+| **2.2** | `todo` | Zakładka **Samopoczucie** (ręczna lub Form): Data, Energia 1–5, Nastrój, Motywacja, Ból, Notatka | arkusz + `docs/jarvis/GEM_INSTRUKCJA.md` | Gem ma subiektywny kontekst | **Wysoki** |
 | **2.3** | `todo` | Zakładka **Suplementy** — dzienny log + FK do `Baza_Suplementow` | arkusz + Gem | Korelacja suplement ↔ sen | Średni |
 
 > Fazy 2.2 i 2.3 można zacząć **ręcznie w arkuszu** (bez kodu), potem opisać w Gemie.
@@ -222,9 +222,9 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 | Plik | Opis |
 |------|------|
 | [GEM_INSTRUKCJA.md](./GEM_INSTRUKCJA.md) | Instrukcja systemowa Gema |
-| [AUDYT_PROMPT_PELNY.md](./AUDYT_PROMPT_PELNY.md) | Prompt użyty w audycie Opus |
-| [JARVIS_ARCHITECTURE.md](./JARVIS_ARCHITECTURE.md) | Architektura ekosystemu (PL) |
-| [JARVIS_SETUP.md](./JARVIS_SETUP.md) | Konfiguracja |
+| [audit/PROMPT.md](../audit/PROMPT.md) | Prompt użyty w audycie Opus |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Architektura ekosystemu (ten folder) |
+| [SETUP.md](./SETUP.md) | Konfiguracja |
 
 ---
 
@@ -239,7 +239,7 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 ## Jak pracować krok po kroku (dla Ciebie i agenta)
 
 1. Wybierz następne zadanie z TOP 5 lub Fazy 0 (w tej kolejności).
-2. W nowym chacie napisz np.: **„Wdróż zadanie 0.1 z @docs/PLAN_NAPRAWCZY.md”**.
+2. W nowym chacie napisz np.: **„Wdróż zadanie 0.1 z @docs/jarvis/PLAN_NAPRAWCZY.md”**.
 3. Po merge / teście — zaktualizuj status w tym pliku na `done` + data.
 4. Po Fazie 0 — uruchom checklist weryfikacji i odpowiedz na H-1…H-5.
 

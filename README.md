@@ -214,15 +214,17 @@ Place your app screenshots in `docs/screenshots/`:
 
 ## Documentation
 
-- [Architecture](docs/ARCHITECTURE.md) — System design and data flow
-- [Jarvis ecosystem (PL)](docs/JARVIS_ARCHITECTURE.md) — Data pipeline to Google Sheets + Gem
-- [Jarvis setup (PL)](docs/JARVIS_SETUP.md) — Step-by-step configuration
-- [**Plan naprawczy (audyt → roadmap)**](docs/PLAN_NAPRAWCZY.md) — Status fixes for Gem data quality
-- [Gem instructions (PL)](docs/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
-- [Decisions](docs/DECISIONS.md) — Technical decision records
-- [Changelog](docs/CHANGELOG.md) — Version history
-- [TODO](docs/TODO.md) — Roadmap and task tracking
-- [Release Guide](docs/RELEASE.md) — Build and publish flow for v1
+See **[docs/README.md](docs/README.md)** for the full index.
+
+- [Jarvis ecosystem (PL)](docs/jarvis/ARCHITECTURE.md) — Data pipeline to Google Sheets + Gem
+- [Jarvis setup (PL)](docs/jarvis/SETUP.md) — Step-by-step configuration
+- [**Plan naprawczy**](docs/jarvis/PLAN_NAPRAWCZY.md) — Audit remediation (task status)
+- [Gem instructions (PL)](docs/jarvis/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
+- [Architecture](docs/stravio/ARCHITECTURE.md) — App system design and data flow
+- [Decisions](docs/stravio/DECISIONS.md) — Technical decision records
+- [Changelog](docs/stravio/CHANGELOG.md) — Version history
+- [TODO](docs/stravio/TODO.md) — App roadmap
+- [Release Guide](docs/stravio/RELEASE.md) — Build and publish flow for v1
 
 ## Contributing
 

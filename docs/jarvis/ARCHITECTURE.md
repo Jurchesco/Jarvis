@@ -2,7 +2,7 @@
 
 Dokumentacja po polsku — przepływ danych od źródeł do Gemini Gema.
 
-Aplikacja Stravio (EN): [ARCHITECTURE.md](./ARCHITECTURE.md)
+Aplikacja Stravio (EN): [../stravio/ARCHITECTURE.md](../stravio/ARCHITECTURE.md)
 
 ---
 
@@ -50,11 +50,11 @@ stravio/                    # repo GitHub (Jurchesco/stravio)
 ├── supabase/               # Schemat Postgres + RLS
 ├── Scripts/import/         # Importer Python (jarvis_import)
 ├── .github/workflows/      # jarvis-import.yml
-└── docs/                   # Dokumentacja (PL + EN)
-    ├── JARVIS_ARCHITECTURE.md   ← ten plik
-    ├── JARVIS_SETUP.md
-    ├── GEM_INSTRUKCJA.md
-    └── ARCHITECTURE.md     ← architektura aplikacji (EN)
+└── docs/
+    ├── README.md           ← indeks dokumentacji
+    ├── jarvis/             ← ekosystem (PL): ten plik, SETUP, Gem, plan
+    ├── stravio/            ← aplikacja (EN): ARCHITECTURE, TODO, …
+    └── audit/              ← prompt i archiwum audytu
 ```
 
 ---
@@ -77,4 +77,4 @@ Możesz trzymać clone repo w `c:\Jarvis\Stravio\` — to jedyny katalog z kodem
 
 ## Roadmapa
 
-[TODO.md](./TODO.md) · [DECISIONS.md](./DECISIONS.md)
+[../stravio/TODO.md](../stravio/TODO.md) · [../stravio/DECISIONS.md](../stravio/DECISIONS.md)

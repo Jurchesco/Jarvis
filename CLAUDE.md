@@ -33,11 +33,13 @@ There are no automated tests in this project.
 
 Use `./docs/*` as the canonical source for product/project documentation. Keep this file concise and avoid duplicating long-form content that already exists there.
 
-- `docs/ARCHITECTURE.md` — detailed architecture and data flow
-- `docs/CHANGELOG.md` — release-by-release change history
-- `docs/DECISIONS.md` — major technical/product decisions and rationale
-- `docs/RELEASE.md` — release process and checklist
-- `docs/TODO.md` — prioritized roadmap and open tasks
+- `docs/README.md` — documentation index
+- `docs/stravio/ARCHITECTURE.md` — detailed app architecture and data flow
+- `docs/stravio/CHANGELOG.md` — release-by-release change history
+- `docs/stravio/DECISIONS.md` — major technical/product decisions and rationale
+- `docs/stravio/RELEASE.md` — release process and checklist
+- `docs/stravio/TODO.md` — prioritized app roadmap
+- `docs/jarvis/PLAN_NAPRAWCZY.md` — Jarvis ecosystem remediation plan
 
 ## Environment Setup
 

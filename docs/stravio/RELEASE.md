@@ -74,7 +74,7 @@ Release naming (recommended):
 - Minor features: `v1.1.0`, `v1.2.0`, ...
 - Breaking changes: `v2.0.0`, ...
 
-- Update `docs/CHANGELOG.md` with release date and final notes.
+- Update `docs/stravio/CHANGELOG.md` with release date and final notes.
 - Merge release work to `main` and push:
 
 ```bash

@@ -1,6 +1,6 @@
 # Pełny prompt audytu Jarvis — do wklejenia w mocniejszy model
 
-**Jak użyć w Cursorze:** nowy chat → model Opus/o1/Thinking → wklej cały blok z sekcji „PROMPT” → dołącz pliki wymienione na końcu (`@docs/GEM_INSTRUKCJA.md` itd.).
+**Jak użyć w Cursorze:** nowy chat → model Opus → wklej blok z sekcji „PROMPT” → dołącz `@docs/jarvis/GEM_INSTRUKCJA.md`, `@Scripts/import/jarvis_import/` itd.
 
 **Jak użyć poza Cursorem (Gemini Advanced, ChatGPT):** wklej prompt + podaj link do repo: https://github.com/Jurchesco/stravio — poproś model o przejrzenie kodu z GitHub (jeśli ma dostęp) lub wklej ręcznie kluczowe pliki.
 
@@ -34,7 +34,7 @@ openScale backup   → importer Python  ↗
 - **Import Python:** `Scripts/import/jarvis_import/`
 - **Aplikacja Stravio:** `apps/mobile/`, `supabase/schema.sql`
 - **Workflow CI:** `.github/workflows/jarvis-import.yml`
-- **Instrukcja Gema:** `docs/GEM_INSTRUKCJA.md`
+- **Instrukcja Gema:** `docs/jarvis/GEM_INSTRUKCJA.md`
 
 ### Google Sheet
 - Tytuł: **„Dziennik Treningowy – Trener AI”**
@@ -113,7 +113,7 @@ Ustal:
 - Potencjalne bugi timezone (szczególnie `sleep.py` i pola `*Local` vs `*GMT`)
 - Pole `minAvgHeartRate` w `daily.py` — czy to właściwa metryka dla „Tętno średnie”
 
-### 5. Instrukcja Gema (`docs/GEM_INSTRUKCJA.md`)
+### 5. Instrukcja Gema (`docs/jarvis/GEM_INSTRUKCJA.md`)
 
 Porównaj **linijka po linijce** z kodem importerów:
 - Opis kolumn vs rzeczywiste dane
@@ -208,7 +208,7 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 ## PLIKI DO PRZECZYTANIA (priorytet)
 
 **Must-read:**
-- `docs/GEM_INSTRUKCJA.md`
+- `docs/jarvis/GEM_INSTRUKCJA.md`
 - `Scripts/import/jarvis_import/importers/sleep.py`
 - `Scripts/import/jarvis_import/importers/daily.py`
 - `Scripts/import/jarvis_import/importers/forma.py`
@@ -224,14 +224,14 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 - `apps/mobile/src/api/client.ts`
 
 **Nice-to-have:**
-- `docs/ARCHITECTURE.md`
+- `docs/stravio/ARCHITECTURE.md`
 - `Scripts/import/README.md`
 - `apps/mobile/app/sheet/[id].tsx`
 - `packages/shared/src/index.ts`
 
 ---
 
-**Zacznij od przeczytania `docs/GEM_INSTRUKCJA.md` i `importers/stravio.py`, potem przejdź moduł po module. Na końcu zsyntetyzuj roadmapę z naciskiem na jakość danych dla Gema.**
+**Zacznij od przeczytania `docs/jarvis/GEM_INSTRUKCJA.md` i `importers/stravio.py`, potem przejdź moduł po module. Na końcu zsyntetyzuj roadmapę z naciskiem na jakość danych dla Gema.**
 
 ---
 
@@ -242,7 +242,7 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 ## W Cursorze — dołącz te pliki (@)
 
 ```
-@docs/GEM_INSTRUKCJA.md
+@docs/jarvis/GEM_INSTRUKCJA.md
 @Scripts/import/jarvis_import/
 @.github/workflows/jarvis-import.yml
 @supabase/schema.sql
