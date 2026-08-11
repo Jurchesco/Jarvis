@@ -2,8 +2,8 @@ name: Jarvis Import
 
 on:
   schedule:
-    # Niedziela 09:00 czasu polskiego (08:00 UTC zimą / 07:00 UTC latem — dostosuj w razie potrzeby)
-    - cron: "0 8 * * 0"
+    # Co godzinę o :00 UTC (np. 09:00, 10:00… czasu polskiego latem)
+    - cron: "0 * * * *"
   workflow_dispatch:
     inputs:
       days:
@@ -38,7 +38,7 @@ jobs:
       OPENSCALE_DRIVE_FILE_ID: ${{ secrets.OPENSCALE_DRIVE_FILE_ID }}
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
       GARMIN_TOKEN_DIR: .garminconnect
-      DEFAULT_DAYS: "7"
+      DEFAULT_DAYS: "2"
       REQUEST_DELAY_SEC: "0.4"
 
     steps:

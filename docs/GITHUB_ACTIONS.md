@@ -40,7 +40,26 @@ Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 1. Repo na GitHubie (zalecane **private**).
 2. Wklej sekrety w Settings → Secrets → Actions.
 3. **Actions → Jarvis Import → Run workflow** — test ręczny z `days: 7`.
-4. Harmonogram: niedziela 09:00 CET (cron w workflow).
+4. Harmonogram: **co godzinę** (`cron: 0 * * * *` w workflow). Runy z harmonogramu importują ostatnie **2 dni** (`DEFAULT_DAYS`).
+
+### Dostosowanie częstotliwości
+
+Edytuj `.github/workflows/jarvis-import.yml`:
+
+| Cel | Cron (UTC) |
+|-----|------------|
+| Co godzinę (domyślnie) | `0 * * * *` |
+| Co 6 godzin | `0 */6 * * *` |
+| Raz dziennie o 06:00 UTC | `0 6 * * *` |
+| Raz w tygodniu (niedziela 08:00 UTC) | `0 8 * * 0` |
+
+Przy częstym harmonogramie trzymaj `DEFAULT_DAYS` nisko (1–2), żeby nie obciążać Garmin API. Ręczny run nadal może użyć `days: 7` lub więcej.
+
+**Uwagi:**
+
+- Na **prywatnym** repo harmonogram może się opóźniać o kilka–kilkanaście minut (limit GitHub).
+- Publiczne repo: harmonogram zwykle punktualniejszy, minuty Actions bez limitu.
+- Free tier prywatnego repo: ~2000 min/mies. — import co godzinę (~720 min) mieści się w limicie.
 
 ## Interpretacja wyniku workflow
 
