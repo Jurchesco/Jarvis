@@ -286,7 +286,7 @@ export default function HistoryScreen() {
                 <Text className="text-text-secondary text-sm">
                   {monthSessions.length > 0
                                     ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS_LOCATIVE[calMonth]}`
-                                    : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`
+                                    : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`}
                 </Text>
                 <Text className="text-text-muted text-xs mt-1">
                   Dotknij, aby otworzyć szczegóły, przytrzymaj, aby usunąć.
