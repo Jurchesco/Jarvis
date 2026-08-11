@@ -76,7 +76,7 @@ def load_config(env_file: Path | None = None) -> Config:
         supabase_url=os.getenv("SUPABASE_URL"),
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY"),
         default_days=int(os.getenv("DEFAULT_DAYS", "7")),
-        import_start_date=date.fromisoformat(os.getenv("IMPORT_START_DATE", "2020-01-01")),
+        import_start_date=date.fromisoformat(os.getenv("IMPORT_START_DATE", "2026-07-09")),
         request_delay_sec=float(os.getenv("REQUEST_DELAY_SEC", "0.4")),
     )
 

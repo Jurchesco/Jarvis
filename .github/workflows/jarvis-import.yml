@@ -44,7 +44,7 @@ jobs:
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
       GARMIN_TOKEN_DIR: .garminconnect
       DEFAULT_DAYS: "2"
-      IMPORT_START_DATE: "2020-01-01"
+      IMPORT_START_DATE: "2026-07-09"
       REQUEST_DELAY_SEC: "0.4"
 
     steps:

@@ -44,7 +44,7 @@ Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 
 ### Pełny import od początku
 
-W **Run workflow** zaznacz checkbox **„Importuj wszystko od początku”** — ignoruje pole „dni” i pobiera dane od `IMPORT_START_DATE` (domyślnie `2020-01-01`).
+W **Run workflow** zaznacz checkbox **„Importuj wszystko od początku”** — ignoruje pole „dni” i pobiera dane od `IMPORT_START_DATE` (domyślnie `2026-07-09`, pierwszy wiersz w arkuszu *Dzien*).
 
 Pełny import może trwać **kilka godzin** (Garmin: jedno zapytanie na dzień × moduł). Timeout joba: 360 min. Przy pierwszym pełnym imporcie rozważ `--skip silownia` jeśli Stravio jest puste.
 

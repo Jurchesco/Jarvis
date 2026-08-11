@@ -64,7 +64,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--all",
         action="store_true",
-        help="Importuj od IMPORT_START_DATE (domyślnie 2020-01-01) do dziś — ignoruje --days",
+        help="Importuj od IMPORT_START_DATE (domyślnie 2026-07-09) do dziś — ignoruje --days",
     )
     parser.add_argument(
         "--no-prompt",
