@@ -141,7 +141,7 @@ export default function HomeScreen() {
                   delayLongPress={180}
                   disabled={reorderSheets.isPending}
                   className="mr-1 h-9 w-8 items-center justify-center"
-                  accessibilityLabel="Hold and drag to reorder sheet"
+                  accessibilityLabel="Przytrzymaj i przeciągnij, aby zmienić kolejność"
                   accessibilityRole="button"
                 >
                   <GripVertical size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
@@ -164,7 +164,7 @@ export default function HomeScreen() {
                     onPress={applyRename}
                     disabled={updateSheet.isPending}
                     className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                    accessibilityLabel="Save sheet name"
+                    accessibilityLabel="Zapisz nazwę planu"
                   >
                     <Check size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#22c55e" />
                   </TouchableOpacity>
@@ -209,14 +209,14 @@ export default function HomeScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="px-5 pt-3 pb-2">
         <ScreenHeader
-          title="My Sheets"
-          subtitle="Create your plan, drag to reorder, long press a title to delete."
+          title="Moje plany"
+          subtitle="Stwórz swój plan, przeciągnij aby zmienić kolejność, przytrzymaj tytuł aby usunąć."
           icon={SquarePen}
-          rightAction={<Button label="Sign out" icon={LogOut} size="sm" variant="ghost" onPress={signOut} />}
+          rightAction={<Button label="Wyloguj" icon={LogOut} size="sm" variant="ghost" onPress={signOut} />}
         />
 
         <Button
-          label="Create sheet"
+          label="Utwórz plan"
           icon={Plus}
           onPress={() => setShowCreate(true)}
           className="mt-4"
@@ -225,13 +225,13 @@ export default function HomeScreen() {
 
       {isLoading ? (
         <View className="flex-1 px-5 pt-8">
-          <StateBlock title="Loading your sheets" description="Syncing your latest workout plans." />
+          <StateBlock title="Wczytywanie planów" description="Synchronizowanie Twoich planów treningowych." />
         </View>
       ) : error ? (
         <View className="flex-1 px-5 pt-8">
           <StateBlock
-            title="Could not load sheets"
-            description="Check your connection and Supabase configuration."
+            title="Nie można wczytać planów"
+            description="Sprawdź swoje połączenie i konfigurację Supabase."
             tone="danger"
           />
         </View>
@@ -250,9 +250,9 @@ export default function HomeScreen() {
           contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 140 }}
           ListEmptyComponent={
             <StateBlock
-              title="No sheets yet"
-              description="Create your first sheet to start planning workouts."
-              actionLabel="Create sheet"
+              title="Brak planów"
+              description="Utwórz swój pierwszy plan, aby zacząć planować treningi."
+              actionLabel="Utwórz plan"
               onAction={() => setShowCreate(true)}
               className="mt-8"
             />
@@ -280,13 +280,13 @@ export default function HomeScreen() {
 
             <View className="mt-4 flex-row gap-3">
               <Button
-                label="Cancel"
+                label="Anuluj"
                 variant="secondary"
                 onPress={() => setShowCreate(false)}
                 className="flex-1"
               />
               <Button
-                label="Create"
+                label="Utwórz"
                 icon={Plus}
                 onPress={handleCreate}
                 className="flex-1"
