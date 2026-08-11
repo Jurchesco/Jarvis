@@ -217,6 +217,7 @@ Place your app screenshots in `docs/screenshots/`:
 - [Architecture](docs/ARCHITECTURE.md) — System design and data flow
 - [Jarvis ecosystem (PL)](docs/JARVIS_ARCHITECTURE.md) — Data pipeline to Google Sheets + Gem
 - [Jarvis setup (PL)](docs/JARVIS_SETUP.md) — Step-by-step configuration
+- [**Plan naprawczy (audyt → roadmap)**](docs/PLAN_NAPRAWCZY.md) — Status fixes for Gem data quality
 - [Gem instructions (PL)](docs/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
 - [Decisions](docs/DECISIONS.md) — Technical decision records
 - [Changelog](docs/CHANGELOG.md) — Version history

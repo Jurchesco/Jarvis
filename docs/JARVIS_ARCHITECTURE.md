@@ -65,6 +65,8 @@ Gem analizuje trendy 7–14 dni, łączy Forma + Sen + Dzien, progres siłowy z 
 
 Instrukcja systemowa Gema: [GEM_INSTRUKCJA.md](./GEM_INSTRUKCJA.md)
 
+Plan naprawczy (audyt → kolejne kroki): [PLAN_NAPRAWCZY.md](./PLAN_NAPRAWCZY.md)
+
 ---
 
 ## Lokalny folder `c:\Jarvis\` (opcjonalnie)
