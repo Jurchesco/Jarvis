@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime
+from datetime import date, datetime, time
 from zoneinfo import ZoneInfo
 
 SHEET_DATETIME_FMT = "%Y-%m-%d %H:%M:%S"
@@ -48,6 +48,14 @@ def utc_iso_to_local(iso_value: str, tz: ZoneInfo) -> datetime:
 
 def timestamp_ms_to_local(timestamp_ms: int, tz: ZoneInfo) -> datetime:
     return datetime.fromtimestamp(timestamp_ms / 1000, tz=tz)
+
+
+def local_date_bounds_utc(start: date, end: date, tz: ZoneInfo) -> tuple[str, str]:
+    """Początek i koniec dni kalendarzowych w tz → ISO UTC (filtry Supabase)."""
+    utc = ZoneInfo("UTC")
+    start_dt = datetime.combine(start, time.min, tzinfo=tz).astimezone(utc)
+    end_dt = datetime.combine(end, time.max, tzinfo=tz).astimezone(utc)
+    return start_dt.isoformat(), end_dt.isoformat()
 
 
 def date_key(value: str) -> str:

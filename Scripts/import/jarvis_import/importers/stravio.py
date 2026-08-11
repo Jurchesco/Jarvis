@@ -2,19 +2,24 @@ from __future__ import annotations
 
 from google.oauth2.service_account import Credentials
 import gspread
-from supabase import create_client
+from supabase import Client, create_client
 
-from ..dates import format_datetime, utc_iso_to_local
+from ..dates import format_datetime, local_date_bounds_utc, utc_iso_to_local
 from ..sheets import ImportResult, batch_update_rows
 from . import ImportContext
 
 
 WORKSHEET_NAME = "Silownia_import"
+SUPABASE_PAGE_SIZE = 1000
+IN_FILTER_CHUNK = 200
 
 HEADERS = [
     "Data", "Split", "Cwiczenie", "Set", "Ciezar (kg)",
     "Powtorzenia", "Est. 1RM", "Volume", "PR", "Bol / Niggle", "Uwagi", "Czas serii",
 ]
+
+SET_LOG_SELECT = "session_id, exercise_id, set_number, reps, weight_kg, completed_at"
+SESSION_SELECT = "id, started_at, completed_at, notes, sheet_id, workout_sheets(name)"
 
 
 def brzycki_1rm(weight: float, reps: int) -> float:
@@ -50,6 +55,64 @@ def get_existing_rows_map(worksheet):
     return rows_map
 
 
+def fetch_set_logs_paginated(
+    supabase: Client,
+    *,
+    gte: str | None = None,
+    lte: str | None = None,
+    lt: str | None = None,
+) -> list[dict]:
+    rows: list[dict] = []
+    offset = 0
+    while True:
+        query = supabase.table("session_set_logs").select(SET_LOG_SELECT)
+        if gte is not None:
+            query = query.gte("completed_at", gte)
+        if lte is not None:
+            query = query.lte("completed_at", lte)
+        if lt is not None:
+            query = query.lt("completed_at", lt)
+        response = (
+            query.order("completed_at")
+            .range(offset, offset + SUPABASE_PAGE_SIZE - 1)
+            .execute()
+        )
+        batch = response.data or []
+        rows.extend(batch)
+        if len(batch) < SUPABASE_PAGE_SIZE:
+            break
+        offset += SUPABASE_PAGE_SIZE
+    return rows
+
+
+def fetch_rows_by_ids(
+    supabase: Client,
+    table: str,
+    select: str,
+    id_column: str,
+    ids: set[str],
+) -> list[dict]:
+    if not ids:
+        return []
+    id_list = list(ids)
+    rows: list[dict] = []
+    for offset in range(0, len(id_list), IN_FILTER_CHUNK):
+        chunk = id_list[offset : offset + IN_FILTER_CHUNK]
+        response = supabase.table(table).select(select).in_(id_column, chunk).execute()
+        rows.extend(response.data or [])
+    return rows
+
+
+def build_max_weight_before_range(logs: list[dict]) -> dict[str, float]:
+    max_by_exercise: dict[str, float] = {}
+    for log in logs:
+        exercise_id = log["exercise_id"]
+        weight = log["weight_kg"] or 0
+        if weight > max_by_exercise.get(exercise_id, 0):
+            max_by_exercise[exercise_id] = weight
+    return max_by_exercise
+
+
 def import_stravio(ctx: ImportContext) -> ImportResult:
     if not ctx.config.supabase_url or not ctx.config.supabase_secret_key:
         return ImportResult("silownia", skipped=1, error="Brak SUPABASE_URL/SUPABASE_SECRET_KEY — pominięto")
@@ -57,39 +120,51 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     print(f"\n[SILOWNIA] Zakres: {ctx.start_date} – {ctx.end_date}")
 
     supabase = create_client(ctx.config.supabase_url, ctx.config.supabase_secret_key)
+    tz = ctx.config.timezone
+    start_str = ctx.start_date.isoformat()
+    end_str = ctx.end_date.isoformat()
+    range_start_utc, range_end_utc = local_date_bounds_utc(ctx.start_date, ctx.end_date, tz)
 
-    sessions_resp = supabase.table("workout_sessions").select(
-        "id, started_at, completed_at, notes, sheet_id, workout_sheets(name)"
-    ).execute()
-    sessions = {s["id"]: s for s in sessions_resp.data}
+    prior_logs = fetch_set_logs_paginated(supabase, lt=range_start_utc)
+    max_weight_by_exercise = build_max_weight_before_range(prior_logs)
+    if prior_logs:
+        print(f"  Historia PR: {len(prior_logs)} serii przed zakresem")
 
-    exercises_resp = supabase.table("exercises").select("id, name").execute()
-    exercises = {e["id"]: e["name"] for e in exercises_resp.data}
+    logs = fetch_set_logs_paginated(
+        supabase,
+        gte=range_start_utc,
+        lte=range_end_utc,
+    )
+    print(f"  Serie w zakresie (completed_at): {len(logs)}")
 
-    notes_resp = supabase.table("session_exercise_notes").select(
-        "session_id, exercise_id, notes"
-    ).execute()
-    exercise_notes = {
-        f"{n['session_id']}:{n['exercise_id']}": n["notes"]
-        for n in notes_resp.data
-    }
-
-    logs_resp = supabase.table("session_set_logs").select(
-        "session_id, exercise_id, set_number, reps, weight_kg, completed_at"
-    ).order("completed_at").execute()
-    logs = logs_resp.data
-
-    if not logs:
+    if not logs and not prior_logs:
         return ImportResult(
             "silownia",
             skipped=1,
             error="Brak zalogowanych serii w Stravio — pominięto",
         )
 
-    start_str = ctx.start_date.isoformat()
-    end_str = ctx.end_date.isoformat()
+    session_ids = {log["session_id"] for log in logs}
+    exercise_ids = {log["exercise_id"] for log in logs}
 
-    max_weight_by_exercise: dict[str, float] = {}
+    sessions_list = fetch_rows_by_ids(supabase, "workout_sessions", SESSION_SELECT, "id", session_ids)
+    sessions = {s["id"]: s for s in sessions_list}
+
+    exercises_list = fetch_rows_by_ids(supabase, "exercises", "id, name", "id", exercise_ids)
+    exercises = {e["id"]: e["name"] for e in exercises_list}
+
+    notes_list = fetch_rows_by_ids(
+        supabase,
+        "session_exercise_notes",
+        "session_id, exercise_id, notes",
+        "session_id",
+        session_ids,
+    )
+    exercise_notes = {
+        f"{n['session_id']}:{n['exercise_id']}": n["notes"]
+        for n in notes_list
+    }
+
     rows_to_upsert: list[list] = []
     skipped_out_of_range = 0
 
@@ -98,7 +173,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         if not session:
             continue
 
-        session_date = utc_iso_to_local(session["started_at"], ctx.config.timezone)
+        session_date = utc_iso_to_local(session["started_at"], tz)
         date_str = session_date.strftime("%Y-%m-%d")
         data_value = format_datetime(session_date)
         weight = log["weight_kg"] or 0
@@ -119,7 +194,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
             split_name = session["workout_sheets"].get("name", "Brak")
 
         exercise_name = exercises.get(exercise_id, "Nieznane cwiczenie")
-        set_time = utc_iso_to_local(log["completed_at"], ctx.config.timezone).strftime("%H:%M")
+        set_time = utc_iso_to_local(log["completed_at"], tz).strftime("%H:%M")
         note_key = f"{log['session_id']}:{exercise_id}"
 
         rows_to_upsert.append([
@@ -162,9 +237,8 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         print(f"  Utworzono zakładkę: {WORKSHEET_NAME}")
 
     existing_rows = get_existing_rows_map(worksheet)
-    updated_count = 0
-    appended_rows = []
     pending_updates: list[tuple[int, list]] = []
+    appended_rows = []
 
     for row in rows_to_upsert:
         key = make_key(row)
@@ -181,7 +255,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
 
     print(
         f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)} "
-        f"(pominięto poza zakresem: {skipped_out_of_range})"
+        f"(pominięto poza zakresem sesji: {skipped_out_of_range})"
     )
     return ImportResult(
         "silownia",

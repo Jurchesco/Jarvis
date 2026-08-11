@@ -18,7 +18,7 @@
 | `blocked` | Czeka na decyzję użytkownika (patrz sekcja H) |
 | `wontfix` | Świadomie pominięte |
 
-**Postęp:** 0 / 28 zadań ukończonych (ostatnia aktualizacja: 2026-08-11)
+**Postęp:** 1 / 28 zadań ukończonych (ostatnia aktualizacja: 2026-08-11)
 
 ---
 
@@ -42,7 +42,7 @@ Bez nowych funkcji w aplikacji. Najwyższy ROI dla Gema.
 
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
-| **0.1** | `todo` | Filtr dat w zapytaniach Supabase + osobne lekkie zapytanie po pełną historię PR (poza limitem 1000 wierszy) | `importers/stravio.py`, ewent. helper paginacji | Import `--all` / `--days 30` zwraca wszystkie serie z zakresu; PR liczone z pełnej historii | **Wysoki** |
+| **0.1** | `done` | Filtr dat w zapytaniach Supabase + osobne lekkie zapytanie po pełną historię PR (poza limitem 1000 wierszy) | `importers/stravio.py`, `dates.py` | Import `--all` / `--days 30` zwraca wszystkie serie z zakresu; PR liczone z pełnej historii | **Wysoki** |
 | **0.2** | `todo` | Notatki ćwiczenia → kolumna `Uwagi`; `Bol / Niggle` zostawić puste (brak źródła bólu w appce) | `importers/stravio.py:125-137` | Po imporcie: `Uwagi` = tekst z sesji ćwiczenia, `Bol / Niggle` puste | **Wysoki** |
 | **0.3** | `todo` | PR po **Est. 1RM (Brzycki)**, nie max ciężar; klucz PR po **nazwie ćwiczenia**, nie `exercise_id` | `importers/stravio.py:92-111` | Seria 95×8 dostaje PR po serii 100×1 jeśli Est. 1RM wyższe | **Wysoki** |
 | **0.4** | `todo` | Wiersz błędu w `daily.py` — upewnić się, że ma **21 pól** (Uwagi w kolumnie U) | `importers/daily.py:75-78` | Przy symulowanym błędzie Garmin komunikat w kolumnie U | Średni |
@@ -232,6 +232,7 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 
 | Data | Zmiana |
 |------|--------|
+| 2026-08-11 | **0.1** — paginacja Supabase, filtr `completed_at`, historia PR przed zakresem |
 | 2026-08-11 | Utworzenie planu po audycie Opus |
 
 ---
@@ -243,4 +244,42 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 3. Po merge / teście — zaktualizuj status w tym pliku na `done` + data.
 4. Po Fazie 0 — uruchom checklist weryfikacji i odpowiedz na H-1…H-5.
 
-**Następne zadanie do zrobienia:** `0.1`
+**Następne zadanie do zrobienia:** `0.2`
+
+---
+
+## Stan sesji — zamknięcie 2026-08-11
+
+Sesja zakończona. Pipeline i arkusz **bez dalszych zmian** do jutra (po pierwszym treningu w Stravio).
+
+### Ukończone
+
+| Obszar | Stan |
+|--------|------|
+| Repo / docs | Uporządkowane (`docs/jarvis`, `stravio`, `audit`); duplikaty z `c:\Jarvis\` usunięte |
+| Audyt | Plan naprawczy + `GEM_INSTRUKCJA.md` |
+| **0.1** | Paginacja Supabase, filtr dat UTC, historia PR — **w repo (main)** |
+| Arkusz | `Silownia_import` wyczyszczony ręcznie (0 wierszy); `Dzien`/`Sen`/`Forma` ~34 wiersze (Garmin OK) |
+| Supabase | Pusta (0 serii) — import siłowni czeka na trening w aplikacji |
+| Lokalnie | `Scripts/import/venv/` gotowy; `.env` + service account skonfigurowane |
+
+### Jutro — checklist
+
+1. **Trening w Stravio** — zaloguj serie (musi trafić do Supabase).
+2. **Import siłowni:**
+   ```powershell
+   cd c:\Jarvis\Stravio\Scripts\import
+   .\venv\Scripts\python.exe -m jarvis_import --only silownia --days 3
+   ```
+3. **Arkusz** — sprawdź `Silownia_import` (nagłówek uzupełni kolumnę „Czas serii” automatycznie).
+4. **Opcjonalnie** — omów zmiany w uzupełnianiu / kolumnach (0.2+); na dziś **zostawiamy jak jest**.
+
+### Świadomie odłożone
+
+- **0.2–0.6** — po weryfikacji importu z prawdziwymi danymi
+- Zmiany w logice uzupełniania arkusza — decyzja użytkownika, później
+- **H-1…H-5** — odpowiedzi po pierwszym imporcie siłowni
+
+### Kontynuacja w Cursorze
+
+> „Kontynuuj Jarvis — trening zrobiony, sprawdź import i zadanie 0.2 z @docs/jarvis/PLAN_NAPRAWCZY.md”

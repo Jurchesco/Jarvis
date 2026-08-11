@@ -45,6 +45,8 @@ Główny README projektu: [../README.md](../README.md)
 
 **Źródło prawdy dla napraw:** [jarvis/PLAN_NAPRAWCZY.md](./jarvis/PLAN_NAPRAWCZY.md) — tam aktualizujemy status zadań.
 
+**Stan na 2026-08-11:** sesja zamknięta. Następny krok — trening w Stravio → import `silownia` → ewentualnie **0.2**. Szczegóły: sekcja *Stan sesji* w planie naprawczym.
+
 ---
 
 ## Szybkie ścieżki
