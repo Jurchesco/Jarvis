@@ -18,20 +18,20 @@ import {
   StateBlock,
 } from "../../../src/components/ui";
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAYS = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nie"];
 const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  "Styczeń",
+  "Luty",
+  "Marzec",
+  "Kwiecień",
+  "Maj",
+  "Czerwiec",
+  "Lipiec",
+  "Sierpień",
+  "Wrzesień",
+  "Październik",
+  "Listopad",
+  "Grudzień",
 ];
 
 function getDaysInMonth(year: number, month: number) {
@@ -78,16 +78,15 @@ export default function HistoryScreen() {
   const firstDay = getFirstDayOfWeek(calYear, calMonth);
 
   const confirmDeleteSession = (id: string, sheetName: string) => {
-    const title = "Delete workout";
-    const message = `Delete \"${sheetName}\" from history? This cannot be undone.`;
+    const title = "Usuń trening";
+    const message = `Usunąć "${sheetName}" z historii? Tej operacji nie można odwrócić.`;
     const runDelete = () => deleteSession.mutate(id);
-
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) runDelete();
     } else {
       Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: runDelete },
+        { text: "Anuluj", style: "cancel" },
+        { text: "Usuń", style: "destructive", onPress: runDelete },
       ]);
     }
   };
@@ -189,7 +188,7 @@ export default function HistoryScreen() {
               <View className="mt-1 flex-row items-center">
                 <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
                 <Text className="ml-1.5 text-text-muted text-sm">
-                  {date.toLocaleDateString("en-US", {
+                  {date.toLocaleDateString("pl-PL", {
                     weekday: "short",
                     day: "numeric",
                     month: "short",
@@ -210,7 +209,7 @@ export default function HistoryScreen() {
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       {isLoading ? (
         <View className="px-5 pt-8">
-          <StateBlock title="Loading workout history" description="Preparing your session timeline." />
+          <StateBlock title="Wczytywanie historii treningów" description="Przygotowywanie osi czasu Twoich sesji." />
         </View>
       ) : (
         <FlatList
@@ -223,8 +222,8 @@ export default function HistoryScreen() {
             <>
               <View className="pt-3 pb-2">
                 <ScreenHeader
-                  title="History"
-                  subtitle="Review completed sessions month by month."
+                  title="Historia"
+                  subtitle="Przeglądaj zakończone sesje miesiąc po miesiącu."
                   icon={CalendarDays}
                 />
               </View>
@@ -235,7 +234,7 @@ export default function HistoryScreen() {
                     onPress={goToPrevMonth}
                     className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
                     accessibilityRole="button"
-                    accessibilityLabel="Previous month"
+                    accessibilityLabel="Poprzedni miesiąc"
                   >
                     <ChevronLeft size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
                   </TouchableOpacity>
@@ -248,7 +247,7 @@ export default function HistoryScreen() {
                     onPress={goToNextMonth}
                     className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
                     accessibilityRole="button"
-                    accessibilityLabel="Next month"
+                    accessibilityLabel="Następny miesiąc"
                   >
                     <ChevronRight size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
                   </TouchableOpacity>
@@ -259,11 +258,11 @@ export default function HistoryScreen() {
                 <View className="mt-3 flex-row items-center justify-center gap-4">
                   <View className="flex-row items-center">
                     <View className="mr-1.5 h-3 w-3 rounded-full bg-emphasis" />
-                    <Text className="text-text-muted text-xs">Logged workout</Text>
+                    <Text className="text-text-muted text-xs">Zaliczony trening</Text>
                   </View>
                   <View className="flex-row items-center">
                     <View className="mr-1.5 h-3 w-3 rounded-full border border-action-primary" />
-                    <Text className="text-text-muted text-xs">Today</Text>
+                    <Text className="text-text-muted text-xs">Dziś</Text>
                   </View>
                 </View>
               </Card>
@@ -271,19 +270,19 @@ export default function HistoryScreen() {
               <View className="mb-2">
                 <Text className="text-text-secondary text-sm">
                   {monthSessions.length > 0
-                    ? `${monthSessions.length} session${monthSessions.length === 1 ? "" : "s"} in ${MONTHS[calMonth]}`
-                    : `No sessions in ${MONTHS[calMonth]}`}
+                    ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS[calMonth]}`
+                    : `Brak sesji w ${MONTHS[calMonth]}`}
                 </Text>
                 <Text className="text-text-muted text-xs mt-1">
-                  Tap to open details, long press to delete.
+                  Dotknij, aby otworzyć szczegóły, przytrzymaj, aby usunąć.
                 </Text>
               </View>
             </>
           }
           ListEmptyComponent={
             <StateBlock
-              title="Nothing logged this month"
-              description="Complete a workout to see it appear in this timeline."
+              title="Brak wpisów w tym miesiącu"
+              description="Zakończ trening, aby zobaczył się na tej osi czasu."
               className="mt-2"
             />
           }
