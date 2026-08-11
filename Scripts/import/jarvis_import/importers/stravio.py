@@ -99,7 +99,9 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         if not session:
             continue
 
-        date_str = datetime.fromisoformat(session["started_at"].replace("Z", "+00:00")).strftime("%Y-%m-%d")
+        session_date = datetime.fromisoformat(session["started_at"].replace("Z", "+00:00"))
+        date_str = session_date.strftime("%Y-%m-%d")
+        data_value = session_date.strftime("%Y-%m-%d %H:%M:%S")
         weight = log["weight_kg"] or 0
         reps = log["reps"] or 0
         exercise_id = log["exercise_id"]
@@ -122,7 +124,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         note_key = f"{log['session_id']}:{exercise_id}"
 
         rows_to_upsert.append([
-            date_str,
+            data_value,
             split_name,
             exercise_name,
             log["set_number"],

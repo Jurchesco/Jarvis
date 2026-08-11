@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from ..dates import combine_date_time
 from ..garmin import GarminClient
 from ..sheets import ImportResult, get_existing_rows_by_key
 from . import ImportContext
@@ -124,7 +125,7 @@ def get_device_label(activity):
 def build_row(activity, existing_note=""):
     start_date, start_time = parse_start(activity)
     return [
-        start_date,
+        combine_date_time(start_date, start_time),
         start_time,
         str(val(activity, "activityId")),
         get_activity_type(activity),

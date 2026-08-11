@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
+from ..dates import date_key, format_day_with_time
 from ..garmin import GarminClient, iter_days
 from ..sheets import ImportResult, get_existing_rows_by_key
 from . import ImportContext
@@ -80,17 +81,17 @@ def one_decimal_text(value, suffix=""):
     return f"{text}{suffix}" if suffix else text
 
 
-def build_no_data_row(day, existing_note=""):
+def build_no_data_row(day, existing_note="", imported_at: datetime | None = None):
     return [
-        day,
+        format_day_with_time(day, imported_at),
         *["brak danych"] * 26,
         existing_note or "Zegarek nie był noszony podczas snu lub Garmin nie ma danych.",
     ]
 
 
-def build_row(day, sleep_data, hrv_data, stats, existing_note=""):
+def build_row(day, sleep_data, hrv_data, stats, existing_note="", imported_at: datetime | None = None):
     if not sleep_data or not sleep_data.get("dailySleepDTO"):
-        return build_no_data_row(day, existing_note=existing_note)
+        return build_no_data_row(day, existing_note=existing_note, imported_at=imported_at)
 
     daily_sleep_dto = sleep_data.get("dailySleepDTO", {}) or {}
     sleep_minutes = get_sleep_minutes(daily_sleep_dto)
@@ -122,7 +123,7 @@ def build_row(day, sleep_data, hrv_data, stats, existing_note=""):
     lowest_resp = stats.get("lowestRespirationValue") or daily_sleep_dto.get("lowestRespirationValue")
 
     return [
-        day,
+        format_day_with_time(day, imported_at),
         format_sleep_window(daily_sleep_dto),
         minutes_to_hm_text(total_sleep) if total_sleep is not None else "brak danych",
         minutes_to_hm_text(time_in_bed_minutes) if time_in_bed_minutes is not None else "brak danych",
@@ -156,7 +157,7 @@ def build_row(day, sleep_data, hrv_data, stats, existing_note=""):
 def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     print(f"\n[SEN] Zakres: {ctx.start_date} – {ctx.end_date}")
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
-    existing_rows = get_existing_rows_by_key(worksheet, note_column=NOTE_COLUMN)
+    existing_rows = get_existing_rows_by_key(worksheet, note_column=NOTE_COLUMN, key_normalizer=date_key)
     api = garmin.api
 
     updated_count = 0
@@ -171,11 +172,15 @@ def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
             sleep_data = api.get_sleep_data(day) or {}
             hrv_data = api.get_hrv_data(day) or {}
             stats = api.get_stats(day) or {}
-            row_values = build_row(day, sleep_data, hrv_data, stats, existing_note=existing_note)
+            row_values = build_row(
+                day, sleep_data, hrv_data, stats,
+                existing_note=existing_note,
+                imported_at=datetime.now(),
+            )
         except Exception as error:
             print(f"    Błąd: {type(error).__name__}: {error}")
             row_values = [""] * 28
-            row_values[0] = day
+            row_values[0] = format_day_with_time(day)
             row_values[27] = existing_note or f"Błąd importu: {type(error).__name__}"
 
         if day in existing_rows:

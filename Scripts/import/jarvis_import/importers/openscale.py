@@ -6,6 +6,7 @@ import zipfile
 from datetime import datetime
 from pathlib import Path
 
+from ..dates import date_key
 from ..openscale_source import resolve_openscale_backup
 from ..sheets import ImportResult, get_existing_rows_by_key
 from . import ImportContext
@@ -128,10 +129,11 @@ def read_measurements_from_db(db_path: Path) -> list[list]:
             comment,
         ) in cur.execute(query):
             dt = datetime.fromtimestamp(timestamp_ms / 1000, tz=local_tz)
+            datetime_value = dt.strftime("%Y-%m-%d %H:%M:%S")
             rows.append([
-                dt.strftime("%Y-%m-%d"),
+                datetime_value,
                 dt.strftime("%H:%M:%S"),
-                dt.strftime("%Y-%m-%d %H:%M:%S"),
+                datetime_value,
                 number_or_blank(weight),
                 number_or_blank(bmi),
                 number_or_blank(body_fat),
@@ -203,7 +205,7 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     all_rows = read_openscale_rows(backup_path)
     filtered_rows = [
         row for row in all_rows
-        if ctx.start_date.isoformat() <= row[0] <= ctx.end_date.isoformat()
+        if ctx.start_date.isoformat() <= date_key(row[0]) <= ctx.end_date.isoformat()
     ]
     print(f"  Odczytano {len(all_rows)} pomiarów, w zakresie: {len(filtered_rows)}")
 

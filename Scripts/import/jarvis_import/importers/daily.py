@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import datetime
+
+from ..dates import date_key, format_day_with_time
 from ..garmin import GarminClient, iter_days
 from ..sheets import ImportResult, get_existing_rows_by_key
 from . import ImportContext
@@ -19,9 +22,9 @@ def one_decimal_or_blank(value):
     return round(float(value), 1)
 
 
-def build_row(day, stats, existing_note=""):
+def build_row(day, stats, existing_note="", imported_at: datetime | None = None):
     return [
-        day,
+        format_day_with_time(day, imported_at),
         value_or_blank(stats.get("totalSteps")),
         value_or_blank(stats.get("totalKilocalories")),
         value_or_blank(stats.get("activeKilocalories")),
@@ -48,7 +51,7 @@ def build_row(day, stats, existing_note=""):
 def import_daily(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     print(f"\n[DZIEN] Zakres: {ctx.start_date} – {ctx.end_date}")
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
-    existing_rows = get_existing_rows_by_key(worksheet, note_column=NOTE_COLUMN)
+    existing_rows = get_existing_rows_by_key(worksheet, note_column=NOTE_COLUMN, key_normalizer=date_key)
     api = garmin.api
 
     updated_count = 0
@@ -61,11 +64,11 @@ def import_daily(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
 
         try:
             stats = api.get_stats(day) or {}
-            row_values = build_row(day, stats, existing_note=existing_note)
+            row_values = build_row(day, stats, existing_note=existing_note, imported_at=datetime.now())
         except Exception as error:
             print(f"    Błąd: {type(error).__name__}: {error}")
             row_values = [
-                day, "", "", "", "", "", "", "", "", "", "", "", "",
+                format_day_with_time(day), "", "", "", "", "", "", "", "", "", "", "", "",
                 "", "", "", "", "", "", existing_note or f"Błąd importu: {type(error).__name__}",
             ]
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -36,6 +37,7 @@ def get_existing_rows_by_key(
     note_column: int | None = None,
     *,
     start_row: int = 2,
+    key_normalizer: Callable[[str], str] | None = None,
 ) -> dict[str, dict]:
     values = worksheet.get_all_values()
     rows_map: dict[str, dict] = {}
@@ -43,9 +45,10 @@ def get_existing_rows_by_key(
     for idx, row in enumerate(values[start_row - 1 :], start=start_row):
         if not row:
             continue
-        key = row[key_column].strip() if len(row) > key_column else ""
-        if not key:
+        raw_key = row[key_column].strip() if len(row) > key_column else ""
+        if not raw_key:
             continue
+        key = key_normalizer(raw_key) if key_normalizer else raw_key
         entry: dict = {"row_number": idx}
         if note_column is not None:
             entry["note"] = row[note_column] if len(row) > note_column else ""
