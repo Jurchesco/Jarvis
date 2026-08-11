@@ -81,7 +81,11 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     logs = logs_resp.data
 
     if not logs:
-        return ImportResult("silownia", error="Brak zalogowanych serii w Stravio")
+        return ImportResult(
+            "silownia",
+            skipped=1,
+            error="Brak zalogowanych serii w Stravio — pominięto",
+        )
 
     start_str = ctx.start_date.isoformat()
     end_str = ctx.end_date.isoformat()
@@ -135,8 +139,8 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     if not rows_to_upsert:
         return ImportResult(
             "silownia",
-            skipped=skipped_out_of_range,
-            error=f"Brak serii w zakresie {start_str}–{end_str}",
+            skipped=max(skipped_out_of_range, 1),
+            error=f"Brak serii w zakresie {start_str}–{end_str} — pominięto",
         )
 
     scopes = [

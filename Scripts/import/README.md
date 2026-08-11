@@ -43,7 +43,7 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 |------|------|
 | `google-service-account.json` | Klucz Google Service Account |
 | `.garminconnect/` | Tokeny Garmin (tworzone przy pierwszym logowaniu) |
-| `.env` | Konfiguracja (Supabase, openScale CSV) |
+| `.env` | Konfiguracja (Supabase, openScale backup / Drive) |
 
 ## Moduły
 
@@ -53,7 +53,7 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | dzien | Garmin | Dzien |
 | forma | Garmin | Forma |
 | aktywnosci | Garmin | Aktywnosci |
-| cialo | openScale CSV | Cialo |
+| cialo | openScale backup | Cialo |
 | silownia | Stravio | Silownia_import |
 
 ## Flagi
@@ -65,6 +65,18 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | `--no-prompt` | Bez promptu, użyj `DEFAULT_DAYS` z `.env` |
 | `--only a,b` | Tylko wybrane moduły |
 | `--skip a,b` | Pomiń moduły |
+
+## Kody wyjścia i podsumowanie
+
+Po imporcie skrypt wypisuje status każdego modułu:
+
+| Etykieta | Znaczenie |
+|----------|-----------|
+| `[OK]` | Dane zaimportowane |
+| `[SKIP]` | Moduł pominięty — brak danych lub brak opcjonalnej konfiguracji (exit code nadal `0`) |
+| `[ERROR]` | Twardy błąd — exit code `1` |
+
+Przykłady miękkiego pominięcia: brak serii w Stravio, brak `SUPABASE_*`, brak backupu openScale, brak serii w wybranym zakresie `--days`.
 
 ## Struktura folderu
 

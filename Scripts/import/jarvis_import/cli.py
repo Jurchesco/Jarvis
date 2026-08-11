@@ -187,8 +187,10 @@ def run() -> int:
                 f"zaktualizowano {result.updated}, dopisano {result.appended}"
                 + (f", pominięto {result.skipped}" if result.skipped else "")
             )
+        elif result.skipped:
+            print(f"[SKIP] {result.name}: {result.error}")
         else:
-            print(f"[SKIP/ERROR] {result.name}: {result.error}")
+            print(f"[ERROR] {result.name}: {result.error}")
 
     if failed:
         hard_failures = [r for r in failed if r.skipped == 0 or "KRYTYCZNY" in (r.error or "")]

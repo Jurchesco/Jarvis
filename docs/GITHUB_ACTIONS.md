@@ -1,6 +1,6 @@
 # Przygotowanie sekretów GitHub Actions
 
-Skrypt pomocniczy — generuje wartości do wklejenia w **Settings → Secrets and variables → Actions** w **prywatnym** repozytorium GitHub.
+Skrypt pomocniczy — generuje wartości do wklejenia w **Settings → Secrets and variables → Actions** w repozytorium GitHub (zalecane: **private**).
 
 ## Uruchomienie (PowerShell)
 
@@ -17,10 +17,10 @@ Skrypt wyświetli listę sekretów i zapisze pliki tymczasowe w `%TEMP%\jarvis-g
 |--------|------|
 | `GOOGLE_SHEET_ID` | ID arkusza Google Sheets |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | **Cała** zawartość pliku `google-service-account.json` |
-| `SUPABASE_URL` | URL projektu Supabase |
-| `SUPABASE_SECRET_KEY` | Klucz `service_role` |
+| `SUPABASE_URL` | URL projektu Supabase (ten sam co Stravio) |
+| `SUPABASE_SECRET_KEY` | Klucz `service_role` (nie `anon`!) |
 | `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive |
-| `GARMINCONNECT_ZIP` | (opcjonalnie) Base64 archiwum `.garminconnect/` |
+| `GARMINCONNECT_ZIP` | Base64 archiwum folderu `.garminconnect/` (wymagany dla modułów Garmin w chmurze) |
 
 ## Google Drive — openScale
 
@@ -30,18 +30,41 @@ Skrypt wyświetli listę sekretów i zapisze pliki tymczasowe w `%TEMP%\jarvis-g
 
 ## Włącz Google Drive API
 
-W [Google Cloud Console](https://console.cloud.google.com) w tym samym projektu co Service Account:
+W [Google Cloud Console](https://console.cloud.google.com) w tym samym projekcie co Service Account:
 **APIs & Services → Enable APIs → Google Drive API**
+
+Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 
 ## Po konfiguracji
 
-1. **Private** repo na GitHubie.
+1. Repo na GitHubie (zalecane **private**).
 2. Wklej sekrety w Settings → Secrets → Actions.
-3. **Actions → Jarvis Import → Run workflow** (test ręczny).
+3. **Actions → Jarvis Import → Run workflow** — test ręczny z `days: 7`.
 4. Harmonogram: niedziela 09:00 CET (cron w workflow).
+
+## Interpretacja wyniku workflow
+
+Importer wypisuje podsumowanie:
+
+| Etykieta | Znaczenie | Wpływ na job |
+|----------|-----------|--------------|
+| `[OK]` | Moduł zaimportował / zaktualizował dane | sukces |
+| `[SKIP]` | Brak danych lub brak opcjonalnej konfiguracji (np. pusta `silownia`, brak openScale) | **sukces** |
+| `[ERROR]` | Twardy błąd (credentials, API, wyjątek) | **fail** (exit code 1) |
+
+Typowy pierwszy run bez treningów w Stravio:
+
+```
+[OK] sen: ...
+[OK] dzien: ...
+[SKIP] silownia: Brak zalogowanych serii w Stravio — pominięto
+Gotowe: 5/6 modułów zakończonych poprawnie.
+```
+
+Job powinien być **zielony**.
 
 ## Prywatność
 
-- Repo musi być **private**.
-- Sekrety nie trafiają do kodu ani publicznych logów (GitHub je maskuje).
-- Job działa na serwerze GitHub — jeśli chcesz uniknąć tego całkowicie, użyj self-hosted runnera (patrz główna dokumentacja).
+- Repo **private** — workflow i kod importu nie są publiczne.
+- Sekrety nie trafiają do kodu ani logów (GitHub je maskuje).
+- Job działa na serwerze GitHub — jeśli chcesz uniknąć tego całkowicie, użyj self-hosted runnera lub harmonogramu Windows (`run.bat --no-prompt`).
