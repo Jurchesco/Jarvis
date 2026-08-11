@@ -213,7 +213,7 @@ export default function SheetDetailScreen() {
           <View className="px-5 pt-3 pb-3">
             <ScreenHeader
               title={sheet.name}
-              subtitle="Plan your sets, then start the session when ready."
+                          subtitle="Zaplanuj swoje serie, a następnie zacznij sesję, gdy będziesz gotowy."
               rightAction={
                 <Button
                   label="Start"
