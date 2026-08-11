@@ -216,6 +216,7 @@ Place your app screenshots in `docs/screenshots/`:
 ## Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) — System design and data flow
+- [Gem instructions (PL)](docs/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
 - [Decisions](docs/DECISIONS.md) — Technical decision records
 - [Changelog](docs/CHANGELOG.md) — Version history
 - [TODO](docs/TODO.md) — Roadmap and task tracking
