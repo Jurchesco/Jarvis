@@ -34,6 +34,21 @@ const MONTHS = [
   "Grudzień",
 ];
 
+const MONTHS_LOCATIVE = [
+  "Styczniu",
+  "Lutym",
+  "Marcu",
+  "Kwietniu",
+  "Maju",
+  "Czerwcu",
+  "Lipcu",
+  "Sierpniu",
+  "Wrześniu",
+  "Październiku",
+  "Listopadzie",
+  "Grudniu",
+];
+
 function getDaysInMonth(year: number, month: number) {
   return new Date(year, month + 1, 0).getDate();
 }
@@ -270,8 +285,8 @@ export default function HistoryScreen() {
               <View className="mb-2">
                 <Text className="text-text-secondary text-sm">
                   {monthSessions.length > 0
-                    ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS[calMonth]}`
-                    : `Brak sesji w ${MONTHS[calMonth]}`}
+                                    ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS_LOCATIVE[calMonth]}`
+                                    : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`
                 </Text>
                 <Text className="text-text-muted text-xs mt-1">
                   Dotknij, aby otworzyć szczegóły, przytrzymaj, aby usunąć.
