@@ -125,7 +125,7 @@ export default function SheetDetailScreen() {
 
   const handleDeleteExercise = (exerciseId: string, name: string) => {
     const title = "Usuń ćwiczenie";
-    const message = `Delete \"${name}\" z tego planu?`;
+    const message = `Usuń "${name}" z tego planu?`;
 
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) {
@@ -133,8 +133,8 @@ export default function SheetDetailScreen() {
       }
     } else {
       Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
-        { text: "Delete", style: "destructive", onPress: () => deleteExercise.mutate(exerciseId) },
+                  { text: "Anuluj", style: "cancel" },
+                  { text: "Usuń", style: "destructive", onPress: () => deleteExercise.mutate(exerciseId) },
       ]);
     }
   };
