@@ -70,8 +70,8 @@ export default function HomeScreen() {
   };
 
   const handleDelete = (id: string, name: string) => {
-    const title = "Delete sheet";
-    const message = `Delete \"${name}\"? This cannot be undone.`;
+    const title = "Usuń plan";
+    const message = `Delete \"${name}\"? Tej operacji nie można cofnąć.`;
 
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) {
@@ -79,9 +79,9 @@ export default function HomeScreen() {
       }
     } else {
       Alert.alert(title, message, [
-        { text: "Cancel", style: "cancel" },
+        { text: "Anuluj", style: "cancel" },
         {
-          text: "Delete",
+          text: "Usuń",
           style: "destructive",
           onPress: () => deleteSheet.mutate(id),
         },
@@ -109,11 +109,11 @@ export default function HomeScreen() {
       {
         onSuccess: () => setEditingSheetId(null),
         onError: (err) => {
-          const msg = err instanceof Error ? err.message : "Could not rename sheet";
+          const msg = err instanceof Error ? err.message : "Nie można zmienić nazwy planu";
           if (Platform.OS === "web") {
             window.alert(msg);
           } else {
-            Alert.alert("Rename failed", msg);
+            Alert.alert("Zmiana nazwy nie powiodła się", msg);
           }
         },
       },
@@ -153,7 +153,7 @@ export default function HomeScreen() {
                   <Input
                     value={renameDraft}
                     onChangeText={setRenameDraft}
-                    placeholder="Sheet name"
+                    placeholder="Nazwa planu"
                     editable={!updateSheet.isPending}
                     onSubmitEditing={applyRename}
                     containerClassName="flex-1"
@@ -175,7 +175,7 @@ export default function HomeScreen() {
                     <Text className="text-text-primary text-lg font-bold" numberOfLines={1}>
                       {item.name}
                     </Text>
-                    <Text className="text-text-muted text-xs mt-1">Tap to open workout plan</Text>
+                    <Text className="text-text-muted text-xs mt-1">Dotknij, aby otworzyć plan treningowy</Text>
                   </View>
 
                   <View
@@ -188,7 +188,7 @@ export default function HomeScreen() {
                         beginRename(item);
                       }}
                       className="mr-2 h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                      accessibilityLabel="Rename sheet"
+                      accessibilityLabel="Zmień nazwę planu"
                     >
                       <PencilLine size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
                     </TouchableOpacity>
@@ -263,15 +263,15 @@ export default function HomeScreen() {
       {showCreate ? (
         <View className="absolute bottom-24 left-5 right-5">
           <Card padding="lg" className="border border-border">
-            <Text className="text-text-primary text-lg font-bold">Create a new sheet</Text>
+            <Text className="text-text-primary text-lg font-bold">Utwórz nowy plan</Text>
             <Text className="text-text-secondary text-sm mt-1">
-              Give it a clear name so you can find it fast before training.
+              Nadaj mu czytelną nazwę, abyś szybko go znalazł przed treningiem.
             </Text>
 
             <Input
               value={newSheetName}
               onChangeText={setNewSheetName}
-              placeholder="Example: Push Day"
+              placeholder="Np. Trening klatki piersiowej"
               onSubmitEditing={handleCreate}
               containerClassName="mt-4"
               autoFocus
@@ -301,7 +301,7 @@ export default function HomeScreen() {
         className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-action-primary border border-action-primary-press"
         onPress={() => setShowCreate(true)}
         accessibilityRole="button"
-        accessibilityLabel="Create a new sheet"
+        accessibilityLabel="Utwórz nowy plan"
         activeOpacity={0.85}
       >
         <Plus size={22} strokeWidth={2.4} color="#ffffff" />
