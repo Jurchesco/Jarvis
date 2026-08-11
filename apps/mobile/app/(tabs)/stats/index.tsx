@@ -193,17 +193,17 @@ export default function StatsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
-          title="Statistics"
-          subtitle={`Insights from your last ${Math.min(sessions.length, 10)} completed sessions.`}
+          title="Statystyki"
+                    subtitle={`Statystyki z Twoich ostatnich ${Math.min(sessions.length, 10)} ukończonych sesji.`}
           icon={BarChart3}
         />
 
         {isLoading ? (
-          <StateBlock title="Loading statistics" description="Crunching your training data." className="mt-6" />
+                  <StateBlock title="Ładowanie statystyk" description="Przetwarzanie danych treningowych." className="mt-6" />
         ) : sessions.length === 0 ? (
           <StateBlock
-            title="No completed sessions yet"
-            description="Finish a workout and your trends will appear here."
+                      title="Brak ukończonych sesji"
+                      description="Zakończ trening, aby zobaczyć tutaj swoje trendy."
             className="mt-6"
           />
         ) : (
@@ -211,18 +211,18 @@ export default function StatsScreen() {
             <Card className="mt-6" padding="md">
               <View className="mb-3 flex-row items-center">
                 <LineChart size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
-                <Text className="ml-2 text-text-primary text-base font-bold">Volume over time</Text>
+                            <Text className="ml-2 text-text-primary text-base font-bold">Objętość w czasie</Text>
               </View>
-              <Text className="mb-3 text-text-muted text-xs">Total kg x reps per session</Text>
+                          <Text className="mb-3 text-text-muted text-xs">Suma kg x powtórzenia na sesję</Text>
               <VolumeChart sessions={sessions} width={chartWidth} />
             </Card>
 
             <Card className="mt-5" padding="md">
               <View className="mb-3 flex-row items-center">
                 <Trophy size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
-                <Text className="ml-2 text-text-primary text-base font-bold">Max weight per exercise</Text>
+                            <Text className="ml-2 text-text-primary text-base font-bold">Maksymalny ciężar dla ćwiczenia</Text>
               </View>
-              <Text className="mb-3 text-text-muted text-xs">Heaviest logged set (kg), top 8</Text>
+                          <Text className="mb-3 text-text-muted text-xs">Najcięższy zarejestrowany zestaw (kg), top 8</Text>
               <MaxWeightChart sessions={sessions} width={chartWidth} />
             </Card>
           </>
