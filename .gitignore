@@ -12,3 +12,10 @@ eas.json.bak
 .vercel
 .vscode
 .DS_Store
+
+# Jarvis import — sekrety (nigdy nie commituj)
+Scripts/import/.env
+Scripts/import/google-service-account.json
+Scripts/import/.garminconnect/
+Scripts/import/venv/
+Scripts/import/.last_import
