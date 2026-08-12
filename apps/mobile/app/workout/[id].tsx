@@ -1,44 +1,52 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   Platform,
   ScrollView,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useCompleteSession,
   useLastSessionBySheet,
-  useLogSessionSet,
   useSession,
   useSessionExerciseNotes,
   useSheet,
-  useUnlogSessionSet,
-  useUpsertExerciseNote,
-  useUpdateSet,
 } from "../../src/api/hooks";
-import type { ExerciseFull, ExerciseSet, SessionSetLog } from "@bhmt3wp/shared";
+import type { CatalogExercise, ExerciseFull, SessionSetLog } from "@bhmt3wp/shared";
+import {
+  computeSessionLiveStats,
+  formatDuration,
+  formatVolumeKg,
+  formatWeightKg,
+  isTimeBasedExercise,
+} from "@bhmt3wp/shared";
 import {
   Check,
-  Clock3,
   Flame,
-  History,
-  NotebookPen,
-  RotateCcw,
-  TimerReset,
+  PencilLine,
+  Plus,
 } from "lucide-react-native";
+import { ExercisePicker } from "../../src/components/ExercisePicker";
+import {
+  createDraftFromLogs,
+  ExerciseLogForm,
+  ExerciseLogSummary,
+  type ExerciseLogDraft,
+} from "../../src/components/ExerciseLogForm";
+import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
+import { getAutofillPrevious } from "../../src/lib/appPreferences";
+import { hapticSuccess } from "../../src/lib/haptics";
+import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../src/lib/saveExerciseLogBatch";
 import {
   Button,
   Card,
-  ICON_SIZE,
   ICON_STROKE,
-  Input,
   StateBlock,
-  cx,
 } from "../../src/components/ui";
 
 function confirmAction(title: string, message: string, onConfirm: () => void) {
@@ -54,155 +62,225 @@ function confirmAction(title: string, message: string, onConfirm: () => void) {
   }
 }
 
+function StatTile({
+  label,
+  value,
+  borderedRight = false,
+  borderedTop = false,
+}: {
+  label: string;
+  value: string;
+  borderedRight?: boolean;
+  borderedTop?: boolean;
+}) {
+  return (
+    <View
+      className={`flex-1 px-3 py-2.5${borderedRight ? " border-r border-border" : ""}${borderedTop ? " border-t border-border" : ""}`}
+    >
+      <Text className="text-text-muted text-[10px] font-semibold uppercase tracking-wide leading-none">
+        {label}
+      </Text>
+      <Text className="text-text-primary text-base font-bold mt-1 leading-tight" numberOfLines={1}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function SessionStatsGrid({
+  exerciseCount,
+  setCount,
+  totalVolume,
+  elapsedSec,
+  bestEst1rm,
+  totalReps,
+}: {
+  exerciseCount: number;
+  setCount: number;
+  totalVolume: number;
+  elapsedSec: number;
+  bestEst1rm: number;
+  totalReps: number;
+}) {
+  return (
+    <View className="mt-4 rounded-xl border border-border bg-surface-muted overflow-hidden">
+      <View className="flex-row">
+        <StatTile label="Ćwiczenia" value={String(exerciseCount)} borderedRight />
+        <StatTile label="Serie" value={String(setCount)} />
+      </View>
+      <View className="flex-row">
+        <StatTile
+          label="Objętość"
+          value={totalVolume > 0 ? formatVolumeKg(totalVolume) : "—"}
+          borderedRight
+          borderedTop
+        />
+        <StatTile label="Czas" value={formatDuration(elapsedSec)} borderedTop />
+      </View>
+      <View className="flex-row">
+        <StatTile
+          label="Naj. 1RM"
+          value={bestEst1rm > 0 ? formatWeightKg(bestEst1rm) : "—"}
+          borderedRight
+          borderedTop
+        />
+        <StatTile
+          label="Powtórzenia"
+          value={totalReps > 0 ? String(totalReps) : "—"}
+          borderedTop
+        />
+      </View>
+    </View>
+  );
+}
+
 export default function WorkoutScreen() {
   const { id, sheetId } = useLocalSearchParams<{ id: string; sheetId: string }>();
   const sessionId = id!;
   const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const { data: sheet } = useSheet(sheetId!);
-  useSession(sessionId);
-  const logSet = useLogSessionSet();
-  const unlogSet = useUnlogSessionSet();
+  const { data: sheet, refetch: refetchSheet } = useSheet(sheetId!);
+  const { data: session, refetch: refetchSession } = useSession(sessionId);
   const completeSession = useCompleteSession();
-  const updateSet = useUpdateSet(sheetId!);
   const { data: lastSessionData } = useLastSessionBySheet(sheetId!);
   const { data: exerciseNotes } = useSessionExerciseNotes(sessionId);
-  const upsertNote = useUpsertExerciseNote();
-  const prevLogs = useMemo(() => {
+
+  const [sessionExerciseIds, setSessionExerciseIds] = useState<Set<string>>(new Set());
+  const [savedExerciseIds, setSavedExerciseIds] = useState<Set<string>>(new Set());
+  const [editingExerciseId, setEditingExerciseId] = useState<string | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+  const [showExercisePicker, setShowExercisePicker] = useState(false);
+  const [isAddingExercise, setIsAddingExercise] = useState(false);
+  const [savingExerciseId, setSavingExerciseId] = useState<string | null>(null);
+  const [autofillPrevious, setAutofillPrevious] = useState(true);
+
+  useEffect(() => {
+    getAutofillPrevious().then(setAutofillPrevious);
+  }, []);
+
+  const previousByExercise = useMemo(() => {
     const map: Record<string, SessionSetLog> = {};
     if (lastSessionData?.logs) {
       for (const log of lastSessionData.logs) {
-        map[`${log.exerciseId}-${log.setNumber}`] = log;
+        map[log.exerciseId] = log;
       }
     }
     return map;
   }, [lastSessionData]);
 
-  const [completedSets, setCompletedSets] = useState<Set<string>>(new Set());
-  const [editValues, setEditValues] = useState<Record<string, { kg: string; reps: string }>>({});
-  const [notes, setNotes] = useState<Record<string, string>>({});
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
-  const [restTimeLeft, setRestTimeLeft] = useState(0);
-
-  useEffect(() => {
-    if (!sheet) return;
-
-    const initial: Record<string, { kg: string; reps: string }> = {};
-    for (const ex of sheet.exercises) {
-      for (const set of ex.sets) {
-        const key = `${ex.id}-${set.setNumber}`;
-        if (!editValues[key]) {
-          initial[key] = {
-            kg: set.weightKg.toString(),
-            reps: set.reps.toString(),
-          };
-        }
-      }
+  const notesByExercise = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const note of exerciseNotes ?? []) {
+      map[note.exerciseId] = note.notes;
     }
-    if (Object.keys(initial).length > 0) {
-      setEditValues((prev) => ({ ...initial, ...prev }));
-    }
-  }, [sheet]);
-
-  useEffect(() => {
-    if (!exerciseNotes) return;
-
-    const notesMap: Record<string, string> = {};
-    for (const note of exerciseNotes) {
-      notesMap[note.exerciseId] = note.notes;
-    }
-    setNotes(notesMap);
+    return map;
   }, [exerciseNotes]);
 
+  const liveStats = useMemo(
+    () => computeSessionLiveStats(session?.logs ?? []),
+    [session?.logs],
+  );
+
+  const activeExercises = useMemo(() => {
+    if (!sheet) return [];
+    const logExerciseIds = new Set(session?.logs.map((log) => log.exerciseId) ?? []);
+    return sheet.exercises.filter(
+      (exercise) => sessionExerciseIds.has(exercise.id) || logExerciseIds.has(exercise.id),
+    );
+  }, [sheet, sessionExerciseIds, session?.logs]);
+
+  const existingExerciseNames = useMemo(
+    () => activeExercises.map((exercise) => exercise.name),
+    [activeExercises],
+  );
+
   useEffect(() => {
-    if (restTimeLeft <= 0) return;
-    const timer = setTimeout(() => setRestTimeLeft((timeLeft) => timeLeft - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [restTimeLeft]);
-
-  const getEditValue = (exerciseId: string, setNumber: number) => {
-    const key = `${exerciseId}-${setNumber}`;
-    return editValues[key];
-  };
-
-  const updateEditValue = (
-    exerciseId: string,
-    setNumber: number,
-    field: "kg" | "reps",
-    value: string,
-  ) => {
-    const key = `${exerciseId}-${setNumber}`;
-    setEditValues((prev) => ({
-      ...prev,
-      [key]: { ...prev[key], [field]: value },
-    }));
-  };
-
-  const updateExerciseNote = (exerciseId: string, text: string) => {
-    setNotes((prev) => ({ ...prev, [exerciseId]: text }));
-  };
-
-  const handleBlurNote = (exerciseId: string) => {
-    const noteText = notes[exerciseId] || "";
-    const trimmedNote = noteText.trim();
-    upsertNote.mutate({
-      sessionId,
-      exerciseId,
-      notes: trimmedNote,
-    });
-    setEditingNoteId(null);
-  };
-
-  const handleCompleteSet = (exercise: ExerciseFull, set: ExerciseSet) => {
-    const key = `${exercise.id}-${set.setNumber}`;
-    if (completedSets.has(key)) return;
-
-    const values = editValues[key] || { kg: set.weightKg.toString(), reps: set.reps.toString() };
-    const actualKg = parseFloat(values.kg) || 0;
-    const actualReps = parseInt(values.reps, 10) || 0;
-
-    logSet.mutate({
-      sessionId,
-      exerciseId: exercise.id,
-      setNumber: set.setNumber,
-      reps: actualReps,
-      weightKg: actualKg,
-    });
-
-    if (actualKg !== set.weightKg) {
-      updateSet.mutate({ id: set.id, weightKg: actualKg });
+    if (!session?.logs) return;
+    const fromLogs = new Set<string>();
+    const saved = new Set<string>();
+    for (const log of session.logs) {
+      fromLogs.add(log.exerciseId);
+      saved.add(log.exerciseId);
     }
+    if (fromLogs.size > 0) {
+      setSessionExerciseIds((prev) => new Set([...prev, ...fromLogs]));
+      setSavedExerciseIds((prev) => new Set([...prev, ...saved]));
+    }
+  }, [session?.logs]);
 
-    setCompletedSets((prev) => new Set(prev).add(key));
-    setRestTimeLeft(set.restTimeSec);
-  };
+  useEffect(() => {
+    if (!session?.startedAt) return;
+    const startMs = new Date(session.startedAt).getTime();
+    const tick = () => setElapsedSec(Math.floor((Date.now() - startMs) / 1000));
+    tick();
+    const timer = setInterval(tick, 1000);
+    return () => clearInterval(timer);
+  }, [session?.startedAt]);
 
-  const handleUndoSet = async (exercise: ExerciseFull, set: ExerciseSet) => {
-    const key = `${exercise.id}-${set.setNumber}`;
+  const refreshData = useCallback(async () => {
+    await Promise.all([
+      refetchSheet(),
+      refetchSession(),
+      queryClient.invalidateQueries({ queryKey: ["sheets", sheetId] }),
+      queryClient.invalidateQueries({ queryKey: ["sessions", sessionId] }),
+      queryClient.invalidateQueries({ queryKey: ["sessions", sessionId, "exercise-notes"] }),
+    ]);
+  }, [queryClient, refetchSession, refetchSheet, sessionId, sheetId]);
+
+  const handleAddFromCatalog = async (exercise: CatalogExercise | { name: string; timeBased?: boolean }) => {
+    if (!sheet) return;
+    setIsAddingExercise(true);
     try {
-      await unlogSet.mutateAsync({
-        sessionId,
-        exerciseId: exercise.id,
-        setNumber: set.setNumber,
+      const orderIndex = sheet.exercises.length;
+      const { exerciseId } = await addCatalogExerciseToSheet(sheetId!, exercise, orderIndex, {
+        setCount: 0,
       });
-      setCompletedSets((prev) => {
+      setSessionExerciseIds((prev) => new Set(prev).add(exerciseId));
+      setSavedExerciseIds((prev) => {
         const next = new Set(prev);
-        next.delete(key);
+        next.delete(exerciseId);
         return next;
       });
-    } catch (error: any) {
-      const msg = error?.message || String(error);
-      if (Platform.OS === "web") {
-        window.alert(`Błąd: ${msg}`);
-      } else {
-        Alert.alert("Błąd", msg);
-      }
+      setEditingExerciseId(exerciseId);
+      setShowExercisePicker(false);
+      await refreshData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Nie można dodać ćwiczenia";
+      if (Platform.OS === "web") window.alert(msg);
+      else Alert.alert("Błąd", msg);
+    } finally {
+      setIsAddingExercise(false);
     }
   };
 
+  const handleSaveExercise = async (exercise: ExerciseFull, draft: ExerciseLogDraft) => {
+    setSavingExerciseId(exercise.id);
+    try {
+      const parsed = parseExerciseLogDraft(exercise.name, draft);
+      await saveExerciseLogBatch(sessionId, exercise, parsed);
+      setSavedExerciseIds((prev) => new Set(prev).add(exercise.id));
+      setEditingExerciseId(null);
+      await hapticSuccess();
+      await refreshData();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
+      if (Platform.OS === "web") window.alert(msg);
+      else Alert.alert("Błąd", msg);
+    } finally {
+      setSavingExerciseId(null);
+    }
+  };
+
+  const getExerciseLogs = (exerciseId: string) =>
+    (session?.logs ?? [])
+      .filter((log) => log.exerciseId === exerciseId)
+      .sort((a, b) => a.setNumber - b.setNumber);
+
   const handleFinishWorkout = () => {
-    if (completedSets.size === 0) {
-      const msg = "Zaznacz przynajmniej jedną serię przed zakończeniem treningu.";
+    const loggedSets = session?.logs.length ?? 0;
+    if (loggedSets === 0) {
+      const msg = "Zapisz przynajmniej jedno ćwiczenie przed zakończeniem treningu.";
       if (Platform.OS === "web") {
         window.alert(msg);
       } else {
@@ -214,12 +292,9 @@ export default function WorkoutScreen() {
     confirmAction("Zakończ trening", "Czy chcesz teraz zakończyć tę sesję?", async () => {
       try {
         await completeSession.mutateAsync(sessionId);
-        if (router.canDismiss()) {
-          router.dismissAll();
-        }
-        router.replace("/");
-      } catch (error: any) {
-        const msg = error?.message || String(error);
+        router.replace(`/workout/summary/${sessionId}`);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
         if (Platform.OS === "web") {
           window.alert(`Błąd: ${msg}`);
         } else {
@@ -229,7 +304,6 @@ export default function WorkoutScreen() {
     });
   };
 
-
   if (!sheet) {
     return (
       <SafeAreaView className="flex-1 bg-background px-5 pt-8" edges={["bottom"]}>
@@ -238,13 +312,9 @@ export default function WorkoutScreen() {
     );
   }
 
-  const totalSets = sheet.exercises.reduce((acc, exercise) => acc + exercise.sets.length, 0);
-  const completedCount = completedSets.size;
-  const progress = totalSets > 0 ? (completedCount / totalSets) * 100 : 0;
-
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
-      <View className="px-5 pt-3 pb-3">
+      <View className="px-5 pt-3 pb-2">
         <Card padding="md">
           <View className="flex-row items-center justify-between">
             <View className="flex-1 pr-3">
@@ -254,10 +324,7 @@ export default function WorkoutScreen() {
                   Trening w trakcie
                 </Text>
               </View>
-              <Text className="text-text-primary text-xl font-bold mt-1">{sheet.name}</Text>
-              <Text className="text-text-secondary text-sm mt-1">
-                {completedCount}/{totalSets} serię ukończono
-              </Text>
+              <Text className="text-text-primary text-xl font-bold mt-1 leading-tight">Freestyle</Text>
             </View>
 
             <Button
@@ -270,155 +337,112 @@ export default function WorkoutScreen() {
             />
           </View>
 
-          <View className="bg-surface-light rounded-full h-2 mt-4 overflow-hidden">
-            <View className="bg-emphasis rounded-full h-2" style={{ width: `${progress}%` }} />
-          </View>
+          <SessionStatsGrid
+            exerciseCount={liveStats.exerciseCount}
+            setCount={liveStats.setCount}
+            totalVolume={liveStats.totalVolume}
+            elapsedSec={elapsedSec}
+            bestEst1rm={liveStats.bestEst1rm}
+            totalReps={liveStats.totalReps}
+          />
         </Card>
-
-        {restTimeLeft > 0 ? (
-          <Card padding="md" className="bg-action-secondary border-action-primary/30">
-            <View className="flex-row items-center justify-between">
-              <View className="flex-row items-center">
-                <Clock3 size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
-                <Text className="ml-2 text-text-secondary text-sm font-semibold uppercase">Czas odpoczynku</Text>
-              </View>
-              <TouchableOpacity onPress={() => setRestTimeLeft(0)}>
-                <View className="flex-row items-center">
-                  <TimerReset size={14} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-                  <Text className="ml-1 text-text-muted text-xs">Pomiń</Text>
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <Text className="mt-2 text-text-primary text-4xl font-bold">
-              {Math.floor(restTimeLeft / 60)}:{(restTimeLeft % 60).toString().padStart(2, "0")}
-            </Text>
-          </Card>
-        ) : null}
-
-        <ScrollView contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 40 }}>
-          {sheet.exercises.map((exercise) => (
-            <Card key={exercise.id} className="mb-3" padding="md">
-              <Text className="text-text-primary text-lg font-bold">{exercise.name}</Text>
-
-              {editingNoteId === exercise.id ? (
-                <Input
-                  value={notes[exercise.id] || ""}
-                  onChangeText={(text) => updateExerciseNote(exercise.id, text)}
-                  onBlur={() => handleBlurNote(exercise.id)}
-                  leftIcon={NotebookPen}
-                  placeholder="Wpisz notatki dla tego ćwiczenia"
-                  multiline
-                  autoFocus
-                  containerClassName="mt-3"
-                />
-              ) : (
-                <TouchableOpacity
-                  className="mt-3 rounded-xl border border-border bg-surface-muted px-3 py-3"
-                  onPress={() => setEditingNoteId(exercise.id)}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Edytuj notatki dla ${exercise.name}`}
-                >
-                  <View className="flex-row items-start">
-                    <NotebookPen size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-                    <Text className="ml-2 flex-1 text-text-muted text-sm">
-                      {notes[exercise.id] || "Dodaj notatki (RPE, wskazówki, ustawienie)"}
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
-
-              <View className="mt-3 mb-2 flex-row px-1">
-                <Text className="text-text-muted text-xs w-10 font-semibold">SERIA</Text>
-                <Text className="text-text-muted text-xs flex-1 text-center font-semibold">KG</Text>
-                <Text className="text-text-muted text-xs flex-1 text-center font-semibold">POWT.</Text>
-                <View className="w-20" />
-              </View>
-
-              {exercise.sets.map((set) => {
-                const key = `${exercise.id}-${set.setNumber}`;
-                const isDone = completedSets.has(key);
-                const vals = getEditValue(exercise.id, set.setNumber);
-                const prev = prevLogs[key];
-
-                return (
-                  <View key={set.id} className="mb-2 px-1">
-                    <View className={cx("flex-row items-center rounded-xl px-2 py-2", isDone ? "bg-emphasis/10" : "bg-surface-muted")}>
-                      <Text className="text-text-secondary text-sm w-10 font-semibold">{set.setNumber}</Text>
-
-                      <View className="flex-1 mx-1">
-                        <TextInput
-                          className={cx(
-                            "text-center rounded-lg px-2 py-1 text-sm border",
-                            isDone
-                              ? "bg-emphasis/10 border-emphasis/30 text-emphasis"
-                              : "bg-surface-light border-border text-text-primary",
-                          )}
-                          value={vals?.kg ?? set.weightKg.toString()}
-                          onChangeText={(value) => updateEditValue(exercise.id, set.setNumber, "kg", value)}
-                          keyboardType="numeric"
-                          editable={!isDone}
-                          selectTextOnFocus
-                        />
-                      </View>
-
-                      <View className="flex-1 mx-1">
-                        <TextInput
-                          className={cx(
-                            "text-center rounded-lg px-2 py-1 text-sm border",
-                            isDone
-                              ? "bg-emphasis/10 border-emphasis/30 text-emphasis"
-                              : "bg-surface-light border-border text-text-primary",
-                          )}
-                          value={vals?.reps ?? set.reps.toString()}
-                          onChangeText={(value) => updateEditValue(exercise.id, set.setNumber, "reps", value)}
-                          keyboardType="numeric"
-                          editable={!isDone}
-                          selectTextOnFocus
-                        />
-                      </View>
-
-                      <TouchableOpacity
-                        className={cx(
-                          "w-20 py-2 rounded-xl items-center",
-                          isDone ? "bg-action-secondary border border-border" : "bg-action-primary",
-                        )}
-                        onPress={() => {
-                          if (isDone) {
-                            handleUndoSet(exercise, set);
-                          } else {
-                            handleCompleteSet(exercise, set);
-                          }
-                        }}
-                      >
-                        <View className="flex-row items-center">
-                          {isDone ? (
-                            <RotateCcw size={14} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-                          ) : (
-                            <Check size={14} strokeWidth={ICON_STROKE} color="#ffffff" />
-                          )}
-                          <Text className={cx("ml-1 text-sm font-semibold", isDone ? "text-text-secondary" : "text-white")}>
-                            {isDone ? "Wróć" : "Gotowe"}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    </View>
-
-                    {prev ? (
-                      <View className="ml-10 mt-1 flex-row items-center">
-                        <History size={12} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-                        <Text className="text-text-muted text-xs ml-1">
-                          Ostatnio: {prev.weightKg} kg x {prev.reps}
-                        </Text>
-                      </View>
-                    ) : null}
-                  </View>
-                );
-              })}
-            </Card>
-          ))}
-        </ScrollView>
       </View>
+
+      <ScrollView
+        className="flex-1"
+        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {activeExercises.length === 0 ? (
+          <StateBlock
+            title="Dodaj pierwsze ćwiczenie"
+            description="Wybierz ćwiczenie z katalogu, wpisz liczbę serii, ciężar i powtórzenia — resztę policzymy za Ciebie."
+            actionLabel="Dodaj ćwiczenie"
+            onAction={() => setShowExercisePicker(true)}
+            className="mt-4"
+          />
+        ) : (
+          activeExercises.map((exercise) => {
+            const logs = getExerciseLogs(exercise.id);
+            const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
+            const isEditing = editingExerciseId === exercise.id || !isSaved;
+            const rawPreviousLog = previousByExercise[exercise.id] ?? null;
+            const previousLog = autofillPrevious ? rawPreviousLog : null;
+            const initialDraft = isSaved
+              ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
+              : {
+                  setCount: "1",
+                  weightKg: previousLog ? String(previousLog.weightKg) : "0",
+                  reps: previousLog ? String(previousLog.reps) : "10",
+                  notes: notesByExercise[exercise.id] ?? "",
+                };
+
+            return (
+              <Card key={exercise.id} className="mb-3" padding="md">
+                <View className="flex-row items-start justify-between mb-3">
+                  <Text className="text-text-primary text-lg font-bold flex-1 pr-3">{exercise.name}</Text>
+                  {isSaved && !isEditing ? (
+                    <TouchableOpacity
+                      onPress={() => setEditingExerciseId(exercise.id)}
+                      className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                      accessibilityLabel={`Edytuj ${exercise.name}`}
+                    >
+                      <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+
+                {isEditing ? (
+                  <ExerciseLogForm
+                    key={`${exercise.id}-${isSaved ? "edit" : "new"}`}
+                    exerciseName={exercise.name}
+                    timeBased={isTimeBasedExercise(exercise.name)}
+                    previousLog={previousLog}
+                    initialDraft={initialDraft}
+                    onSave={(draft) => handleSaveExercise(exercise, draft)}
+                    onCancel={
+                      isSaved
+                        ? () => setEditingExerciseId(null)
+                        : undefined
+                    }
+                    loading={savingExerciseId === exercise.id}
+                    saveLabel={isSaved ? "Zaktualizuj" : "Zapisz ćwiczenie"}
+                  />
+                ) : (
+                  <ExerciseLogSummary
+                    exerciseName={exercise.name}
+                    setCount={logs.length}
+                    weightKg={logs[0]?.weightKg ?? 0}
+                    reps={logs[0]?.reps ?? 0}
+                    notes={notesByExercise[exercise.id]}
+                    timeBased={isTimeBasedExercise(exercise.name)}
+                    onEdit={() => setEditingExerciseId(exercise.id)}
+                  />
+                )}
+              </Card>
+            );
+          })
+        )}
+
+        {activeExercises.length > 0 ? (
+          <Button
+            label="Dodaj kolejne ćwiczenie"
+            icon={Plus}
+            variant="secondary"
+            onPress={() => setShowExercisePicker(true)}
+            className="mb-4"
+          />
+        ) : null}
+      </ScrollView>
+
+      <ExercisePicker
+        visible={showExercisePicker}
+        onClose={() => setShowExercisePicker(false)}
+        existingExerciseNames={existingExerciseNames}
+        onSelectCatalog={handleAddFromCatalog}
+        onSelectCustom={(name) => handleAddFromCatalog({ name })}
+        loading={isAddingExercise}
+      />
     </SafeAreaView>
   );
 }

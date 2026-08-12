@@ -46,7 +46,16 @@ if (supabaseConfigError) {
   console.warn(supabaseConfigError);
 }
 
-export const supabase = createClient(SUPABASE_URL ?? FALLBACK_URL, SUPABASE_PUBLISHABLE_KEY ?? FALLBACK_KEY, {
+export const supabaseUrl = SUPABASE_URL ?? FALLBACK_URL;
+export const supabaseAnonKey = SUPABASE_PUBLISHABLE_KEY ?? FALLBACK_KEY;
+
+/** np. vggkwwyjobfcokwtfljj — do diagnostyki sync z Edge Function */
+export function getSupabaseProjectRef(): string | null {
+  const match = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/);
+  return match?.[1] ?? null;
+}
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     storage,
     autoRefreshToken: true,

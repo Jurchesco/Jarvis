@@ -1,4 +1,7 @@
+export { BottomSheet } from "./BottomSheet";
 export { Button } from "./Button";
+export { Pills } from "./Pills";
+export type { PillOption } from "./Pills";
 export { Card } from "./Card";
 export { Input } from "./Input";
 export { ScreenHeader } from "./ScreenHeader";

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
 import type { SessionDetailFull } from "@bhmt3wp/shared";
 import { api } from "./client";
@@ -218,11 +219,28 @@ export function useCompletedSessions() {
   });
 }
 
-export function useStatsData() {
+export type StatsRange = "1m" | "3m" | "6m" | "all";
+
+function filterSessionsByRange<T extends { completedAt: string | null }>(
+  sessions: T[],
+  range: StatsRange,
+): T[] {
+  if (range === "all") return sessions;
+  const days = range === "1m" ? 30 : range === "3m" ? 90 : 180;
+  const cutoff = Date.now() - days * 86_400_000;
+  return sessions.filter(
+    (s) => s.completedAt && new Date(s.completedAt).getTime() >= cutoff,
+  );
+}
+
+export function useStatsData(range: StatsRange = "all") {
   const { data: completed = [] } = useCompletedSessions();
-  const last10 = completed.slice(0, 10);
+  const filtered = useMemo(
+    () => filterSessionsByRange(completed, range).slice(0, 20),
+    [completed, range],
+  );
   const sessionQueries = useQueries({
-    queries: last10.map((s) => ({
+    queries: filtered.map((s) => ({
       queryKey: ["sessions", s.id],
       queryFn: () => api.sessions.get(s.id),
     })),
@@ -232,7 +250,30 @@ export function useStatsData() {
     .filter((s): s is SessionDetailFull => s != null)
     .reverse();
   const isLoading = sessionQueries.some((q) => q.isLoading);
-  return { sessions, isLoading };
+  return { sessions, isLoading, totalInRange: filtered.length };
+}
+
+/** Pobiera szczegóły wielu sesji (np. lista w Historii). */
+export function useSessionsByIds(ids: string[]) {
+  const sessionQueries = useQueries({
+    queries: ids.map((id) => ({
+      queryKey: ["sessions", id],
+      queryFn: () => api.sessions.get(id),
+      staleTime: 60_000,
+    })),
+  });
+
+  const sessionsById = useMemo(() => {
+    const map = new Map<string, SessionDetailFull>();
+    for (const query of sessionQueries) {
+      if (query.data) map.set(query.data.id, query.data);
+    }
+    return map;
+  }, [sessionQueries]);
+
+  const isLoading = sessionQueries.some((q) => q.isLoading);
+
+  return { sessionsById, isLoading };
 }
 
 export function useLastSessionBySheet(sheetId: string) {

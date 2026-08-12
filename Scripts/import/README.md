@@ -1,6 +1,6 @@
 # Jarvis Import
 
-Jeden folder, wszystkie importery: Garmin, openScale, Stravio → Google Sheets.
+Jeden folder, wszystkie importery: Garmin, openScale, JJ Workout Tool → Google Sheets.
 
 ## Uruchomienie
 
@@ -54,7 +54,7 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | forma | Garmin | Forma |
 | aktywnosci | Garmin | Aktywnosci |
 | cialo | openScale backup | Cialo |
-| silownia | Stravio | Silownia_import |
+| silownia | JJ Workout Tool | Silownia_import |
 
 ## Flagi
 
@@ -78,7 +78,7 @@ Po imporcie skrypt wypisuje status każdego modułu:
 | `[SKIP]` | Moduł pominięty — brak danych lub brak opcjonalnej konfiguracji (exit code nadal `0`) |
 | `[ERROR]` | Twardy błąd — exit code `1` |
 
-Przykłady miękkiego pominięcia: brak serii w Stravio, brak `SUPABASE_*`, brak backupu openScale, brak serii w wybranym zakresie `--days`.
+Przykłady miękkiego pominięcia: brak serii w JJ Workout Tool, brak `SUPABASE_*`, brak backupu openScale, brak serii w wybranym zakresie `--days`.
 
 ## Struktura folderu
 

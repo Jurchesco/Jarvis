@@ -14,7 +14,7 @@ alwaysApply: true
 
 | Zakładka | Źródło | Uwagi |
 |----------|--------|--------|
-| `Silownia_import` | Stravio/Supabase | **Główne** dane siłowe dla Gema |
+| `Silownia_import` | JJ-Workout-Tool/Supabase | **Główne** dane siłowe dla Gema |
 | `Silownia` | legacy / ręczne | Archiwum — nie używać do progresu |
 | `Dzien`, `Sen`, `Forma`, `Aktywnosci` | Garmin | |
 | `Cialo` | openScale | |
@@ -25,7 +25,7 @@ alwaysApply: true
 Nie zakładaj zawartości z pamięci — **odczytaj przez API**:
 
 ```powershell
-cd C:\Jarvis\Stravio\Scripts\import
+cd C:\Jarvis\JJ-Workout-Tool\Scripts\import
 .\venv\Scripts\python.exe -m jarvis_import --only silownia --days 3
 ```
 

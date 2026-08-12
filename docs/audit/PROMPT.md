@@ -2,7 +2,7 @@
 
 **Jak użyć w Cursorze:** nowy chat → model Opus → wklej blok z sekcji „PROMPT” → dołącz `@docs/jarvis/GEM_INSTRUKCJA.md`, `@Scripts/import/jarvis_import/` itd.
 
-**Jak użyć poza Cursorem (Gemini Advanced, ChatGPT):** wklej prompt + podaj link do repo: https://github.com/Jurchesco/stravio — poproś model o przejrzenie kodu z GitHub (jeśli ma dostęp) lub wklej ręcznie kluczowe pliki.
+**Jak użyć poza Cursorem (Gemini Advanced, ChatGPT):** wklej prompt + podaj link do repo: https://github.com/Jurchesco/jj-workout-tool — poproś model o przejrzenie kodu z GitHub (jeśli ma dostęp) lub wklej ręcznie kluczowe pliki.
 
 ---
 
@@ -24,15 +24,15 @@ Osobisty ekosystem do śledzenia treningu i zdrowia. **Główny konsument danych
 ### Architektura (docelowa)
 
 ```
-Stravio (Expo app) → Supabase Postgres → importer Python → Google Sheets → Gemini Gem
+JJ Workout Tool (Expo app) → Supabase Postgres → importer Python → Google Sheets → Gemini Gem
 Garmin Connect     → importer Python  ↗
 openScale backup   → importer Python  ↗
 ```
 
 ### Repozytorium
-- **GitHub:** https://github.com/Jurchesco/stravio (branch `main`)
+- **GitHub:** https://github.com/Jurchesco/jj-workout-tool (branch `main`)
 - **Import Python:** `Scripts/import/jarvis_import/`
-- **Aplikacja Stravio:** `apps/mobile/`, `supabase/schema.sql`
+- **Aplikacja JJ Workout Tool:** `apps/mobile/`, `supabase/schema.sql`
 - **Workflow CI:** `.github/workflows/jarvis-import.yml`
 - **Instrukcja Gema:** `docs/jarvis/GEM_INSTRUKCJA.md`
 
@@ -52,12 +52,12 @@ openScale backup   → importer Python  ↗
 
 ### Źródła danych użytkownika
 - **Garmin Forerunner 165** — sen, dzienne statystyki, forma/gotowość, aktywności (cardio, bieganie, profil siłowy z zegarka)
-- **Stravio** — szczegółowy log serii siłowych (ćwiczenie, ciężar, powtórzenia, notatki)
+- **JJ Workout Tool** — szczegółowy log serii siłowych (ćwiczenie, ciężar, powtórzenia, notatki)
 - **Xiaomi waga + openScale** — masa i estymowany skład ciała (BIA)
 - **Baza_Suplementow** — statyczna referencja produktów (nie dziennik przyjmowania)
 
 ### Profil treningowy użytkownika (kontekst dla Gema)
-- Siłownia: logowanie serii w Stravio; progres siłowy to priorytet analityczny
+- Siłownia: logowanie serii w JJ Workout Tool; progres siłowy to priorytet analityczny
 - Cardio: strefa 2 (orbitrek, rower, bieżnia), bieganie rekreacyjne — bez presji na rekordy
 - Cel Gema: odpowiedź „trenować ciężko / lekko / odpocząć dziś” na podstawie danych
 
@@ -71,7 +71,7 @@ Moduły (kolejność CLI): `sen`, `dzien`, `forma`, `aktywnosci`, `cialo`, `silo
 
 Przeanalizuj każdy plik:
 - `cli.py`, `config.py`, `dates.py`, `sheets.py`, `garmin.py`
-- `importers/sleep.py`, `daily.py`, `forma.py`, `activities.py`, `openscale.py`, `stravio.py`
+- `importers/sleep.py`, `daily.py`, `forma.py`, `activities.py`, `openscale.py`, `workout.py`
 
 Dla każdego modułu ustal:
 1. Pełną listę kolumn zapisywanych do arkusza (nazwa, typ, jednostki)
@@ -90,13 +90,13 @@ Dla każdego modułu ustal:
 | Forma | Garmin | Data importu |
 | Aktywnosci | Garmin | Data startu |
 | Cialo | openScale | Data pomiaru |
-| Silownia_import | Stravio/Supabase | Data (start sesji) |
+| Silownia_import | JJ-Workout-Tool/Supabase | Data (start sesji) |
 
 Oceń: spójność typów (liczba vs tekst), placeholdery (`brak danych`), luki czasowe, opóźnienie importu (~1 h), duplikaty.
 
-### 3. Stravio + Supabase
+### 3. JJ Workout Tool + Supabase
 
-Przeanalizuj `supabase/schema.sql` i `importers/stravio.py` oraz UI aplikacji (`apps/mobile/app/workout/[id].tsx`, `apps/mobile/src/api/client.ts`).
+Przeanalizuj `supabase/schema.sql` i `importers/workout.py` oraz UI aplikacji (`apps/mobile/app/workout/[id].tsx`, `apps/mobile/src/api/client.ts`).
 
 Ustal:
 - Mapowanie tabel → kolumny `Silownia_import`
@@ -139,13 +139,13 @@ Oceń lukę dla pytań:
 Poprzedni wstępny audyt wskazywał — **zweryfikuj niezależnie**:
 
 1. **`sleep.py`** — `datetime.utcfromtimestamp()` na polach `sleepStartTimestampLocal` / `sleepEndTimestampLocal` → błędne godziny snu względem Warszawy
-2. **`stravio.py`** — PR liczone po max **ciężarze**, podczas gdy Gem mówi o rekordzie **Est. 1RM (Brzycki)**
-3. **`stravio.py`** — kolumna `Bol / Niggle` dostaje notatki ćwiczenia (w appce placeholder: „RPE, wskazówki, ustawienie”), nie wyłącznie ból
-4. **`stravio.py`** — `Uwagi` = notatka sesji powielona na każdej serii; brak UI do wpisywania notatek sesji
+2. **`workout.py`** — PR liczone po max **ciężarze**, podczas gdy Gem mówi o rekordzie **Est. 1RM (Brzycki)**
+3. **`workout.py`** — kolumna `Bol / Niggle` dostaje notatki ćwiczenia (w appce placeholder: „RPE, wskazówki, ustawienie”), nie wyłącznie ból
+4. **`workout.py`** — `Uwagi` = notatka sesji powielona na każdej serii; brak UI do wpisywania notatek sesji
 5. **`activities.py`** — brak filtra `activity_date <= end_date`
 6. **`config.py`** — `date.today()` bez timezone → na CI (UTC) „dziś” może być inne niż w Polsce w nocy
 7. **`daily.py`** — `minAvgHeartRate` używane jako „Tętno średnie” — czy to właściwe pole Garmin
-8. **Brak filtra `user_id`** w importerze Stravio przy service_role
+8. **Brak filtra `user_id`** w importerz JJ Workout Tool przy service_role
 9. **Limit 1000 aktywności** — utrata starszego cardio przy `--all`
 10. **`DEFAULT_DAYS=1`** — luki przy pominiętym hourly run
 
@@ -184,7 +184,7 @@ Fazy 0–4 z zadaniami: opis, pliki, kryterium „done”, wysiłek (dni), wpły
 - **Faza 0** — quick wins (≤3 dni, bez nowych funkcji)
 - **Faza 1** — spójność semantyczna kolumn i eksportu
 - **Faza 2** — nowe zakładki (Samopoczucie, Suplementy, Meta)
-- **Faza 3** — Stravio (RPE, user filter, richer export)
+- **Faza 3** — JJ Workout Tool (RPE, user filter, richer export)
 - **Faza 4** — operacje (monitoring, alerty, reconcile)
 
 ### G. Checklist weryfikacji
@@ -214,7 +214,7 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 - `Scripts/import/jarvis_import/importers/forma.py`
 - `Scripts/import/jarvis_import/importers/activities.py`
 - `Scripts/import/jarvis_import/importers/openscale.py`
-- `Scripts/import/jarvis_import/importers/stravio.py`
+- `Scripts/import/jarvis_import/importers/workout.py`
 - `Scripts/import/jarvis_import/config.py`
 - `Scripts/import/jarvis_import/dates.py`
 - `Scripts/import/jarvis_import/sheets.py`
@@ -224,14 +224,14 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 - `apps/mobile/src/api/client.ts`
 
 **Nice-to-have:**
-- `docs/stravio/ARCHITECTURE.md`
+- `docs/jj-workout-tool/ARCHITECTURE.md`
 - `Scripts/import/README.md`
 - `apps/mobile/app/sheet/[id].tsx`
 - `packages/shared/src/index.ts`
 
 ---
 
-**Zacznij od przeczytania `docs/jarvis/GEM_INSTRUKCJA.md` i `importers/stravio.py`, potem przejdź moduł po module. Na końcu zsyntetyzuj roadmapę z naciskiem na jakość danych dla Gema.**
+**Zacznij od przeczytania `docs/jarvis/GEM_INSTRUKCJA.md` i `importers/workout.py`, potem przejdź moduł po module. Na końcu zsyntetyzuj roadmapę z naciskiem na jakość danych dla Gema.**
 
 ---
 
@@ -250,4 +250,4 @@ Max 5 pytań — tylko te, których nie da się rozstrzygnąć z kodu (np. dost�
 @apps/mobile/src/api/client.ts
 ```
 
-Opcjonalnie cały folder: `@c:\Jarvis\Stravio`
+Opcjonalnie cały folder: `@c:\Jarvis\JJ-Workout-Tool`

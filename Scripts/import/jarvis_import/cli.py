@@ -13,7 +13,7 @@ from .importers.daily import import_daily
 from .importers.forma import import_forma
 from .importers.openscale import import_openscale
 from .importers.sleep import import_sleep
-from .importers.stravio import import_stravio
+from .importers.workout import import_workout
 from .sheets import ImportResult, SheetsClient
 from .sort_sheets import WORKSHEET_SORT, sort_all_worksheets
 
@@ -214,7 +214,7 @@ def run() -> int:
             elif name == "cialo":
                 result = import_openscale(ctx)
             elif name == "silownia":
-                result = import_stravio(ctx)
+                result = import_workout(ctx)
             else:
                 continue
             results.append(result)

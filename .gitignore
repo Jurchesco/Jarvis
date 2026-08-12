@@ -12,6 +12,12 @@ eas.json.bak
 .vscode
 .DS_Store
 
+# Supabase CLI cache / temp
+supabase/.temp/
+
+# Lokalne analizy (nie commituj)
+.tmp-dziennik-analysis/
+
 # Jarvis import — sekrety (nigdy nie commituj)
 Scripts/import/.env
 Scripts/import/google-service-account.json

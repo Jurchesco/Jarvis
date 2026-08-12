@@ -17,7 +17,7 @@ Skrypt wyświetli listę sekretów i zapisze pliki tymczasowe w `%TEMP%\jarvis-g
 |--------|------|
 | `GOOGLE_SHEET_ID` | ID arkusza Google Sheets |
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | **Cała** zawartość pliku `google-service-account.json` |
-| `SUPABASE_URL` | URL projektu Supabase (ten sam co Stravio) |
+| `SUPABASE_URL` | URL projektu Supabase (ten sam co JJ Workout Tool) |
 | `SUPABASE_SECRET_KEY` | Klucz `service_role` (nie `anon`!) |
 | `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive |
 | `GARMINCONNECT_ZIP` | Base64 archiwum folderu `.garminconnect/` (wymagany dla modułów Garmin w chmurze) |
@@ -46,7 +46,7 @@ Bez tego moduł `cialo` zwróci błąd API (403 / API not enabled).
 
 W **Run workflow** zaznacz checkbox **„Importuj wszystko od początku”** — ignoruje pole „dni” i pobiera dane od `IMPORT_START_DATE` (domyślnie `2026-07-09`, pierwszy wiersz w arkuszu *Dzien*).
 
-Pełny import może trwać **kilka godzin** (Garmin: jedno zapytanie na dzień × moduł). Timeout joba: 360 min. Przy pierwszym pełnym imporcie rozważ `--skip silownia` jeśli Stravio jest puste.
+Pełny import może trwać **kilka godzin** (Garmin: jedno zapytanie na dzień × moduł). Timeout joba: 360 min. Przy pierwszym pełnym imporcie rozważ `--skip silownia` jeśli JJ Workout Tool jest puste.
 
 Lokalnie: `run.bat --no-prompt --all`
 
@@ -79,12 +79,12 @@ Importer wypisuje podsumowanie:
 | `[SKIP]` | Brak danych lub brak opcjonalnej konfiguracji (np. pusta `silownia`, brak openScale) | **sukces** |
 | `[ERROR]` | Twardy błąd (credentials, API, wyjątek) | **fail** (exit code 1) |
 
-Typowy pierwszy run bez treningów w Stravio:
+Typowy pierwszy run bez treningów w JJ Workout Tool:
 
 ```
 [OK] sen: ...
 [OK] dzien: ...
-[SKIP] silownia: Brak zalogowanych serii w Stravio — pominięto
+[SKIP] silownia: Brak zalogowanych serii w JJ Workout Tool — pominięto
 Gotowe: 5/6 modułów zakończonych poprawnie.
 ```
 

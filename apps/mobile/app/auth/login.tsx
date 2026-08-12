@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { APP_NAME } from "../../src/constants/branding";
 import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function LoginScreen() {
@@ -50,7 +51,7 @@ export default function LoginScreen() {
           {/* Logo / Title */}
           <View className="items-center mb-10">
             <Text className="text-5xl mb-2">🏋️</Text>
-            <Text className="text-text-primary text-4xl font-bold">Stravio</Text>
+            <Text className="text-text-primary text-4xl font-bold">{APP_NAME}</Text>
             <Text className="text-text-secondary text-base mt-2">
               Śledź swoje treningi, gdziekolwiek jesteś.
             </Text>

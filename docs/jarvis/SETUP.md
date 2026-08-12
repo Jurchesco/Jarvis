@@ -2,11 +2,11 @@
 
 Instrukcja krok po kroku dla nowego środowiska deweloperskiego.
 
-> Repozytorium: clone `https://github.com/Jurchesco/stravio` — wszystkie ścieżki poniżej są względem roota repo.
+> Repozytorium: clone `https://github.com/Jurchesco/jj-workout-tool` — wszystkie ścieżki poniżej są względem roota repo.
 
 ---
 
-## 1. Stravio — aplikacja treningowa
+## 1. JJ Workout Tool — aplikacja treningowa
 
 ### Wymagania
 
@@ -59,7 +59,7 @@ eas build --platform android --profile preview
 
 ## 2. Import danych (`Scripts/import`)
 
-Jeden folder, jeden skrypt — Garmin, openScale i Stravio.
+Jeden folder, jeden skrypt — Garmin, openScale i JJ Workout Tool.
 
 ### Wymagania
 
@@ -104,7 +104,7 @@ run.bat                        # pyta ile dni wstecz
 run.bat --days 14              # bez pytania, 14 dni
 run.bat --no-prompt --days 7   # harmonogram zadań (bez promptu)
 run.bat --only sen,dzien,forma,aktywnosci   # tylko Garmin
-run.bat --skip silownia,cialo               # bez Stravio i openScale
+run.bat --skip silownia,cialo               # bez JJ Workout Tool i openScale
 ```
 
 ### Pliki w folderze `import/`
@@ -138,7 +138,7 @@ Szczegóły: [Scripts/import/README.md](../Scripts/import/README.md)
 | `Forma` | forma | Panel gotowości (HRV, RHR, stres) |
 | `Aktywnosci` | aktywnosci | Treningi cardio |
 | `Cialo` | cialo | Waga, BMI, skład ciała — **Data pomiaru** |
-| `Silownia_import` | silownia | Serie siłowe ze Stravio |
+| `Silownia_import` | silownia | Serie siłowe z JJ Workout Tool |
 
 ---
 
@@ -152,10 +152,10 @@ Szczegółowa instrukcja: [GITHUB_ACTIONS.md](./GITHUB_ACTIONS.md)
 
 Patrz też [Scripts/import/README.md](../Scripts/import/README.md).
 
-### Stravio (aplikacja): biały ekran na web
+### JJ Workout Tool (aplikacja): biały ekran na web
 
 Sprawdź `apps/mobile/.env` — klucze Supabase muszą być ustawione.
 
 ### Moduł silownia: „Brak zalogowanych serii”
 
-To `[SKIP]`, nie błąd krytyczny. Sprawdź treningi w Stravio, klucz `service_role` i zakres `--days`.
+To `[SKIP]`, nie błąd krytyczny. Sprawdź treningi w JJ Workout Tool, klucz `service_role` i zakres `--days`.

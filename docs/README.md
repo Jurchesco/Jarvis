@@ -1,6 +1,6 @@
 # Dokumentacja
 
-Indeks plików w `docs/`. Repozytorium łączy aplikację **Stravio** z ekosystemem **Jarvis** (import → Google Sheets → Gemini Gem).
+Indeks plików w `docs/`. Repozytorium łączy aplikację **JJ Workout Tool** z ekosystemem **Jarvis** (import → Google Sheets → Gemini Gem).
 
 ---
 
@@ -20,19 +20,21 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 
 ---
 
-## Stravio — aplikacja (EN)
-
-Monorepo Expo + Supabase.
+## JJ Workout Tool — aplikacja (EN + UI)
 
 | Plik | Opis |
 |------|------|
-| [stravio/ARCHITECTURE.md](./stravio/ARCHITECTURE.md) | System design, data flow |
-| [stravio/DECISIONS.md](./stravio/DECISIONS.md) | Decyzje techniczne |
-| [stravio/TODO.md](./stravio/TODO.md) | Roadmapa aplikacji |
-| [stravio/CHANGELOG.md](./stravio/CHANGELOG.md) | Historia wersji |
-| [stravio/RELEASE.md](./stravio/RELEASE.md) | Build i publikacja |
+| [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) | System design, flow freestyle |
+| [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje techniczne (D009–D011: freestyle, Epley, log zbiorczy) |
+| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — **następny krok: UI polish** |
+| [jj-workout-tool/CHANGELOG.md](./jj-workout-tool/CHANGELOG.md) | Historia wersji |
+| [jj-workout-tool/RELEASE.md](./jj-workout-tool/RELEASE.md) | Build i publikacja |
+| [**jj-workout-tool/UI_REDESIGN_PROPOSAL.md**](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) | Audyt UI + plan faz UI-A…D |
+| [jj-workout-tool/UI_PROPOSAL GEMINI.md](./jj-workout-tool/UI_PROPOSAL%20GEMINI.md) | Filozofia UX (dark, one-thumb) |
 
 Główny README projektu: [../README.md](../README.md)
+
+**Stan JJ Workout Tool na 2026-08-12:** freestyle trening + logowanie ćwiczeń **zamrożone funkcjonalnie**. Kolejny sprint = poprawa interfejsu wg dokumentów UI powyżej.
 
 ---
 
@@ -45,7 +47,7 @@ Główny README projektu: [../README.md](../README.md)
 
 **Źródło prawdy dla napraw:** [jarvis/PLAN_NAPRAWCZY.md](./jarvis/PLAN_NAPRAWCZY.md) — tam aktualizujemy status zadań.
 
-**Stan na 2026-08-11:** sesja zamknięta. Następny krok — trening w Stravio → import `silownia` → ewentualnie **0.2**. Szczegóły: sekcja *Stan sesji* w planie naprawczym.
+**Stan na 2026-08-11:** sesja zamknięta. Następny krok — trening w JJ Workout Tool → import `silownia` → ewentualnie **0.2**. Szczegóły: sekcja *Stan sesji* w planie naprawczym.
 
 ---
 
@@ -57,4 +59,5 @@ Główny README projektu: [../README.md](../README.md)
 | Wkleić instrukcję do Gema | [jarvis/GEM_INSTRUKCJA.md](./jarvis/GEM_INSTRUKCJA.md) |
 | Naprawiać bugi po audycie | [jarvis/PLAN_NAPRAWCZY.md](./jarvis/PLAN_NAPRAWCZY.md) |
 | Uruchomić import lokalnie | [Scripts/import/README.md](../Scripts/import/README.md) |
-| Zrozumieć kod aplikacji | [stravio/ARCHITECTURE.md](./stravio/ARCHITECTURE.md) |
+| Zrozumieć kod aplikacji | [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) |
+| Poprawić UI aplikacji | [jj-workout-tool/UI_REDESIGN_PROPOSAL.md](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) §6 (UI-A…) |

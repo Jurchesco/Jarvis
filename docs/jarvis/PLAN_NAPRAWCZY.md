@@ -2,7 +2,7 @@
 
 **Źródło:** audyt Opus (2026-08-11) + wstępny audyt Composer  
 **Cel:** jakość danych w Google Sheets dla Gemini Gema (Trener AI)  
-**Repozytorium:** `c:\Jarvis\Stravio` · GitHub `Jurchesco/stravio`
+**Repozytorium:** `c:\Jarvis\JJ-Workout-Tool` · GitHub `Jurchesco/jj-workout-tool`
 
 > **Dla agenta / kolejnych sesji:** przy każdej naprawie odwołuj się do tego pliku (`@docs/jarvis/PLAN_NAPRAWCZY.md`). Po ukończeniu zadania zmień status na `done` i dopisz datę w kolumnie „Ukończono”.
 
@@ -42,9 +42,9 @@ Bez nowych funkcji w aplikacji. Najwyższy ROI dla Gema.
 
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
-| **0.1** | `done` | Filtr dat w zapytaniach Supabase + osobne lekkie zapytanie po pełną historię PR (poza limitem 1000 wierszy) | `importers/stravio.py`, `dates.py` | Import `--all` / `--days 30` zwraca wszystkie serie z zakresu; PR liczone z pełnej historii | **Wysoki** |
-| **0.2** | `todo` | Notatki ćwiczenia → kolumna `Uwagi`; `Bol / Niggle` zostawić puste (brak źródła bólu w appce) | `importers/stravio.py:125-137` | Po imporcie: `Uwagi` = tekst z sesji ćwiczenia, `Bol / Niggle` puste | **Wysoki** |
-| **0.3** | `todo` | PR po **Est. 1RM (Brzycki)**, nie max ciężar; klucz PR po **nazwie ćwiczenia**, nie `exercise_id` | `importers/stravio.py:92-111` | Seria 95×8 dostaje PR po serii 100×1 jeśli Est. 1RM wyższe | **Wysoki** |
+| **0.1** | `done` | Filtr dat w zapytaniach Supabase + osobne lekkie zapytanie po pełną historię PR (poza limitem 1000 wierszy) | `importers/workout.py`, `dates.py` | Import `--all` / `--days 30` zwraca wszystkie serie z zakresu; PR liczone z pełnej historii | **Wysoki** |
+| **0.2** | `todo` | Notatki ćwiczenia → kolumna `Uwagi`; `Bol / Niggle` zostawić puste (brak źródła bólu w appce) | `importers/workout.py:125-137` | Po imporcie: `Uwagi` = tekst z sesji ćwiczenia, `Bol / Niggle` puste | **Wysoki** |
+| **0.3** | `todo` | PR po **Est. 1RM (Brzycki)**, nie max ciężar; klucz PR po **nazwie ćwiczenia**, nie `exercise_id` | `importers/workout.py:92-111` | Seria 95×8 dostaje PR po serii 100×1 jeśli Est. 1RM wyższe | **Wysoki** |
 | **0.4** | `todo` | Wiersz błędu w `daily.py` — upewnić się, że ma **21 pól** (Uwagi w kolumnie U) | `importers/daily.py:75-78` | Przy symulowanym błędzie Garmin komunikat w kolumnie U | Średni |
 | **0.5** | `todo` | Aktualizacja `GEM_INSTRUKCJA.md` według sekcji E audytu + **wklejenie do Gema** | `docs/jarvis/GEM_INSTRUKCJA.md`, Gem UI | Gem nie alarmuje o „kontuzji” z notatek technicznych; zna PR/typy Sen | **Wysoki** |
 | **0.6** | `todo` | `DEFAULT_DAYS: "3"` w workflow (bufor samonaprawy) | `.github/workflows/jarvis-import.yml:46` | Po 2-dniowej przerwie CI uzupełnia luki | Średni |
@@ -52,7 +52,7 @@ Bez nowych funkcji w aplikacji. Najwyższy ROI dla Gema.
 ### Szczegóły implementacji 0.1
 
 ```python
-# stravio.py — filtr logów po dacie (zamiast pobierania wszystkiego)
+# workout.py — filtr logów po dacie (zamiast pobierania wszystkiego)
 start_iso = f"{ctx.start_date.isoformat()}T00:00:00+00:00"
 end_iso = f"{ctx.end_date.isoformat()}T23:59:59+00:00"
 logs_resp = (
@@ -85,10 +85,10 @@ rows_to_upsert.append([
 
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
-| **1.1** | `blocked` | Filtr `STRAVIO_USER_ID` / `user_id` w importerze | `config.py`, `stravio.py`, `.env.example`, workflow | Sesja obcego konta nie trafia do arkusza | **Wysoki** (jeśli Vercel publiczny) |
-| **1.2** | `todo` | Odporny `date_key` na lokalizację PL + normalizacja `Czas serii` w kluczu upsert | `dates.py`, `stravio.py:26-32` | Dwa kolejne importy → `dopisano 0` | **Wysoki** (jeśli D-2 potwierdzone) |
+| **1.1** | `blocked` | Filtr `JJ_WORKOUT_USER_ID` / `user_id` w importerze | `config.py`, `workout.py`, `.env.example`, workflow | Sesja obcego konta nie trafia do arkusza | **Wysoki** (jeśli Vercel publiczny) |
+| **1.2** | `todo` | Odporny `date_key` na lokalizację PL + normalizacja `Czas serii` w kluczu upsert | `dates.py`, `workout.py:26-32` | Dwa kolejne importy → `dopisano 0` | **Wysoki** (jeśli D-2 potwierdzone) |
 | **1.3** | `todo` | `restlessMomentsCount` z Garmina zamiast własnego liczenia | `importers/sleep.py:114-119` | Kolumna `Niespokojne momenty` > 0 gdy Garmin raportuje | Średni |
-| **1.4** | `todo` | Rename nagłówka `Tętno min. średnie`; guard Brzycki `reps > 15`; tempo `"5:30 /km"` | `daily.py`, `stravio.py`, `activities.py`, `docs/jarvis/GEM_INSTRUKCJA.md` | Brak absurdalnych Est. 1RM; tempo nie jako godzina w Sheets | Średni |
+| **1.4** | `todo` | Rename nagłówka `Tętno min. średnie`; guard Brzycki `reps > 15`; tempo `"5:30 /km"` | `daily.py`, `workout.py`, `activities.py`, `docs/jarvis/GEM_INSTRUKCJA.md` | Brak absurdalnych Est. 1RM; tempo nie jako godzina w Sheets | Średni |
 | **1.5** | `todo` | `date.today()` → data w `Europe/Warsaw`; filtr `<= end_date` w aktywnościach; `utcfromtimestamp` → `fromtimestamp(tz=utc)` | `config.py`, `activities.py`, `sleep.py` | Brak DeprecationWarning w CI | Niski |
 | **1.6** | `todo` | Early break paginacji aktywności (przerwa gdy strona starsza niż `start_date`) | `importers/activities.py:179-188` | Mniej wywołań API; log 1–2 paczek zamiast 20 | Średni |
 
@@ -106,15 +106,15 @@ rows_to_upsert.append([
 
 ---
 
-## Faza 3 — Stravio (4–6 dni)
+## Faza 3 — JJ Workout Tool (4–6 dni)
 
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
-| **3.1** | `todo` | Osobne pole **ból / niggle** w sesji (nie szablonie) | `schema.sql`, `client.ts`, `workout/[id].tsx`, `stravio.py` | Ból trafia do `Bol / Niggle` | **Wysoki** |
-| **3.2** | `todo` | Pole **RPE** (1–10) per seria + export | schema, app, `stravio.py` | Kolumna `RPE` w arkuszu | **Wysoki** |
+| **3.1** | `todo` | Osobne pole **ból / niggle** w sesji (nie szablonie) | `schema.sql`, `client.ts`, `workout/[id].tsx`, `workout.py` | Ból trafia do `Bol / Niggle` | **Wysoki** |
+| **3.2** | `todo` | Pole **RPE** (1–10) per seria + export | schema, app, `workout.py` | Kolumna `RPE` w arkuszu | **Wysoki** |
 | **3.3** | `todo` | Notatka **sesji** przy „Zakończ trening" | `workout/[id].tsx`, `client.ts` | `Uwagi` sesji wypełnione (jeden wiersz logiczny) | Średni |
 | **3.4** | `todo` | Odtwarzanie ukończonych serii po restarcie app | `workout/[id].tsx:63,81` | Powrót do sesji pokazuje checkmarki | Średni |
-| **3.5** | `blocked` | Kolumna `Sesja zakończona` (Tak/Nie) lub filtr `completed_at IS NOT NULL` | `stravio.py` | Gem wie, czy sesja porzucona | Średni |
+| **3.5** | `blocked` | Kolumna `Sesja zakończona` (Tak/Nie) lub filtr `completed_at IS NOT NULL` | `workout.py` | Gem wie, czy sesja porzucona | Średni |
 
 ---
 
@@ -250,13 +250,13 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 
 ## Stan sesji — zamknięcie 2026-08-11
 
-Sesja zakończona. Pipeline i arkusz **bez dalszych zmian** do jutra (po pierwszym treningu w Stravio).
+Sesja zakończona. Pipeline i arkusz **bez dalszych zmian** do jutra (po pierwszym treningu w JJ Workout Tool).
 
 ### Ukończone
 
 | Obszar | Stan |
 |--------|------|
-| Repo / docs | Uporządkowane (`docs/jarvis`, `stravio`, `audit`); duplikaty z `c:\Jarvis\` usunięte |
+| Repo / docs | Uporządkowane (`docs/jarvis`, `jj-workout-tool`, `audit`); duplikaty z `c:\Jarvis\` usunięte |
 | Audyt | Plan naprawczy + `GEM_INSTRUKCJA.md` |
 | **0.1** | Paginacja Supabase, filtr dat UTC, historia PR — **w repo (main)** |
 | Arkusz | `Silownia_import` wyczyszczony ręcznie (0 wierszy); `Dzien`/`Sen`/`Forma` ~34 wiersze (Garmin OK) |
@@ -265,10 +265,10 @@ Sesja zakończona. Pipeline i arkusz **bez dalszych zmian** do jutra (po pierwsz
 
 ### Jutro — checklist
 
-1. **Trening w Stravio** — zaloguj serie (musi trafić do Supabase).
+1. **Trening w JJ Workout Tool** — zaloguj serie (musi trafić do Supabase).
 2. **Import siłowni:**
    ```powershell
-   cd c:\Jarvis\Stravio\Scripts\import
+   cd c:\Jarvis\JJ-Workout-Tool\Scripts\import
    .\venv\Scripts\python.exe -m jarvis_import --only silownia --days 3
    ```
 3. **Arkusz** — sprawdź `Silownia_import` (nagłówek uzupełni kolumnę „Czas serii” automatycznie).

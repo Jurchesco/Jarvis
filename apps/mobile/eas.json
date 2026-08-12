@@ -6,8 +6,8 @@
   "build": {
     "base": {
       "env": {
-        "EXPO_PUBLIC_SUPABASE_URL": "https://dqtfhrdkikxfxnifnsqs.supabase.co",
-        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_OZmvdHhLB7Z_m2r_fTbCPg_06Yzb9yu"
+        "EXPO_PUBLIC_SUPABASE_URL": "https://vggkwwyjobfcokwtfljj.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_9fMqHL7rqeAr3V6unq6Apg_x5JBU2lU"
       }
     },
     "development": {

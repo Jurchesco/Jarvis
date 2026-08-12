@@ -132,6 +132,92 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D009: Freestyle-first (plany w UI wyłączone)
+
+**Date**: 2026-08-12
+**Status**: Active
+
+**Context**: Użytkownik loguje treningi jak w dzienniku Perplexity — wybór ćwiczeń w trakcie sesji, bez wcześniejszego planowania arkusza.
+
+**Decision**:
+- Home = jeden CTA „Rozpocznij trening”.
+- Ćwiczenia z katalogu (`EXERCISE_CATALOG`) dodawane w `app/workout/[id].tsx`.
+- Jeden techniczny arkusz `"Freestyle"` na użytkownika (`ensureFreestyleSheet.ts`) — wymagany przez FK `workout_sessions.sheet_id` i `exercises.sheet_id`.
+- Gotowe **plany treningowe** (PPL, szablony) → **osobna zakładka** w przyszłości, nie blokują freestyle.
+
+**UI planów** (`app/sheet/[id].tsx`) przekierowuje na Home.
+
+---
+
+## D010: Epley 1RM w UI, Brzycki w imporcie
+
+**Date**: 2026-08-12
+**Status**: Active
+
+**Context**: Dziennik Perplexity (PWA) liczy Est. 1RM wzorem **Epley** (`ciężar × (1 + powt./30)`). Importer Jarvis / Gem używają **Brzyckiego** w kolumnie `Est. 1RM` w Google Sheets.
+
+**Decision**:
+- UI treningu (`packages/shared/src/workoutCalculations.ts`): **Epley** — zgodność z oczekiwanym UX w aplikacji.
+- Eksport (`Scripts/import/jarvis_import/importers/workout.py`): **Brzycki** — bez zmian, spójność z `GEM_INSTRUKCJA.md`.
+- Wartości w UI i w Sheets **mogą się różnić** dla tej samej serii; oba liczone z surowego ciężaru i powtórzeń.
+
+---
+
+## D011: Logowanie zbiorcze serii (nie wiersz po wierszu)
+
+**Date**: 2026-08-12
+**Status**: Active
+
+**Decision**: Użytkownik podaje **liczbę serii**, **ciężar**, **powtórzenia** (lub czas dla ćwiczeń izometrycznych) i **uwagi** w jednym formularzu (`ExerciseLogForm`). Zapis tworzy N wpisów `session_set_logs` + szablony `exercise_sets` (`saveExerciseLogBatch.ts`).
+
+**Rest timer** tymczasowo **wyłączony** z UI — może wrócić jako opcja w Ustawieniach.
+
+---
+
+## D012: Ręczny sync do Google Sheets — Edge Function (testy osobiste)
+
+**Date**: 2026-08-12  
+**Status**: Active (wymaga deploy + sekretów)
+
+**Context**: Testy na własnych treningach; dane do arkusza Jarvis / Gema. Sekrety Google i service role nie mogą trafić do klienta.
+
+**Decision**:
+- Edge Function `sync-sheets` — port `workout.py` → zakładka `Silownia_import`.
+- Jeden `GOOGLE_SHEET_ID` w sekretach (osobisty arkusz, nie SaaS).
+- Opcjonalny `JJ_WORKOUT_ALLOWED_USER_ID` — tylko właściciel wywołuje sync.
+- GitHub Actions co godzinę pozostaje jako automatyczny backup.
+
+**Future**: OAuth Google (własny arkusz), eksport CSV z Ustawień.
+
+---
+
+## D013: Agregacja importu + rebrand JJ Workout Tool v1.0
+
+**Date**: 2026-08-13  
+**Status**: Active
+
+**Context**: Sync do `Silownia_import` tworzył osobny wiersz na każdą serię. Użytkownik preferuje jeden wiersz na ćwiczenie w sesji.
+
+**Decision**:
+- Import (`importWorkout.ts`, `workout.py`): grupowanie po `session_id:exercise_id`; kolumna **Set** = liczba serii; **Volume** = ciężar × powtórzenia × serie; ciężar/powt. z pierwszej serii (logowanie zbiorcze); klucz upsert = `Data|Cwiczenie`.
+- **Nazwa produktu**: **JJ Workout Tool**, wersja **1.0.0** w UI (`branding.ts`, `app.json`).
+
+---
+
+## D014: Pełny rebrand nazewnictwa (katalogi, kod, docs)
+
+**Date**: 2026-08-13  
+**Status**: Active
+
+**Decision**:
+- Katalog projektu: **`JJ-Workout-Tool/`** (docelowo; junction gdy folder zablokowany przez IDE).
+- Dokumentacja aplikacji: `docs/jj-workout-tool/` (było `docs/stravio/`).
+- Importer Python: `workout.py` / `import_workout()`; Edge Function: `importWorkout.ts` / `runWorkoutImport()`.
+- Expo: `slug` + `scheme` = `jj-workout-tool`, bundle/package = `com.jjworkout.tool`.
+- Sekret Supabase: **`JJ_WORKOUT_ALLOWED_USER_ID`**; fallback na stary `STRAVIO_ALLOWED_USER_ID` w Edge Function.
+
+---
+
 ## Future Decisions (TODO)
 
 - **PowerSync**: Offline-first sync between local SQLite and Supabase

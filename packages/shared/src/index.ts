@@ -1,5 +1,5 @@
 // ============================================
-// Shared types for the Stravio workout tracker
+// Shared types for JJ Workout Tool
 // ============================================
 
 // --- User / Auth ---
@@ -174,3 +174,42 @@ export interface SessionDetailFull extends WorkoutSession {
   logs: SessionSetLog[];
   exercises: SessionExerciseGroup[];
 }
+
+// --- Exercise catalog (PPL preset library) ---
+export type { CatalogExercise, WorkoutSplit } from "./exerciseCatalog";
+export {
+  EXERCISE_CATALOG,
+  PPL_SHEET_TEMPLATES,
+  SPLIT_LABELS,
+  WORKOUT_SPLITS,
+  catalogExerciseCount,
+  getCatalogExercisesForSplit,
+  inferSplitFromSheetName,
+  isTimeBasedExercise,
+  normalizeExerciseName,
+  searchCatalogExercises,
+} from "./exerciseCatalog";
+export {
+  computeSessionLiveStats,
+  epley1rm,
+  exerciseVolume,
+  formatDuration,
+  formatVolumeKg,
+  formatWeightKg,
+  sessionDurationSec,
+  setVolume,
+} from "./workoutCalculations";
+export type { SessionLiveStats } from "./workoutCalculations";
+export {
+  computeMonthBestStreak,
+  computeWorkoutStreak,
+} from "./workoutStreak";
+export {
+  buildSessionSummaryInsights,
+} from "./sessionSummary";
+export type {
+  SessionComparison,
+  SessionSummaryInsights,
+  SessionSummaryLike,
+  RankedExerciseVolume,
+} from "./sessionSummary";

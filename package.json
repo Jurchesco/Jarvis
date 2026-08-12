@@ -1,5 +1,5 @@
 {
-  "name": "bhmt3wp",
+  "name": "jj-workout-tool",
   "private": true,
   "workspaces": [
     "packages/*",

@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { APP_NAME } from "../../src/constants/branding";
 import { useAuth } from "../../src/contexts/AuthContext";
 
 export default function SignupScreen() {
@@ -92,7 +93,7 @@ export default function SignupScreen() {
           <View className="items-center mb-10">
             <Text className="text-text-primary text-3xl font-bold">Utwórz konto</Text>
             <Text className="text-text-secondary text-base mt-2">
-              Dołącz do Stravio i zacznij śledzić swoje treningi.
+              Dołącz do {APP_NAME} i zacznij śledzić swoje treningi.
             </Text>
           </View>
 

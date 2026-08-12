@@ -28,7 +28,7 @@ export function ScreenHeader({
               <Icon size={ICON_SIZE_LG} strokeWidth={ICON_STROKE} color="#60a5fa" />
             </View>
           ) : null}
-          <Text className="text-text-primary text-3xl font-bold shrink">{title}</Text>
+          <Text className="text-text-primary text-3xl font-bold shrink leading-tight">{title}</Text>
         </View>
         {subtitle ? <Text className="text-text-secondary text-sm mt-2">{subtitle}</Text> : null}
       </View>

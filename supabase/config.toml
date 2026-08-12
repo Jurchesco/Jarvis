@@ -1,0 +1,5 @@
+# Supabase local / deploy config (Edge Functions)
+# Docs: https://supabase.com/docs/guides/functions
+
+[functions.sync-sheets]
+verify_jwt = true

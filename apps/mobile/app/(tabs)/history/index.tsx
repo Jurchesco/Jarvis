@@ -7,9 +7,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock3,
+  Flame,
 } from "lucide-react-native";
-import type { WorkoutSessionWithSheet } from "@bhmt3wp/shared";
-import { useCompletedSessions, useDeleteSession } from "../../../src/api/hooks";
+import type { SessionDetailFull, WorkoutSessionWithSheet } from "@bhmt3wp/shared";
+import {
+  computeMonthBestStreak,
+  computeSessionLiveStats,
+  computeWorkoutStreak,
+  formatDuration,
+  formatVolumeKg,
+  sessionDurationSec,
+} from "@bhmt3wp/shared";
+import { useCompletedSessions, useDeleteSession, useSessionsByIds } from "../../../src/api/hooks";
+import { OverflowMenu } from "../../../src/components/OverflowMenu";
 import {
   Card,
   ICON_SIZE,
@@ -58,6 +68,19 @@ function getFirstDayOfWeek(year: number, month: number) {
   return day === 0 ? 6 : day - 1;
 }
 
+function sessionLabel(sheetName: string): string {
+  return sheetName === "Freestyle" ? "Trening freestyle" : sheetName;
+}
+
+function MonthStat({ label, value }: { label: string; value: string }) {
+  return (
+    <View className="flex-1 items-center py-2">
+      <Text className="text-text-muted text-[10px] font-semibold uppercase">{label}</Text>
+      <Text className="text-text-primary text-base font-bold mt-0.5">{value}</Text>
+    </View>
+  );
+}
+
 export default function HistoryScreen() {
   const router = useRouter();
   const { data: sessions, isLoading } = useCompletedSessions();
@@ -89,12 +112,36 @@ export default function HistoryScreen() {
     });
   }, [sessions, calYear, calMonth]);
 
+  const monthSessionIds = useMemo(() => monthSessions.map((s) => s.id), [monthSessions]);
+  const { sessionsById } = useSessionsByIds(monthSessionIds);
+
+  const monthSummary = useMemo(() => {
+    let totalVolume = 0;
+    let totalSets = 0;
+
+    for (const id of monthSessionIds) {
+      const detail = sessionsById.get(id);
+      if (!detail) continue;
+      const stats = computeSessionLiveStats(detail.logs);
+      totalVolume += stats.totalVolume;
+      totalSets += stats.setCount;
+    }
+
+    const completedDates = (sessions ?? [])
+      .map((s) => s.completedAt)
+      .filter((d): d is string => !!d);
+    const globalStreak = computeWorkoutStreak(completedDates);
+    const monthBestStreak = computeMonthBestStreak(completedDates, calYear, calMonth);
+
+    return { totalVolume, totalSets, globalStreak, monthBestStreak };
+  }, [monthSessionIds, sessionsById, sessions, calYear, calMonth]);
+
   const daysInMonth = getDaysInMonth(calYear, calMonth);
   const firstDay = getFirstDayOfWeek(calYear, calMonth);
 
   const confirmDeleteSession = (id: string, sheetName: string) => {
     const title = "Usuń trening";
-    const message = `Usunąć "${sheetName}" z historii? Tej operacji nie można odwrócić.`;
+    const message = `Usunąć "${sessionLabel(sheetName)}" z historii? Tej operacji nie można odwrócić.`;
     const runDelete = () => deleteSession.mutate(id);
     if (Platform.OS === "web") {
       if (window.confirm(`${title}\n\n${message}`)) runDelete();
@@ -188,35 +235,66 @@ export default function HistoryScreen() {
 
   const renderSession = ({ item }: { item: WorkoutSessionWithSheet }) => {
     const date = item.completedAt ? new Date(item.completedAt) : new Date(item.startedAt);
+    const detail: SessionDetailFull | undefined = sessionsById.get(item.id);
+    const stats = detail ? computeSessionLiveStats(detail.logs) : null;
+    const durationSec = detail
+      ? sessionDurationSec(detail.startedAt, detail.completedAt)
+      : 0;
 
     return (
-      <TouchableOpacity
-        onPress={() => router.push(`/history/${item.id}`)}
-        onLongPress={() => confirmDeleteSession(item.id, item.sheetName)}
-        delayLongPress={360}
-        activeOpacity={0.8}
-      >
-        <Card className="mb-3">
-          <View className="flex-row items-center justify-between">
-            <View className="flex-1 pr-3">
-              <Text className="text-text-primary text-base font-bold">{item.sheetName}</Text>
-              <View className="mt-1 flex-row items-center">
-                <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
-                <Text className="ml-1.5 text-text-muted text-sm">
-                  {date.toLocaleDateString("pl-PL", {
-                    weekday: "short",
-                    day: "numeric",
-                    month: "short",
-                    year: "numeric",
-                  })}
-                </Text>
-              </View>
+      <Card className="mb-3">
+        <View className="flex-row items-center justify-between">
+          <TouchableOpacity
+            onPress={() => router.push(`/history/${item.id}`)}
+            activeOpacity={0.8}
+            className="flex-1 pr-3"
+          >
+            <Text className="text-text-primary text-base font-bold leading-tight">
+              {sessionLabel(item.sheetName)}
+            </Text>
+            <View className="mt-1 flex-row items-center">
+              <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
+              <Text className="ml-1.5 text-text-muted text-sm">
+                {date.toLocaleDateString("pl-PL", {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                })}
+                {" · "}
+                {date.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+              </Text>
             </View>
 
-            <ChevronRight size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-          </View>
-        </Card>
-      </TouchableOpacity>
+            {stats && stats.setCount > 0 ? (
+              <View className="mt-2 flex-row flex-wrap gap-x-3 gap-y-1">
+                {durationSec > 0 ? (
+                  <Text className="text-text-secondary text-xs">{formatDuration(durationSec)}</Text>
+                ) : null}
+                {stats.totalVolume > 0 ? (
+                  <Text className="text-text-secondary text-xs">{formatVolumeKg(stats.totalVolume)}</Text>
+                ) : null}
+                <Text className="text-text-secondary text-xs">
+                  {stats.exerciseCount} ćw. · {stats.setCount} serii
+                </Text>
+              </View>
+            ) : null}
+          </TouchableOpacity>
+
+          <OverflowMenu
+            actions={[
+              {
+                label: "Usuń trening",
+                destructive: true,
+                onPress: () => confirmDeleteSession(item.id, item.sheetName),
+              },
+            ]}
+            accessibilityLabel={`Menu treningu ${item.sheetName}`}
+            className="mr-1"
+          />
+
+          <ChevronRight size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
+        </View>
+      </Card>
     );
   };
 
@@ -231,7 +309,7 @@ export default function HistoryScreen() {
           data={monthSessions}
           keyExtractor={(item) => item.id}
           renderItem={renderSession}
-          extraData={deleteSession.isPending}
+          extraData={[deleteSession.isPending, sessionsById]}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }}
           ListHeaderComponent={
             <>
@@ -254,7 +332,7 @@ export default function HistoryScreen() {
                     <ChevronLeft size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
                   </TouchableOpacity>
 
-                  <Text className="text-text-primary text-base font-bold">
+                  <Text className="text-text-primary text-base font-bold leading-tight">
                     {MONTHS[calMonth]} {calYear}
                   </Text>
 
@@ -282,14 +360,47 @@ export default function HistoryScreen() {
                 </View>
               </Card>
 
+              {monthSessions.length > 0 ? (
+                <Card className="mb-4 border-emphasis/20 bg-emphasis/5" padding="md">
+                  <View className="flex-row items-center mb-3">
+                    <Flame size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
+                    <Text className="ml-2 text-text-primary text-sm font-bold">
+                      Podsumowanie {MONTHS_LOCATIVE[calMonth]}
+                    </Text>
+                  </View>
+                  <View className="flex-row border-t border-border/60 pt-2">
+                    <MonthStat label="Treningi" value={String(monthSessions.length)} />
+                    <MonthStat
+                      label="Objętość"
+                      value={monthSummary.totalVolume > 0 ? formatVolumeKg(monthSummary.totalVolume) : "—"}
+                    />
+                    <MonthStat
+                      label="Seria"
+                      value={
+                        monthSummary.monthBestStreak > 0
+                          ? `${monthSummary.monthBestStreak} dni`
+                          : "—"
+                      }
+                    />
+                    <MonthStat label="Serie" value={String(monthSummary.totalSets)} />
+                  </View>
+                  {monthSummary.globalStreak.current > 0 ? (
+                    <Text className="text-emphasis text-xs mt-2 text-center">
+                      Aktywna seria: {monthSummary.globalStreak.current}{" "}
+                      {monthSummary.globalStreak.current === 1 ? "dzień" : "dni"} z rzędu
+                    </Text>
+                  ) : null}
+                </Card>
+              ) : null}
+
               <View className="mb-2">
                 <Text className="text-text-secondary text-sm">
                   {monthSessions.length > 0
-                                    ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS_LOCATIVE[calMonth]}`
-                                    : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`}
+                    ? `${monthSessions.length} ${monthSessions.length === 1 ? "sesja" : "sesje"} w ${MONTHS_LOCATIVE[calMonth]}`
+                    : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`}
                 </Text>
                 <Text className="text-text-muted text-xs mt-1">
-                  Dotknij, aby otworzyć szczegóły, przytrzymaj, aby usunąć.
+                  Dotknij wpis, aby zobaczyć szczegóły. Usuwanie — menu ⋮.
                 </Text>
               </View>
             </>

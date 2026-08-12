@@ -1,5 +1,5 @@
 -- ============================================
--- Stravio – Supabase Postgres Schema
+-- JJ Workout Tool – Supabase Postgres Schema
 -- Run this in the Supabase SQL Editor
 -- ============================================
 

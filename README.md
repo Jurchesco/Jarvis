@@ -1,6 +1,14 @@
-# Stravio
+# JJ Workout Tool
 
-Stravio is an open source workout sheet manager. Create workout sheets, log sessions in real-time, and track progress on Android, iOS, and Web.
+Spersonalizowany freestyle tracker treningowy (spersonalizowany freestyle tracker treningowy v1.0). Loguj sesje w aplikacji mobilnej/webowej, synchronizuj do Google Sheets (Jarvis / Gemini Gem).
+
+**Wersja 1.0.0** — oficjalna pierwsza wersja spersonalizowanego narzędzia.
+
+---
+
+## O projekcie
+
+JJ Workout Tool to darmowy tracker treningowy na Android, iOS i Web.
 
 <p align="center">
   <img src="docs/screenshots/login.png" width="200" alt="Login" />
@@ -15,26 +23,29 @@ Stravio is an open source workout sheet manager. Create workout sheets, log sess
 
 ## Vision
 
-Stravio is a free and open source alternative for workout sheet management.
-This v1 intentionally keeps the product model simple:
+JJ Workout Tool is a free and open source workout logger for the gym.
+**Current product model (2026-08): freestyle-first**
 
-- Every new account is stored as athlete (`allievo`) in the database.
-- No role differences are exposed in the UI.
-- Multi-role behavior is postponed to a future release.
+- Start a workout with one tap — pick exercises from the catalog during the session
+- Pre-built workout **plans** (PPL templates) are planned as a separate tab later; not in v1 UI
+- Every account is stored as athlete (`allievo`); no role UI
+- Data syncs to Supabase; Jarvis pipeline can export sessions to Google Sheets
 
 ## Features
 
-- **Workout Sheets** — Create and manage custom workout templates with exercises and sets
-- **Real-Time Session Logging** — Start a workout from any sheet, log each set with actual weight and reps
-- **Rest Timer** — Automatic countdown between sets with skip option
-- **Previous Session Hints** — See what you did last time for each exercise during your workout
-- **Session History** — Calendar view with highlighted workout days, detailed session review
-- **Exercise Notes** — Add notes per exercise (template-level and session-level)
-- **Weight Auto-Sync** — Weight changes during a workout automatically update the sheet template
-- **Authentication** — Email/password login with persistent sessions
-- **Persistent Login** — Stay logged in across app restarts (SecureStore on mobile, localStorage on web)
-- **Cross-Platform** — Same codebase runs on Android (APK) and Web (Vercel)
-- **Per-User Data Isolation** — Row Level Security ensures you only see your own data
+- **Freestyle workouts** — One-tap start; add exercises from the PPL catalog on the fly
+- **Batch set logging** — Enter sets count, weight, reps, and notes in one form per exercise
+- **Live session stats** — Volume, time, best est. 1RM, set count in the workout header
+- **Exercise catalog** — Push / Pull / Legs / Core filters + custom exercise names
+- **Session History** — Calendar with workout days, session detail review
+- **Statistics** — Volume and frequency charts
+- **Previous session hints** — Last weight/reps when logging an exercise
+- **Exercise notes** — Per-exercise notes during a session
+- **Authentication** — Email/password with persistent sessions
+- **Cross-Platform** — Android (APK) and Web (Vercel)
+- **Per-User Data Isolation** — Supabase RLS
+
+*Legacy / backlog:* rest timer UI, workout plan editor, sheet drag-and-drop — see `docs/jj-workout-tool/TODO.md`
 
 ---
 
@@ -52,10 +63,10 @@ This v1 intentionally keeps the product model simple:
 ---
 
 ## APK
-the apk is aviable in this link: https://expo.dev/accounts/beccio00/projects/stravio/builds/04e946f6-f2de-4e1e-a55e-8dc337c0ec70
+the apk is aviable in this link: https://expo.dev/accounts/beccio00/projects/jj-workout-tool/builds/04e946f6-f2de-4e1e-a55e-8dc337c0ec70
 
 ## Web App 
-Web app is deployed on Vercel: https://stravio-project.vercel.app/
+Web app is deployed on Vercel: https://jj-workout-tool.vercel.app/
 
 ## Getting Started
 
@@ -70,8 +81,8 @@ Web app is deployed on Vercel: https://stravio-project.vercel.app/
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/Beccio00/stravio
-cd stravio
+git clone https://github.com/Jurchesco/jj-workout-tool
+cd JJ-Workout-Tool
 npm install
 
 # 2. Set up Supabase
@@ -153,7 +164,7 @@ vercel --prod
 ## Project Structure
 
 ```
-stravio/
+jj-workout-tool/
 ├── apps/
 │   ├── mobile/              # Expo universal app (Android + Web)
 │   │   ├── app/             # File-based routes (expo-router)
@@ -220,11 +231,11 @@ See **[docs/README.md](docs/README.md)** for the full index.
 - [Jarvis setup (PL)](docs/jarvis/SETUP.md) — Step-by-step configuration
 - [**Plan naprawczy**](docs/jarvis/PLAN_NAPRAWCZY.md) — Audit remediation (task status)
 - [Gem instructions (PL)](docs/jarvis/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
-- [Architecture](docs/stravio/ARCHITECTURE.md) — App system design and data flow
-- [Decisions](docs/stravio/DECISIONS.md) — Technical decision records
-- [Changelog](docs/stravio/CHANGELOG.md) — Version history
-- [TODO](docs/stravio/TODO.md) — App roadmap
-- [Release Guide](docs/stravio/RELEASE.md) — Build and publish flow for v1
+- [Architecture](docs/jj-workout-tool/ARCHITECTURE.md) — App system design and data flow
+- [Decisions](docs/jj-workout-tool/DECISIONS.md) — Technical decision records
+- [Changelog](docs/jj-workout-tool/CHANGELOG.md) — Version history
+- [TODO](docs/jj-workout-tool/TODO.md) — App roadmap
+- [Release Guide](docs/jj-workout-tool/RELEASE.md) — Build and publish flow for v1
 
 ## Contributing
 

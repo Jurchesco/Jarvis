@@ -33,8 +33,6 @@ def make_key(row: list) -> str:
     return "|".join([
         str(row[0]),   # Data
         str(row[2]),   # Cwiczenie
-        str(row[3]),   # Set
-        str(row[11]),  # Czas serii
     ])
 
 
@@ -114,7 +112,7 @@ def build_max_weight_before_range(logs: list[dict]) -> dict[str, float]:
     return max_by_exercise
 
 
-def import_stravio(ctx: ImportContext) -> ImportResult:
+def import_workout(ctx: ImportContext) -> ImportResult:
     if not ctx.config.supabase_url or not ctx.config.supabase_secret_key:
         return ImportResult("silownia", skipped=1, error="Brak SUPABASE_URL/SUPABASE_SECRET_KEY — pominięto")
 
@@ -142,7 +140,7 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
         return ImportResult(
             "silownia",
             skipped=1,
-            error="Brak zalogowanych serii w Stravio — pominięto",
+            error="Brak zalogowanych serii — pominięto",
         )
 
     session_ids = {log["session_id"] for log in logs}
@@ -169,6 +167,8 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     rows_to_upsert: list[list] = []
     skipped_out_of_range = 0
 
+    groups: dict[str, dict] = {}
+
     for log in logs:
         session = sessions.get(log["session_id"])
         if not session:
@@ -176,41 +176,59 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
 
         session_date = utc_iso_to_local(session["started_at"], tz)
         date_str = session_date.strftime("%Y-%m-%d")
-        data_value = format_datetime(session_date)
-        weight = log["weight_kg"] or 0
-        reps = log["reps"] or 0
-        exercise_id = log["exercise_id"]
+        if date_str < start_str or date_str > end_str:
+            skipped_out_of_range += 1
+            continue
+
+        group_key = f"{log['session_id']}:{log['exercise_id']}"
+        if group_key not in groups:
+            groups[group_key] = {
+                "session_id": log["session_id"],
+                "exercise_id": log["exercise_id"],
+                "logs": [],
+            }
+        groups[group_key]["logs"].append(log)
+
+    for group in groups.values():
+        session = sessions.get(group["session_id"])
+        if not session:
+            continue
+
+        sorted_logs = sorted(group["logs"], key=lambda item: item["set_number"])
+        set_count = len(sorted_logs)
+        first = sorted_logs[0]
+        weight = first["weight_kg"] or 0
+        reps = first["reps"] or 0
+        exercise_id = group["exercise_id"]
 
         prev_max = max_weight_by_exercise.get(exercise_id, 0)
         is_pr = weight > 0 and weight > prev_max
         if weight > prev_max:
             max_weight_by_exercise[exercise_id] = weight
 
-        if date_str < start_str or date_str > end_str:
-            skipped_out_of_range += 1
-            continue
-
+        session_date = utc_iso_to_local(session["started_at"], tz)
+        data_value = format_datetime(session_date)
         split_name = "Brak"
         if session.get("workout_sheets"):
             split_name = session["workout_sheets"].get("name", "Brak")
 
         exercise_name = exercises.get(exercise_id, "Nieznane cwiczenie")
-        set_time = utc_iso_to_local(log["completed_at"], tz).strftime("%H:%M")
-        note_key = f"{log['session_id']}:{exercise_id}"
+        note_key = f"{group['session_id']}:{exercise_id}"
+        volume = weight * reps * set_count
 
         rows_to_upsert.append([
             data_value,
             split_name,
             exercise_name,
-            log["set_number"],
+            set_count,
             weight,
             reps,
             brzycki_1rm(weight, reps),
-            weight * reps,
+            volume,
             "Tak" if is_pr else "",
             exercise_notes.get(note_key, ""),
             session.get("notes") or "",
-            set_time,
+            "",
         ])
 
     if not rows_to_upsert:

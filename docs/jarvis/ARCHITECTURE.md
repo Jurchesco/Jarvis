@@ -2,7 +2,7 @@
 
 Dokumentacja po polsku — przepływ danych od źródeł do Gemini Gema.
 
-Aplikacja Stravio (EN): [../stravio/ARCHITECTURE.md](../stravio/ARCHITECTURE.md)
+Aplikacja JJ Workout Tool (EN): [../jj-workout-tool/ARCHITECTURE.md](../jj-workout-tool/ARCHITECTURE.md)
 
 ---
 
@@ -10,7 +10,7 @@ Aplikacja Stravio (EN): [../stravio/ARCHITECTURE.md](../stravio/ARCHITECTURE.md)
 
 Jarvis łączy trzy źródła danych w jeden arkusz Google Sheets („Dziennik Treningowy – Trener AI”), który służy Gemini Gemowi jako baza analizy:
 
-1. **Treningi siłowe** — Stravio (Supabase)
+1. **Treningi siłowe** — JJ Workout Tool (Supabase)
 2. **Aktywność i zdrowie** — Garmin Connect
 3. **Skład ciała** — openScale (auto backup)
 
@@ -21,7 +21,7 @@ Jarvis łączy trzy źródła danych w jeden arkusz Google Sheets („Dziennik T
 ```
 Garmin Connect  ──→  jarvis_import (sen, dzien, forma, aktywnosci)  ──→  Google Sheets
 openScale       ──→  jarvis_import (cialo)                          ──→  Google Sheets
-Stravio/Supabase ──→  jarvis_import (silownia)                       ──→  Google Sheets
+JJ-Workout-Tool/Supabase ──→  jarvis_import (silownia)                       ──→  Google Sheets
                                                                               ↓
                                                                         Gemini Gem
 ```
@@ -44,7 +44,7 @@ Stravio/Supabase ──→  jarvis_import (silownia)                       ─�
 ## Struktura repozytorium
 
 ```
-stravio/                    # repo GitHub (Jurchesco/stravio)
+jj-workout-tool/                    # repo GitHub (Jurchesco/jj-workout-tool)
 ├── apps/mobile/            # Expo — logowanie treningów
 ├── packages/shared/        # Typy TypeScript
 ├── supabase/               # Schemat Postgres + RLS
@@ -53,7 +53,7 @@ stravio/                    # repo GitHub (Jurchesco/stravio)
 └── docs/
     ├── README.md           ← indeks dokumentacji
     ├── jarvis/             ← ekosystem (PL): ten plik, SETUP, Gem, plan
-    ├── stravio/            ← aplikacja (EN): ARCHITECTURE, TODO, …
+    ├── jj-workout-tool/            ← aplikacja (EN): ARCHITECTURE, TODO, …
     └── audit/              ← prompt i archiwum audytu
 ```
 
@@ -71,10 +71,10 @@ Plan naprawczy (audyt → kolejne kroki): [PLAN_NAPRAWCZY.md](./PLAN_NAPRAWCZY.m
 
 ## Lokalny folder `c:\Jarvis\` (opcjonalnie)
 
-Możesz trzymać clone repo w `c:\Jarvis\Stravio\` — to jedyny katalog z kodem i gitem. Folder `c:\Jarvis\` może zawierać tylko krótki README wskazujący na `Stravio/`.
+Możesz trzymać clone repo w `c:\Jarvis\JJ-Workout-Tool\` — to jedyny katalog z kodem i gitem. Folder `c:\Jarvis\` może zawierać tylko krótki README wskazujący na `JJ-Workout-Tool/`.
 
 ---
 
 ## Roadmapa
 
-[../stravio/TODO.md](../stravio/TODO.md) · [../stravio/DECISIONS.md](../stravio/DECISIONS.md)
+[../jj-workout-tool/TODO.md](../jj-workout-tool/TODO.md) · [../jj-workout-tool/DECISIONS.md](../jj-workout-tool/DECISIONS.md)

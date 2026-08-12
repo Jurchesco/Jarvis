@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document defines the operational release flow for Stravio v1.
+This document defines the operational release flow for JJ Workout Tool v1.
 
 v1 goals:
 - Unified UX without role selection.
@@ -74,7 +74,7 @@ Release naming (recommended):
 - Minor features: `v1.1.0`, `v1.2.0`, ...
 - Breaking changes: `v2.0.0`, ...
 
-- Update `docs/stravio/CHANGELOG.md` with release date and final notes.
+- Update `docs/jj-workout-tool/CHANGELOG.md` with release date and final notes.
 - Merge release work to `main` and push:
 
 ```bash
@@ -87,7 +87,7 @@ git push origin main
 - Create annotated git tag, for example:
 
 ```bash
-git tag -a v1.0.0 -m "Stravio v1"
+git tag -a v1.0.0 -m "JJ Workout Tool v1"
 git push origin v1.0.0
 ```
 

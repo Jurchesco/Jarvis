@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "Stravio",
-    "slug": "stravio",
-    "version": "1.0.3",
+    "name": "JJ Workout Tool",
+    "slug": "jj-workout-tool",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "stravio",
+    "scheme": "jj-workout-tool",
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "splash": {
@@ -13,13 +13,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.bhmt3wp.stravio"
+      "bundleIdentifier": "com.jjworkout.tool"
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#1a1a2e"
       },
-      "package": "com.bhmt3wp.stravio"
+      "package": "com.jjworkout.tool"
     },
     "web": {
       "bundler": "metro",
@@ -44,6 +44,6 @@
         "projectId": "409a6cbe-3f04-4863-9dd3-7d614ec338ef"
       }
     },
-    "owner": "stravio"
+    "owner": "jj-workout-tool"
   }
 }

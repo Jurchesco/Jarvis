@@ -11,6 +11,16 @@ export default function WorkoutLayout() {
         contentStyle: { backgroundColor: "#0b1220" },
       }}
     >
-      <Stack.Screen name="[id]" options={{ title: "Trening", headerBackTitle: "Arkusz" }} />    </Stack>
+      <Stack.Screen name="[id]" options={{ title: "Trening", headerBackTitle: "Wstecz" }} />
+      <Stack.Screen
+        name="summary/[id]"
+        options={{
+          title: "Podsumowanie",
+          headerShown: false,
+          presentation: "modal",
+          gestureEnabled: false,
+        }}
+      />
+    </Stack>
   );
 }

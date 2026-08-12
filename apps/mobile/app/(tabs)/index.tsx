@@ -1,311 +1,137 @@
-import { useEffect, useState } from "react";
-import { Alert, Platform, Text, TouchableOpacity, View } from "react-native";
+import { useMemo, useState } from "react";
+import { Alert, Platform, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { Dumbbell, Flame, Play, TrendingUp } from "lucide-react-native";
 import {
-  Check,
-  ChevronRight,
-  GripVertical,
-  LogOut,
-  PencilLine,
-  Plus,
-  SquarePen,
-} from "lucide-react-native";
-import DraggableFlatList, { ScaleDecorator } from "react-native-draggable-flatlist";
-import type { RenderItemParams } from "react-native-draggable-flatlist";
-import { TouchableOpacity as GHTouchableOpacity } from "react-native-gesture-handler";
-import { cssInterop } from "nativewind";
-import type { WorkoutSheet } from "@bhmt3wp/shared";
-import { useAuth } from "../../src/contexts/AuthContext";
-import {
-  useCreateSheet,
-  useDeleteSheet,
-  useReorderSheets,
-  useSheets,
-  useUpdateSheet,
-} from "../../src/api/hooks";
+  computeSessionLiveStats,
+  formatDuration,
+  formatVolumeKg,
+  sessionDurationSec,
+} from "@bhmt3wp/shared";
+import { APP_NAME } from "../../src/constants/branding";
+import { useCompletedSessions, useCreateSession, useSession } from "../../src/api/hooks";
+import { ensureFreestyleSheet } from "../../src/lib/ensureFreestyleSheet";
 import {
   Button,
   Card,
-  ICON_SIZE,
   ICON_STROKE,
-  Input,
   ScreenHeader,
-  StateBlock,
 } from "../../src/components/ui";
-
-cssInterop(GHTouchableOpacity, { className: "style" });
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { signOut } = useAuth();
-  const { data: sheets, isLoading, error } = useSheets();
-  const createSheet = useCreateSheet();
-  const deleteSheet = useDeleteSheet();
-  const updateSheet = useUpdateSheet();
-  const reorderSheets = useReorderSheets();
+  const createSession = useCreateSession();
+  const { data: completedSessions } = useCompletedSessions();
+  const [isStarting, setIsStarting] = useState(false);
 
-  const [newSheetName, setNewSheetName] = useState("");
-  const [showCreate, setShowCreate] = useState(false);
-  const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
-  const [renameDraft, setRenameDraft] = useState("");
-  const [listData, setListData] = useState<WorkoutSheet[]>([]);
+  const lastSessionId = completedSessions?.[0]?.id ?? null;
+  const { data: lastSession } = useSession(lastSessionId ?? "");
 
-  useEffect(() => {
-    if (sheets) setListData(sheets);
-    else setListData([]);
-  }, [sheets]);
+  const thisMonthCount = useMemo(() => {
+    if (!completedSessions) return 0;
+    const now = new Date();
+    return completedSessions.filter((session) => {
+      if (!session.completedAt) return false;
+      const d = new Date(session.completedAt);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    }).length;
+  }, [completedSessions]);
 
-  const handleCreate = () => {
-    if (!newSheetName.trim()) return;
-    createSheet.mutate(
-      { name: newSheetName.trim() },
-      {
-        onSuccess: () => {
-          setNewSheetName("");
-          setShowCreate(false);
-        },
-      },
-    );
-  };
+  const lastSessionStats = useMemo(() => {
+    if (!lastSession?.completedAt) return null;
+    const stats = computeSessionLiveStats(lastSession.logs);
+    const duration = sessionDurationSec(lastSession.startedAt, lastSession.completedAt);
+    return { stats, duration };
+  }, [lastSession]);
 
-  const handleDelete = (id: string, name: string) => {
-    const title = "Usuń plan";
-          const message = `Usuń "${name}"? Tej operacji nie można cofnąć.`;
-
-    if (Platform.OS === "web") {
-      if (window.confirm(`${title}\n\n${message}`)) {
-        deleteSheet.mutate(id);
-      }
-    } else {
-      Alert.alert(title, message, [
-        { text: "Anuluj", style: "cancel" },
+  const handleStartWorkout = async () => {
+    setIsStarting(true);
+    try {
+      const { sheetId } = await ensureFreestyleSheet();
+      createSession.mutate(
+        { sheetId },
         {
-          text: "Usuń",
-          style: "destructive",
-          onPress: () => deleteSheet.mutate(id),
+          onSuccess: (session) => {
+            router.push(`/workout/${session.id}?sheetId=${sheetId}`);
+          },
+          onError: (err) => {
+            const msg = err instanceof Error ? err.message : "Nie można rozpocząć treningu";
+            if (Platform.OS === "web") window.alert(msg);
+            else Alert.alert("Błąd", msg);
+          },
+          onSettled: () => setIsStarting(false),
         },
-      ]);
+      );
+    } catch (err) {
+      setIsStarting(false);
+      const msg = err instanceof Error ? err.message : "Nie można przygotować treningu";
+      if (Platform.OS === "web") window.alert(msg);
+      else Alert.alert("Błąd", msg);
     }
-  };
-
-  const beginRename = (item: WorkoutSheet) => {
-    setEditingSheetId(item.id);
-    setRenameDraft(item.name);
-  };
-
-  const applyRename = () => {
-    if (!editingSheetId) return;
-    const trimmed = renameDraft.trim();
-    if (!trimmed) return;
-    const currentName = sheets?.find((s) => s.id === editingSheetId)?.name;
-    if (trimmed === currentName) {
-      setEditingSheetId(null);
-      return;
-    }
-
-    updateSheet.mutate(
-      { id: editingSheetId, name: trimmed },
-      {
-        onSuccess: () => setEditingSheetId(null),
-        onError: (err) => {
-          const msg = err instanceof Error ? err.message : "Nie można zmienić nazwy planu";
-          if (Platform.OS === "web") {
-            window.alert(msg);
-          } else {
-            Alert.alert("Zmiana nazwy nie powiodła się", msg);
-          }
-        },
-      },
-    );
-  };
-
-  const renderSheet = ({ item, drag, isActive }: RenderItemParams<WorkoutSheet>) => {
-    const isEditing = editingSheetId === item.id;
-
-    return (
-      <ScaleDecorator>
-        <GHTouchableOpacity
-          className="w-full"
-          onPress={() => router.push(`/sheet/${item.id}`)}
-          onLongPress={() => handleDelete(item.id, item.name)}
-          delayLongPress={350}
-          disabled={isEditing}
-          activeOpacity={0.75}
-        >
-          <Card className={`w-full mb-3 ${isActive ? "opacity-90" : ""}`}>
-            <View className="flex-row items-center">
-              {!isEditing ? (
-                <GHTouchableOpacity
-                  onLongPress={drag}
-                  delayLongPress={180}
-                  disabled={reorderSheets.isPending}
-                  className="mr-1 h-9 w-8 items-center justify-center"
-                  accessibilityLabel="Przytrzymaj i przeciągnij, aby zmienić kolejność"
-                  accessibilityRole="button"
-                >
-                  <GripVertical size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-                </GHTouchableOpacity>
-              ) : null}
-
-              {isEditing ? (
-                <View className="flex-1 flex-row items-center">
-                  <Input
-                    value={renameDraft}
-                    onChangeText={setRenameDraft}
-                    placeholder="Nazwa planu"
-                    editable={!updateSheet.isPending}
-                    onSubmitEditing={applyRename}
-                    containerClassName="flex-1"
-                    inputClassName="text-lg font-semibold"
-                    returnKeyType="done"
-                  />
-                  <TouchableOpacity
-                    onPress={applyRename}
-                    disabled={updateSheet.isPending}
-                    className="ml-2 h-10 w-10 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                    accessibilityLabel="Zapisz nazwę planu"
-                  >
-                    <Check size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#22c55e" />
-                  </TouchableOpacity>
-                </View>
-              ) : (
-                <View className="relative flex-1 min-w-0">
-                  <View className="min-w-0 pr-20">
-                    <Text className="text-text-primary text-lg font-bold" numberOfLines={1}>
-                      {item.name}
-                    </Text>
-                    <Text className="text-text-muted text-xs mt-1">Dotknij, aby otworzyć plan treningowy</Text>
-                  </View>
-
-                  <View
-                    className="absolute inset-y-0 right-0 w-16 flex-row items-center justify-end"
-                    pointerEvents="box-none"
-                  >
-                    <TouchableOpacity
-                      onPress={(event) => {
-                        event.stopPropagation();
-                        beginRename(item);
-                      }}
-                      className="mr-2 h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                      accessibilityLabel="Zmień nazwę planu"
-                    >
-                      <PencilLine size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-                    </TouchableOpacity>
-                    <View className="w-4 items-center">
-                      <ChevronRight size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-                    </View>
-                  </View>
-                </View>
-              )}
-            </View>
-          </Card>
-        </GHTouchableOpacity>
-      </ScaleDecorator>
-    );
   };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <View className="px-5 pt-3 pb-2">
         <ScreenHeader
-          title="Moje plany"
-          subtitle="Stwórz swój plan, przeciągnij aby zmienić kolejność, przytrzymaj tytuł aby usunąć."
-          icon={SquarePen}
-          rightAction={<Button label="Wyloguj" icon={LogOut} size="sm" variant="ghost" onPress={signOut} />}
-        />
-
-        <Button
-          label="Utwórz plan"
-          icon={Plus}
-          onPress={() => setShowCreate(true)}
-          className="mt-4"
+          title={APP_NAME}
+          subtitle={
+            thisMonthCount > 0
+              ? `${thisMonthCount} ${thisMonthCount === 1 ? "trening" : "treningi"} w tym miesiącu — wybieraj ćwiczenia na bieżąco.`
+              : "Freestyle — odpal trening i wybieraj ćwiczenia z katalogu."
+          }
+          icon={Dumbbell}
         />
       </View>
 
-      {isLoading ? (
-        <View className="flex-1 px-5 pt-8">
-          <StateBlock title="Wczytywanie planów" description="Synchronizowanie Twoich planów treningowych." />
-        </View>
-      ) : error ? (
-        <View className="flex-1 px-5 pt-8">
-          <StateBlock
-            title="Nie można wczytać planów"
-            description="Sprawdź swoje połączenie i konfigurację Supabase."
-            tone="danger"
-          />
-        </View>
-      ) : (
-        <DraggableFlatList
-          data={listData}
-          keyExtractor={(item) => item.id}
-          renderItem={renderSheet}
-          onDragEnd={({ data, from, to }) => {
-            setListData(data);
-            if (from !== to) {
-              reorderSheets.mutate(data.map((s) => s.id));
-            }
-          }}
-          extraData={[editingSheetId, renameDraft, updateSheet.isPending, reorderSheets.isPending]}
-          contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 8, paddingBottom: 140 }}
-          ListEmptyComponent={
-            <StateBlock
-              title="Brak planów"
-              description="Utwórz swój pierwszy plan, aby zacząć planować treningi."
-              actionLabel="Utwórz plan"
-              onAction={() => setShowCreate(true)}
-              className="mt-8"
-            />
-          }
-        />
-      )}
-
-      {showCreate ? (
-        <View className="absolute bottom-24 left-5 right-5">
-          <Card padding="lg" className="border border-border">
-            <Text className="text-text-primary text-lg font-bold">Utwórz nowy plan</Text>
-            <Text className="text-text-secondary text-sm mt-1">
-              Nadaj mu czytelną nazwę, abyś szybko go znalazł przed treningiem.
-            </Text>
-
-            <Input
-              value={newSheetName}
-              onChangeText={setNewSheetName}
-              placeholder="Np. Trening klatki piersiowej"
-              onSubmitEditing={handleCreate}
-              containerClassName="mt-4"
-              autoFocus
-              returnKeyType="done"
-            />
-
-            <View className="mt-4 flex-row gap-3">
-              <Button
-                label="Anuluj"
-                variant="secondary"
-                onPress={() => setShowCreate(false)}
-                className="flex-1"
-              />
-              <Button
-                label="Utwórz"
-                icon={Plus}
-                onPress={handleCreate}
-                className="flex-1"
-                loading={createSheet.isPending}
-              />
+      <View className="flex-1 px-5 pt-4">
+        <Card padding="lg" className="border-emphasis/25 bg-surface">
+          <View className="flex-row items-center mb-2">
+            <View className="h-10 w-10 items-center justify-center rounded-xl bg-emphasis/15 border border-emphasis/30">
+              <Flame size={20} strokeWidth={ICON_STROKE} color="#22c55e" />
             </View>
-          </Card>
-        </View>
-      ) : null}
+            <View className="ml-3 flex-1">
+              <Text className="text-text-primary text-xl font-bold leading-tight">Gotowy do treningu?</Text>
+              <Text className="text-text-muted text-xs mt-0.5">Freestyle · katalog PPL</Text>
+            </View>
+          </View>
 
-      <TouchableOpacity
-        className="absolute bottom-24 right-5 h-14 w-14 items-center justify-center rounded-full bg-action-primary border border-action-primary-press"
-        onPress={() => setShowCreate(true)}
-        accessibilityRole="button"
-        accessibilityLabel="Utwórz nowy plan"
-        activeOpacity={0.85}
-      >
-        <Plus size={22} strokeWidth={2.4} color="#ffffff" />
-      </TouchableOpacity>
+          <Text className="text-text-secondary text-sm mt-2 leading-5">
+            Dodajesz ćwiczenia w trakcie sesji. Wpisujesz serie, ciężar i powtórzenia — resztę liczymy za Ciebie.
+          </Text>
+
+          <Button
+            label="Rozpocznij trening"
+            icon={Play}
+            onPress={handleStartWorkout}
+            loading={isStarting || createSession.isPending}
+            className="mt-5"
+          />
+        </Card>
+
+        {lastSessionStats ? (
+          <Card padding="md" className="mt-4">
+            <View className="flex-row items-center mb-2">
+              <TrendingUp size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
+              <Text className="ml-2 text-text-secondary text-sm font-semibold">Ostatni trening</Text>
+            </View>
+            <Text className="text-text-primary text-base font-bold leading-tight">
+              {lastSessionStats.stats.totalVolume > 0
+                ? formatVolumeKg(lastSessionStats.stats.totalVolume)
+                : `${lastSessionStats.stats.setCount} serii`}
+              {lastSessionStats.duration > 0 ? ` · ${formatDuration(lastSessionStats.duration)}` : ""}
+            </Text>
+            <Text className="text-text-muted text-xs mt-1">
+              {lastSessionStats.stats.exerciseCount} ćwiczeń · {lastSessionStats.stats.setCount} serii
+            </Text>
+          </Card>
+        ) : null}
+
+        <Text className="text-text-muted text-xs text-center mt-8 px-4">
+          Gotowe plany treningowe (PPL) pojawią się w osobnej zakładce — wkrótce.
+        </Text>
+      </View>
     </SafeAreaView>
   );
 }
