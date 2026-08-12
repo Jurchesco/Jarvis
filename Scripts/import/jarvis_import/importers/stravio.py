@@ -6,6 +6,7 @@ from supabase import Client, create_client
 
 from ..dates import format_datetime, local_date_bounds_utc, utc_iso_to_local
 from ..sheets import ImportResult, batch_update_rows
+from ..sort_sheets import sort_worksheet_by_name
 from . import ImportContext
 
 
@@ -253,8 +254,10 @@ def import_stravio(ctx: ImportContext) -> ImportResult:
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
+    sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
     print(
-        f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)} "
+        f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, "
+        f"posortowano {sorted_rows} wierszy "
         f"(pominięto poza zakresem sesji: {skipped_out_of_range})"
     )
     return ImportResult(

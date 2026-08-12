@@ -5,6 +5,7 @@ from datetime import datetime
 from ..dates import IMPORT_TIMESTAMP_HEADER, date_key, format_day_with_time, now_in_tz
 from ..garmin import GarminClient, iter_days
 from ..sheets import ImportResult, batch_update_rows, ensure_column_header, get_existing_rows_by_key
+from ..sort_sheets import sort_worksheet_by_name
 from . import ImportContext
 
 
@@ -93,5 +94,6 @@ def import_forma(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
-    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}")
+    sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult("forma", updated=updated_count, appended=len(appended_rows))

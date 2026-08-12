@@ -5,6 +5,7 @@ from datetime import datetime
 from ..dates import combine_date_time
 from ..garmin import GarminClient
 from ..sheets import ImportResult, batch_update_rows, get_existing_rows_by_key
+from ..sort_sheets import sort_worksheet_by_name
 from . import ImportContext
 
 
@@ -223,5 +224,6 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
-    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}")
+    sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult("aktywnosci", updated=updated_count, appended=len(appended_rows))

@@ -66,6 +66,7 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | `--no-prompt` | Bez promptu, użyj `DEFAULT_DAYS` z `.env` |
 | `--only a,b` | Tylko wybrane moduły |
 | `--skip a,b` | Pomiń moduły |
+| `--sort-only` | Posortuj zakładki po dacie (bez importu) |
 
 ## Kody wyjścia i podsumowanie
 

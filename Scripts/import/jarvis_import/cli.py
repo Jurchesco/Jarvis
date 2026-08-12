@@ -15,6 +15,7 @@ from .importers.openscale import import_openscale
 from .importers.sleep import import_sleep
 from .importers.stravio import import_stravio
 from .sheets import ImportResult, SheetsClient
+from .sort_sheets import WORKSHEET_SORT, sort_all_worksheets
 
 ALL_IMPORTERS = ("sen", "dzien", "forma", "aktywnosci", "cialo", "silownia")
 
@@ -83,7 +84,40 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Pomiń wybrane moduły, np. silownia,cialo",
     )
+    parser.add_argument(
+        "--sort-only",
+        action="store_true",
+        help="Tylko posortuj zakładki po dacie (bez importu). Użyj z --only, aby wybrać moduły.",
+    )
     return parser
+
+
+SORT_MODULE_TO_SHEET = {
+    "sen": "Sen",
+    "dzien": "Dzien",
+    "forma": "Forma",
+    "aktywnosci": "Aktywnosci",
+    "cialo": "Cialo",
+    "silownia": "Silownia_import",
+}
+
+
+def run_sort_only(sheets: SheetsClient, only: str | None) -> int:
+    selected = set(WORKSHEET_SORT) if not only else {SORT_MODULE_TO_SHEET[n] for n in parse_list(only) if n in SORT_MODULE_TO_SHEET}
+    unknown = parse_list(only) - set(SORT_MODULE_TO_SHEET) if only else set()
+    if unknown:
+        print(f"Błąd: nieznane moduły do sortowania: {', '.join(sorted(unknown))}")
+        return 1
+
+    spreadsheet = sheets._gc.open_by_key(sheets._spreadsheet_id)
+    print("=" * 70)
+    print("JARVIS — SORTOWANIE ARKUSZY")
+    print("=" * 70)
+    results = sort_all_worksheets(spreadsheet, only=selected or None)
+    for name, count in results.items():
+        print(f"[OK] {name}: posortowano {count} wierszy")
+    print(f"\nGotowe: {len(results)} zakładek.")
+    return 0
 
 
 def resolve_importers(only: str | None, skip: str | None) -> list[str]:
@@ -120,6 +154,15 @@ def run() -> int:
         print(f"Błąd konfiguracji: brak zmiennej {error}")
         return 1
 
+    try:
+        sheets = SheetsClient(config.spreadsheet_id, config.google_credentials_file)
+    except FileNotFoundError as error:
+        print(f"Błąd: {error}")
+        return 1
+
+    if args.sort_only:
+        return run_sort_only(sheets, args.only)
+
     days = resolve_days(args, config.default_days)
     if args.all:
         start_date, end_date = date_range_from_start(config.import_start_date)
@@ -148,12 +191,6 @@ def run() -> int:
     print(f"Zakres: {start_date} – {end_date} ({days} dni)")
     print(f"Moduły: {', '.join(importers)}")
     print("=" * 70)
-
-    try:
-        sheets = SheetsClient(config.spreadsheet_id, config.google_credentials_file)
-    except FileNotFoundError as error:
-        print(f"Błąd: {error}")
-        return 1
 
     ctx = ImportContext(
         config=config,

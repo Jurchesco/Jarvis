@@ -1,0 +1,40 @@
+---
+description: Arkusz Google Sheets Jarvis — źródło danych dla importu i Gema
+alwaysApply: true
+---
+
+# Dziennik Treningowy – Trener AI (Google Sheets)
+
+**Arkusz (testowa reguła projektu):**
+- URL: https://docs.google.com/spreadsheets/d/1_CjTuAM7xlN3sQ2iIOfs4k0l5s30np6B8dS4G1FOf64/edit
+- ID: `1_CjTuAM7xlN3sQ2iIOfs4k0l5s30np6B8dS4G1FOf64`
+- Strefa czasowa importu: `Europe/Warsaw`
+
+## Zakładki
+
+| Zakładka | Źródło | Uwagi |
+|----------|--------|--------|
+| `Silownia_import` | Stravio/Supabase | **Główne** dane siłowe dla Gema |
+| `Silownia` | legacy / ręczne | Archiwum — nie używać do progresu |
+| `Dzien`, `Sen`, `Forma`, `Aktywnosci` | Garmin | |
+| `Cialo` | openScale | |
+| `Baza_Suplementow` | ręcznie | |
+
+## Odczyt arkusza (agent)
+
+Nie zakładaj zawartości z pamięci — **odczytaj przez API**:
+
+```powershell
+cd C:\Jarvis\Stravio\Scripts\import
+.\venv\Scripts\python.exe -m jarvis_import --only silownia --days 3
+```
+
+Podgląd bez importu: `gspread` + `google-service-account.json` + `GOOGLE_SHEET_ID` z `Scripts/import/.env`.
+
+Service account (Editor na arkuszu): `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`
+
+## Powiązane docs
+
+- Plan naprawczy: `docs/jarvis/PLAN_NAPRAWCZY.md`
+- Gem: `docs/jarvis/GEM_INSTRUKCJA.md`
+- Import: `Scripts/import/README.md`

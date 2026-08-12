@@ -8,6 +8,7 @@ from pathlib import Path
 from ..dates import date_key, format_datetime, timestamp_ms_to_local
 from ..openscale_source import resolve_openscale_backup
 from ..sheets import ImportResult, batch_update_rows
+from ..sort_sheets import sort_worksheet_by_name
 from . import ImportContext
 
 WORKSHEET_NAME = "Cialo"
@@ -366,7 +367,8 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     if appended_rows:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
-    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}")
+    sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+    print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult(
         "cialo",
         updated=updated_count,
