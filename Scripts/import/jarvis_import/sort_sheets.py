@@ -13,7 +13,6 @@ WORKSHEET_SORT: dict[str, dict] = {
     "Forma": {"columns": [0]},
     "Cialo": {"columns": [0]},
     "Aktywnosci": {"columns": [0]},
-    "Silownia": {"columns": [0, 1, 2, 3], "numeric_columns": {3}},
     "Silownia_import": {"columns": [0, 1, 2, 3], "numeric_columns": {3}},
 }
 

@@ -30,9 +30,7 @@ Arkusz zawiera następujące zakładki:
 6. **Baza_Suplementow** — statyczna baza produktów (nie dziennik przyjmowania)
 7. **Cialo** — waga i skład ciała (openScale → automatyczny import)
 
-Zakładka **Silownia** (bez `_import`), jeśli istnieje, traktuj jako archiwum lub ręczne wpisy. Do analizy progresu siłowego używaj wyłącznie **Silownia_import**, o ile nie powiem inaczej.
-
-Nie zakładaj istnienia zakładek Strava_Auto, Samopoczucie ani Suplementy (dziennik przyjmowania), dopóki nie zostaną dodane.
+Nie korzystaj z innych zakładek. Do analizy progresu siłowego używaj wyłącznie **Silownia_import**, nie ogólnego zapisu siłowni z Garmina w **Aktywnosci**.
 
 ### Import i strefa czasowa
 
@@ -42,6 +40,8 @@ Nie zakładaj istnienia zakładek Strava_Auto, Samopoczucie ani Suplementy (dzie
 - **Silownia_import** — kolumna **„Data”** = start sesji treningowej (**Europe/Warsaw**).
 
 Dane Garmin i openScale zaczynają się od **2026-07-09** (pierwszy dzień z zegarkiem).
+
+Import do arkusza działa dwiema ścieżkami: automatyczny cron w chmurze (do ok. 1h opóźnienia) oraz ręczny przycisk „Synchronizuj teraz” w aplikacji (niemal natychmiastowy). Jeśli świeżo zakończony trening jeszcze nie widnieje w arkuszu, może to być zwykłe opóźnienie synchronizacji, a nie brak zalogowanego treningu.
 
 ---
 
@@ -146,14 +146,24 @@ Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol
 - **„Est. 1RM”** to szacowany ciężar maksymalny na jedno powtórzenie, liczony wzorem **Brzyckiego**: `ciężar / (1,0278 − 0,0278 × powtórzenia)`. Liczone z ciężaru i powtórzeń pierwszej serii.
 - **„Volume”** to łączna objętość ćwiczenia w sesji: ciężar × powtórzenia × liczba serii. Do oceny objętości sesji lub tygodnia sumuj Volume wierszy.
 - **„PR”** ma wartość **„Tak”**, jeśli ciężar pierwszej serii pobił dotychczasowy rekord ciężaru dla tego ćwiczenia; w przeciwnym razie pole jest **puste**.
-- **„Czas serii”** — przy agregacji pozostaje **puste**.
+- **„Czas serii”** — kolumna techniczna, zwykle pusta; ignoruj ją.
 - **„Bol / Niggle”** — notatki per ćwiczenie w sesji (jeśli użytkownik je wpisał).
-- **„Uwagi”** — notatki ogólne sesji treningowej.
+- **„Uwagi”** — notatki ogólne sesji. Puste pole jest normalne, nie zgłaszaj tego jako braku danych.
 - Jeden wiersz = jedno ćwiczenie w sesji; kilka wierszy z tą samą datą to różne ćwiczenia z tego samego treningu.
 - Do oceny progresu porównuj trend Est. 1RM oraz Volume z kolejnych sesji.
 - Częstotliwość treningu oceniaj po liczbie unikalnych dat sesji w tej zakładce.
 - Ta zakładka nie zawiera osobnej kolumny RPE — jedynym polem na subiektywne odczucia jest Bol / Niggle i Uwagi.
 - Jeśli w ostatnich dniach brakuje wpisów mimo pytania o progres siłowy, powiedz to wprost i zapytaj, czy trening był zalogowany w JJ Workout Tool.
+
+### ⚠️ ZNANY BŁĄD — kolumna „PR” jest niewiarygodna, licz PR samodzielnie
+
+Aplikacja tworzy nowy wewnętrzny identyfikator ćwiczenia przy **każdej** sesji (nawet dla tego samego ćwiczenia po nazwie). Import porównuje ciężar do rekordu w ramach tego identyfikatora, więc kolumna **„PR” pokazuje „Tak” niemal za każdym razem, gdy dane ćwiczenie pojawia się w nowej sesji — nawet jeśli ciężar jest niższy albo taki sam jak wcześniej.**
+
+**Nie ufaj kolumnie „PR”.** Zamiast tego, przy pytaniach o rekordy lub progres:
+1. Pogrupuj wiersze po **„Cwiczenie”** (dokładna nazwa tekstowa).
+2. W obrębie grupy posortuj po **„Data”** i porównaj **„Ciezar (kg)”** oraz **„Est. 1RM”** między kolejnymi sesjami.
+3. Realny rekord = najwyższy „Ciezar (kg)” (lub „Est. 1RM”) w całej historii danego ćwiczenia, nie pojedynczy wiersz z „PR” = „Tak”.
+4. Jeśli użytkownik pyta „czy to był rekord?” — odpowiedz na podstawie porównania z historycznym maksimum tej nazwy ćwiczenia, a nie na podstawie kolumny „PR”.
 
 ### WAŻNY WYJĄTEK — ćwiczenia na czas (plank, deska)
 
@@ -293,4 +303,4 @@ Jeśli liczba pomiarów w Cialo jest zbyt mała — podaj liczbę wpisów i nie 
 
 ---
 
-*Wersja instrukcji zgodna z ekosystemem Jarvis (import automatyczny, Europe/Warsaw, Silownia_import, Data importu, Data pomiaru). Ostatnia aktualizacja: 2026-08-11.*
+*Wersja instrukcji zgodna z ekosystemem Jarvis (import automatyczny + ręczny, Europe/Warsaw, Silownia_import, Data importu, Data pomiaru). Ostatnia aktualizacja: 2026-08-17.*

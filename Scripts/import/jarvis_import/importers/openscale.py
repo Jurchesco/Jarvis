@@ -260,6 +260,11 @@ def normalize_sheet_row(raw: list[str], fmt: str) -> list | None:
     return row_from_legacy(raw)
 
 
+def ensure_metric_number_format(worksheet) -> None:
+    """Kolumna wagi sformatowana jako Czas zamienia 97 na 00:00:00 przy USER_ENTERED."""
+    worksheet.format("B2:L", {"numberFormat": {"type": "NUMBER", "pattern": "0.0"}})
+
+
 def migrate_worksheet_layout(worksheet) -> None:
     values = worksheet.get_all_values()
     if not values:
@@ -356,6 +361,7 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
 
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
     migrate_worksheet_layout(worksheet)
+    ensure_metric_number_format(worksheet)
     existing_exact, existing_fuzzy = get_existing_rows_map(worksheet)
 
     updated_count = 0

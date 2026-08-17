@@ -38,7 +38,7 @@ openScale backup   → importer Python  ↗
 
 ### Google Sheet
 - Tytuł: **„Dziennik Treningowy – Trener AI”**
-- Zakładki: **Sen**, **Dzien**, **Forma**, **Aktywnosci**, **Cialo**, **Silownia_import**, **Baza_Suplementow** (+ ewentualnie legacy **Silownia**)
+- Zakładki: **Sen**, **Dzien**, **Forma**, **Aktywnosci**, **Cialo**, **Silownia_import**, **Baza_Suplementow**
 - Brak (na razie): **Samopoczucie**, **Suplementy** (dziennik dzienny), **Meta** (log importów)
 
 ### Konfiguracja operacyjna

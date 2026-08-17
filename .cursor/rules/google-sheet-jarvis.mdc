@@ -15,7 +15,6 @@ alwaysApply: true
 | Zakładka | Źródło | Uwagi |
 |----------|--------|--------|
 | `Silownia_import` | JJ-Workout-Tool/Supabase | **Główne** dane siłowe dla Gema |
-| `Silownia` | legacy / ręczne | Archiwum — nie używać do progresu |
 | `Dzien`, `Sen`, `Forma`, `Aktywnosci` | Garmin | |
 | `Cialo` | openScale | |
 | `Baza_Suplementow` | ręcznie | |
