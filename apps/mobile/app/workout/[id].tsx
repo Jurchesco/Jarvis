@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Text,
@@ -56,6 +57,26 @@ import {
   StateBlock,
 } from "../../src/components/ui";
 
+function useVisualViewportInset() {
+  const [inset, setInset] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+    const update = () => {
+      setInset(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, []);
+  return inset;
+}
+
 function confirmAction(title: string, message: string, onConfirm: () => void) {
   if (Platform.OS === "web") {
     if (window.confirm(`${title}\n\n${message}`)) {
@@ -110,7 +131,7 @@ function SessionStatsGrid({
   totalReps: number;
 }) {
   return (
-    <View className="mt-4 rounded-xl border border-border bg-surface-muted overflow-hidden">
+    <View className="rounded-xl border border-border bg-surface-muted overflow-hidden">
       <View className="flex-row">
         <StatTile label="Ćwiczenia" value={String(exerciseCount)} borderedRight />
         <StatTile label="Serie" value={String(setCount)} />
@@ -148,6 +169,8 @@ export default function WorkoutScreen() {
   const navigation = useNavigation();
   const queryClient = useQueryClient();
   const leavingIntentionallyRef = useRef(false);
+  const scrollRef = useRef<ScrollView>(null);
+  const keyboardInset = useVisualViewportInset();
 
   const { data: sheet, refetch: refetchSheet } = useSheet(sheetId!);
   const { data: session, refetch: refetchSession } = useSession(sessionId);
@@ -278,6 +301,7 @@ export default function WorkoutScreen() {
       setEditingExerciseId(exerciseId);
       setShowExercisePicker(false);
       await refreshData();
+      setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 150);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Nie można dodać ćwiczenia";
       if (Platform.OS === "web") window.alert(msg);
@@ -407,32 +431,37 @@ export default function WorkoutScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["bottom"]}>
-      <View className="px-5 pt-3 pb-2">
-        <Card padding="md">
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+      >
+        <View className="px-5 pt-3 pb-2">
           <View className="flex-row items-center justify-between">
-            <View className="flex-1 pr-3">
+            <View className="flex-1 pr-3 min-w-0">
               <View className="flex-row items-center">
                 <Flame size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
                 <Text className="ml-1.5 text-emphasis text-xs font-semibold uppercase">
                   Trening w trakcie
                 </Text>
               </View>
-              <Text className="text-text-primary text-xl font-bold mt-1 leading-tight">Freestyle</Text>
+              <Text className="text-text-primary text-xl font-bold mt-0.5 leading-tight">Freestyle</Text>
               {session?.startedAt ? (
                 <TouchableOpacity
                   onPress={() => setShowEditStart(true)}
-                  className="flex-row items-center mt-1.5"
+                  className="flex-row items-center mt-1"
                   accessibilityLabel="Edytuj godzinę rozpoczęcia"
                 >
                   <CalendarClock size={13} strokeWidth={2} color="#7c8aa5" />
-                  <Text className="ml-1 text-text-muted text-xs">
-                    Rozpoczęto{" "}
+                  <Text className="ml-1 text-text-muted text-xs" numberOfLines={1}>
                     {new Date(session.startedAt).toLocaleString("pl-PL", {
                       day: "numeric",
                       month: "short",
                       hour: "2-digit",
                       minute: "2-digit",
                     })}
+                    {" · "}
+                    {formatDuration(elapsedSec)}
                     {" · Popraw"}
                   </Text>
                 </TouchableOpacity>
@@ -448,143 +477,137 @@ export default function WorkoutScreen() {
               loading={completeSession.isPending}
             />
           </View>
+        </View>
 
-          <SessionStatsGrid
-            exerciseCount={liveStats.exerciseCount}
-            setCount={liveStats.setCount}
-            totalVolume={liveStats.totalVolume}
-            elapsedSec={elapsedSec}
-            bestEst1rm={liveStats.bestEst1rm}
-            totalReps={liveStats.totalReps}
-          />
+        <ScrollView
+          ref={scrollRef}
+          className="flex-1"
+          contentContainerStyle={{
+            paddingHorizontal: 20,
+            paddingBottom: 48 + keyboardInset,
+          }}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
+        >
+          <Card padding="md" className="mb-3">
+            <SessionStatsGrid
+              exerciseCount={liveStats.exerciseCount}
+              setCount={liveStats.setCount}
+              totalVolume={liveStats.totalVolume}
+              elapsedSec={elapsedSec}
+              bestEst1rm={liveStats.bestEst1rm}
+              totalReps={liveStats.totalReps}
+            />
+            <Button
+              label="Anuluj trening"
+              variant="ghost"
+              size="sm"
+              onPress={handleCancelWorkout}
+              loading={deleteSession.isPending}
+              className="mt-3"
+            />
+          </Card>
 
-          <Button
-            label="Anuluj trening"
-            variant="ghost"
-            size="sm"
-            onPress={handleCancelWorkout}
-            loading={deleteSession.isPending}
-            className="mt-3"
-          />
-        </Card>
-      </View>
+          {activeExercises.length === 0 ? (
+            <StateBlock
+              title="Dodaj pierwsze ćwiczenie"
+              description="Wybierz ćwiczenie z katalogu, wpisz liczbę serii, ciężar i powtórzenia — resztę policzymy za Ciebie."
+              actionLabel="Dodaj ćwiczenie"
+              onAction={() => setShowExercisePicker(true)}
+              className="mt-1"
+            />
+          ) : (
+            activeExercises.map((exercise) => {
+              const logs = getExerciseLogs(exercise.id);
+              const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
+              const isEditing = editingExerciseId === exercise.id || !isSaved;
+              const rawPreviousLog = previousByExercise[exercise.id] ?? null;
+              const previousLog = autofillPrevious ? rawPreviousLog : null;
+              const initialDraft = isSaved
+                ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
+                : {
+                    setCount: "1",
+                    weightKg: previousLog ? String(previousLog.weightKg) : "0",
+                    reps: previousLog ? String(previousLog.reps) : "10",
+                    notes: notesByExercise[exercise.id] ?? "",
+                  };
 
-      <ScrollView
-        className="flex-1"
-        contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 100 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {activeExercises.length === 0 ? (
-          <StateBlock
-            title="Dodaj pierwsze ćwiczenie"
-            description="Wybierz ćwiczenie z katalogu, wpisz liczbę serii, ciężar i powtórzenia — resztę policzymy za Ciebie."
-            actionLabel="Dodaj ćwiczenie"
-            onAction={() => setShowExercisePicker(true)}
-            className="mt-4"
-          />
-        ) : (
-          activeExercises.map((exercise) => {
-            const logs = getExerciseLogs(exercise.id);
-            const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
-            const isEditing = editingExerciseId === exercise.id || !isSaved;
-            const rawPreviousLog = previousByExercise[exercise.id] ?? null;
-            const previousLog = autofillPrevious ? rawPreviousLog : null;
-            const initialDraft = isSaved
-              ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-              : {
-                  setCount: "1",
-                  weightKg: previousLog ? String(previousLog.weightKg) : "0",
-                  reps: previousLog ? String(previousLog.reps) : "10",
-                  notes: notesByExercise[exercise.id] ?? "",
-                };
+              return (
+                <Card key={exercise.id} className="mb-3" padding="md">
+                  <View className="relative mb-3 min-h-[36px] justify-center pr-[76px]">
+                    <Text
+                      className="text-text-primary text-lg font-bold leading-tight"
+                      numberOfLines={2}
+                    >
+                      {exercise.name}
+                    </Text>
+                    {isSaved ? (
+                      <View className="absolute right-0 top-0 flex-row items-center gap-2">
+                        {!isEditing ? (
+                          <TouchableOpacity
+                            onPress={() => setEditingExerciseId(exercise.id)}
+                            className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                            accessibilityLabel={`Edytuj ${exercise.name}`}
+                          >
+                            <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
+                          </TouchableOpacity>
+                        ) : null}
+                        <TouchableOpacity
+                          onPress={() => handleDeleteExercise(exercise)}
+                          disabled={discardingExerciseId === exercise.id}
+                          className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                          accessibilityLabel={`Usuń ${exercise.name} z treningu`}
+                        >
+                          <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
+                        </TouchableOpacity>
+                      </View>
+                    ) : null}
+                  </View>
 
-            return (
-              <Card key={exercise.id} className="mb-3" padding="md">
-                <View className="flex-row items-center mb-3">
-                  <View className="w-20" />
-                  <Text
-                    className="flex-1 text-center text-text-primary text-lg font-bold leading-tight px-1"
-                    numberOfLines={2}
-                  >
-                    {exercise.name}
-                  </Text>
-                  {isSaved && !isEditing ? (
-                    <View className="w-20 flex-row items-center justify-end gap-2">
-                      <TouchableOpacity
-                        onPress={() => setEditingExerciseId(exercise.id)}
-                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                        accessibilityLabel={`Edytuj ${exercise.name}`}
-                      >
-                        <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => handleDeleteExercise(exercise)}
-                        disabled={discardingExerciseId === exercise.id}
-                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                        accessibilityLabel={`Usuń ${exercise.name} z treningu`}
-                      >
-                        <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
-                      </TouchableOpacity>
-                    </View>
-                  ) : isSaved && isEditing ? (
-                    <View className="w-20 flex-row items-center justify-end">
-                      <TouchableOpacity
-                        onPress={() => handleDeleteExercise(exercise)}
-                        disabled={discardingExerciseId === exercise.id}
-                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                        accessibilityLabel={`Usuń ${exercise.name} z treningu`}
-                      >
-                        <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
-                      </TouchableOpacity>
-                    </View>
+                  {isEditing ? (
+                    <ExerciseLogForm
+                      key={`${exercise.id}-${isSaved ? "edit" : "new"}`}
+                      exerciseName={exercise.name}
+                      timeBased={isTimeBasedExercise(exercise.name)}
+                      previousLog={previousLog}
+                      initialDraft={initialDraft}
+                      onSave={(draft) => handleSaveExercise(exercise, draft)}
+                      onCancel={
+                        isSaved
+                          ? () => setEditingExerciseId(null)
+                          : undefined
+                      }
+                      onDiscard={isSaved ? undefined : () => handleDiscardDraftExercise(exercise.id)}
+                      discardLabel="Usuń tę kartę"
+                      loading={savingExerciseId === exercise.id}
+                      saveLabel={isSaved ? "Zaktualizuj" : "Zapisz ćwiczenie"}
+                    />
                   ) : (
-                    <View className="w-20" />
+                    <ExerciseLogSummary
+                      exerciseName={exercise.name}
+                      setCount={logs.length}
+                      weightKg={logs[0]?.weightKg ?? 0}
+                      reps={logs[0]?.reps ?? 0}
+                      notes={notesByExercise[exercise.id]}
+                      timeBased={isTimeBasedExercise(exercise.name)}
+                    />
                   )}
-                </View>
+                </Card>
+              );
+            })
+          )}
 
-                {isEditing ? (
-                  <ExerciseLogForm
-                    key={`${exercise.id}-${isSaved ? "edit" : "new"}`}
-                    exerciseName={exercise.name}
-                    timeBased={isTimeBasedExercise(exercise.name)}
-                    previousLog={previousLog}
-                    initialDraft={initialDraft}
-                    onSave={(draft) => handleSaveExercise(exercise, draft)}
-                    onCancel={
-                      isSaved
-                        ? () => setEditingExerciseId(null)
-                        : undefined
-                    }
-                    onDiscard={isSaved ? undefined : () => handleDiscardDraftExercise(exercise.id)}
-                    discardLabel="Usuń tę kartę"
-                    loading={savingExerciseId === exercise.id}
-                    saveLabel={isSaved ? "Zaktualizuj" : "Zapisz ćwiczenie"}
-                  />
-                ) : (
-                  <ExerciseLogSummary
-                    exerciseName={exercise.name}
-                    setCount={logs.length}
-                    weightKg={logs[0]?.weightKg ?? 0}
-                    reps={logs[0]?.reps ?? 0}
-                    notes={notesByExercise[exercise.id]}
-                    timeBased={isTimeBasedExercise(exercise.name)}
-                  />
-                )}
-              </Card>
-            );
-          })
-        )}
-
-        {activeExercises.length > 0 ? (
-          <Button
-            label="Dodaj kolejne ćwiczenie"
-            icon={Plus}
-            variant="secondary"
-            onPress={() => setShowExercisePicker(true)}
-            className="mb-4"
-          />
-        ) : null}
-      </ScrollView>
+          {activeExercises.length > 0 ? (
+            <Button
+              label="Dodaj kolejne ćwiczenie"
+              icon={Plus}
+              variant="secondary"
+              onPress={() => setShowExercisePicker(true)}
+              className="mb-4"
+            />
+          ) : null}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <ExercisePicker
         visible={showExercisePicker}

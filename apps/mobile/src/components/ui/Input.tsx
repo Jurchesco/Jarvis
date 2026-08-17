@@ -1,4 +1,4 @@
-import { Text, TextInput, View, type TextInputProps } from "react-native";
+import { Platform, Text, TextInput, View, type TextInputProps } from "react-native";
 import type { LucideIcon } from "lucide-react-native";
 import { ICON_SIZE_SM, ICON_STROKE } from "./icons";
 import { cx } from "./utils";
@@ -35,13 +35,13 @@ export function Input({
   ...props
 }: InputProps) {
   return (
-    <View className={cx("w-full", containerClassName)}>
+    <View className={cx("w-full min-w-0", containerClassName)}>
       {label ? <Text className="text-text-secondary text-sm mb-1.5">{label}</Text> : null}
 
       <View
         className={cx(
-          "flex-row items-start rounded-xl border border-border bg-surface-muted px-3",
-          multiline ? "py-2" : "h-12 items-center",
+          "flex-row items-center rounded-xl border border-border bg-surface-muted px-3 overflow-hidden min-w-0",
+          multiline ? "py-2 items-start" : "h-12",
           error ? "border-danger" : "",
         )}
       >
@@ -58,12 +58,27 @@ export function Input({
           multiline={multiline}
           placeholderTextColor={placeholderTextColor}
           className={cx(
-            "flex-1 text-text-primary",
+            "flex-1 min-w-0 text-text-primary",
             multiline ? "min-h-[84px]" : "",
             inputClassName,
           )}
-          style={[{ fontSize }, style]}
+          style={[
+            {
+              fontSize,
+              minWidth: 0,
+              width: "100%",
+              ...(Platform.OS === "web"
+                ? {
+                    outlineStyle: "none" as const,
+                    outlineWidth: 0,
+                    boxSizing: "border-box" as const,
+                  }
+                : null),
+            },
+            style,
+          ]}
           textAlignVertical={multiline ? "top" : "center"}
+          {...(Platform.OS === "web" ? ({ size: "1" } as object) : {})}
         />
       </View>
 

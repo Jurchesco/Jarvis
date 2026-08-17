@@ -89,7 +89,7 @@ export function ExerciseLogForm({
   };
 
   return (
-    <View>
+    <View className="min-w-0">
       {previousLog ? (
         <Text className="text-text-muted text-xs mb-3">
           Poprzednio:{" "}
@@ -99,9 +99,11 @@ export function ExerciseLogForm({
         </Text>
       ) : null}
 
-      <View className="flex-row gap-3">
-        <View className="flex-1">
-          <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5">Serie</Text>
+      <View className="flex-row gap-3 min-w-0">
+        <View className="flex-1 min-w-0">
+          <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+            Serie
+          </Text>
           <Input
             value={draft.setCount}
             onChangeText={(value) => updateField("setCount", value.replace(/[^\d]/g, ""))}
@@ -113,8 +115,8 @@ export function ExerciseLogForm({
         </View>
 
         {timeBased ? (
-          <View className="flex-[2]">
-            <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5">
+          <View className="flex-[2] min-w-0">
+            <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
               Czas (sekundy)
             </Text>
             <Input
@@ -128,8 +130,8 @@ export function ExerciseLogForm({
           </View>
         ) : (
           <>
-            <View className="flex-1">
-              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5">
+            <View className="flex-1 min-w-0">
+              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
                 Ciężar (kg)
               </Text>
               <Input
@@ -141,8 +143,8 @@ export function ExerciseLogForm({
                 fontSize={20}
               />
             </View>
-            <View className="flex-1">
-              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5">
+            <View className="flex-1 min-w-0">
+              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
                 Powtórzenia
               </Text>
               <Input
