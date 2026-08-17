@@ -22,6 +22,8 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 - **Kalkulacje na żywo** — `workoutCalculations.ts`: Est. 1RM (Epley), objętość; statystyki sesji w nagłówku treningu (ćwiczenia, serie, objętość, czas, naj. 1RM, powtórzenia)
 - **OverflowMenu** — menu ⋮ w historii (usuwanie sesji bez long-press)
 - **`ensureFreestyleSheet`** — jeden techniczny arkusz `"Freestyle"` na użytkownika (wymóg schematu Supabase)
+- **Edycja historii** — szczegóły sesji: edycja dat start/koniec (`EditSessionDateSheet`, `CalendarPicker`), edycja/usuwanie ćwiczeń, dodawanie ćwiczeń do ukończonego treningu
+- **Silownia_import — stabilny upsert** — kolumny `Session ID` / `Exercise ID`; klucz `session_id|exercise_id` w `workout.py` i `importWorkout.ts`
 - `vercel.json`, `docs/`, `.gitignore` entries, `LICENSE` (wcześniejsze)
 
 ### Changed
@@ -32,10 +34,12 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 - **Tab bar** — `backgroundColor: #0b1220` (spójny z tokenem `background`)
 - **ScreenHeader** — `leading-tight` na tytułach
 - **Importer / Gem** — kolumna Split w Sheets dla sesji freestyle = `"Freestyle"`
+- **Historia UI** — wyśrodkowany tytuł ćwiczenia, kafelki statystyk (1RM, objętość), kosz/edycja w nagłówku karty, przycisk „Wróć” do listy
 - **API client**: Supabase JS; UUID IDs; auth UX (wcześniejsze zmiany)
 
 ### Fixed
 - **Reset formularza ćwiczenia** — wpisane wartości nie znikały przy ticku licznika czasu sesji (usunięty `useEffect` nadpisujący `initialDraft`)
+- **Duplikaty w Silownia_import** — ponowny sync po edycji sesji dopisywał wiersze zamiast aktualizować (klucz `Data|Cwiczenie` + lokalizacja PL)
 
 ### Removed
 - **Program PPL (seed)** — `seedPplProgram.ts`, przycisk seed na Home

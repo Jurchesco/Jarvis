@@ -22,6 +22,7 @@ import type {
   CreateExerciseSetInput,
   UpdateExerciseSetInput,
   CreateWorkoutSessionInput,
+  UpdateWorkoutSessionInput,
   CreateSessionSetLogInput,
   DeleteSessionSetLogInput,
   SessionSetLog,
@@ -437,6 +438,22 @@ export const api = {
       return mapSession(result);
     },
 
+    update: async (id: string, data: UpdateWorkoutSessionInput): Promise<WorkoutSession> => {
+      const updates: Record<string, unknown> = {};
+      if (data.startedAt !== undefined) updates.started_at = data.startedAt;
+      if (data.completedAt !== undefined) updates.completed_at = data.completedAt;
+      if (data.notes !== undefined) updates.notes = data.notes;
+
+      const { data: result, error } = await supabase
+        .from("workout_sessions")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(error.message);
+      return mapSession(result);
+    },
+
     delete: async (id: string): Promise<void> => {
       const { error } = await supabase.from("workout_sessions").delete().eq("id", id);
       if (error) throw new Error(error.message);
@@ -468,6 +485,23 @@ export const api = {
       if (error) throw new Error(error.message);
     },
 
+    /** Removes an exercise entirely from a session — all its logged sets + its notes for this session. */
+    unlogExercise: async (sessionId: string, exerciseId: string): Promise<void> => {
+      const { error: logsError } = await supabase
+        .from("session_set_logs")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("exercise_id", exerciseId);
+      if (logsError) throw new Error(logsError.message);
+
+      const { error: notesError } = await supabase
+        .from("session_exercise_notes")
+        .delete()
+        .eq("session_id", sessionId)
+        .eq("exercise_id", exerciseId);
+      if (notesError) throw new Error(notesError.message);
+    },
+
     lastBySheet: async (
       sheetId: string,
     ): Promise<{ session: WorkoutSession; logs: SessionSetLog[] } | null> => {
@@ -488,6 +522,20 @@ export const api = {
         .eq("session_id", lastSession.id);
 
       return { session: lastSession, logs: (logRows ?? []).map(mapLog) };
+    },
+
+    /** Most recent not-yet-completed session for a sheet, if any — used to resume an in-progress workout. */
+    findIncomplete: async (sheetId: string): Promise<WorkoutSession | null> => {
+      const { data, error } = await supabase
+        .from("workout_sessions")
+        .select("*")
+        .eq("sheet_id", sheetId)
+        .is("completed_at", null)
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (error) throw new Error(error.message);
+      if (!data || data.length === 0) return null;
+      return mapSession(data[0]);
     },
 
     getExerciseNotes: async (sessionId: string): Promise<SessionExerciseNote[]> => {

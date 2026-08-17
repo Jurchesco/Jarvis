@@ -56,7 +56,7 @@ export async function readWorksheetValues(
   spreadsheetId: string,
   worksheetTitle: string,
 ): Promise<string[][]> {
-  const range = encodeURIComponent(`${worksheetTitle}!A:L`);
+  const range = encodeURIComponent(`${worksheetTitle}!A:N`);
   const res = await sheetsFetch(
     accessToken,
     `/${spreadsheetId}/values/${range}?majorDimension=ROWS`,
@@ -94,7 +94,7 @@ export async function batchUpdateRows(
   for (let offset = 0; offset < updates.length; offset += chunkSize) {
     const chunk = updates.slice(offset, offset + chunkSize);
     const data = chunk.map(({ rowNumber, values }) => ({
-      range: `${worksheetTitle}!A${rowNumber}:L${rowNumber}`,
+      range: `${worksheetTitle}!A${rowNumber}:N${rowNumber}`,
       values: [values.map((v) => (v === "" ? "" : v))],
     }));
     const res = await sheetsFetch(accessToken, `/${spreadsheetId}/values:batchUpdate`, {
@@ -117,7 +117,7 @@ export async function appendRows(
   rows: (string | number)[][],
 ): Promise<void> {
   if (rows.length === 0) return;
-  const range = encodeURIComponent(`${worksheetTitle}!A:L`);
+  const range = encodeURIComponent(`${worksheetTitle}!A:N`);
   const res = await sheetsFetch(
     accessToken,
     `/${spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&insertDataOption=INSERT_ROWS`,

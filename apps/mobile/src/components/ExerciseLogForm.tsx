@@ -8,7 +8,7 @@ import {
   formatWeightKg,
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
-import { ChevronRight, NotebookPen } from "lucide-react-native";
+import { ChevronRight, NotebookPen, Trash2 } from "lucide-react-native";
 import { BottomSheet, Button, ICON_STROKE, Input, cx } from "./ui";
 
 export type ExerciseLogDraft = {
@@ -25,6 +25,8 @@ type ExerciseLogFormProps = {
   initialDraft?: ExerciseLogDraft;
   onSave: (draft: ExerciseLogDraft) => void;
   onCancel?: () => void;
+  onDiscard?: () => void;
+  discardLabel?: string;
   loading?: boolean;
   saveLabel?: string;
 };
@@ -58,6 +60,8 @@ export function ExerciseLogForm({
   initialDraft,
   onSave,
   onCancel,
+  onDiscard,
+  discardLabel = "Usuń ćwiczenie z treningu",
   loading = false,
   saveLabel = "Zapisz ćwiczenie",
 }: ExerciseLogFormProps) {
@@ -103,7 +107,8 @@ export function ExerciseLogForm({
             onChangeText={(value) => updateField("setCount", value.replace(/[^\d]/g, ""))}
             keyboardType="number-pad"
             placeholder="3"
-            inputClassName="text-center text-lg font-bold"
+            inputClassName="text-center font-bold"
+            fontSize={20}
           />
         </View>
 
@@ -117,7 +122,8 @@ export function ExerciseLogForm({
               onChangeText={(value) => updateField("reps", value.replace(/[^\d]/g, ""))}
               keyboardType="number-pad"
               placeholder="60"
-              inputClassName="text-center text-lg font-bold"
+              inputClassName="text-center font-bold"
+              fontSize={20}
             />
           </View>
         ) : (
@@ -131,7 +137,8 @@ export function ExerciseLogForm({
                 onChangeText={(value) => updateField("weightKg", value.replace(/[^\d.,]/g, "").replace(",", "."))}
                 keyboardType="decimal-pad"
                 placeholder="0"
-                inputClassName="text-center text-lg font-bold"
+                inputClassName="text-center font-bold"
+                fontSize={20}
               />
             </View>
             <View className="flex-1">
@@ -143,7 +150,8 @@ export function ExerciseLogForm({
                 onChangeText={(value) => updateField("reps", value.replace(/[^\d]/g, ""))}
                 keyboardType="number-pad"
                 placeholder="10"
-                inputClassName="text-center text-lg font-bold"
+                inputClassName="text-center font-bold"
+                fontSize={20}
               />
             </View>
           </>
@@ -228,6 +236,50 @@ export function ExerciseLogForm({
           className={onCancel ? "flex-1" : "w-full"}
         />
       </View>
+
+      {onDiscard ? (
+        <TouchableOpacity
+          onPress={onDiscard}
+          activeOpacity={0.7}
+          className="mt-3 flex-row items-center justify-center py-2"
+          accessibilityLabel={discardLabel}
+        >
+          <Trash2 size={14} strokeWidth={ICON_STROKE} color="#ef4444" />
+          <Text className="ml-1.5 text-danger text-sm font-semibold">{discardLabel}</Text>
+        </TouchableOpacity>
+      ) : null}
+    </View>
+  );
+}
+
+function SummaryMetric({
+  label,
+  value,
+  accent = false,
+  className,
+}: {
+  label: string;
+  value: string;
+  accent?: boolean;
+  className?: string;
+}) {
+  return (
+    <View
+      className={cx(
+        "rounded-xl border px-3 py-2.5",
+        accent ? "border-emphasis/30 bg-emphasis/10" : "border-border bg-surface-muted",
+        className,
+      )}
+    >
+      <Text className="text-text-muted text-[10px] font-semibold uppercase tracking-wide">{label}</Text>
+      <Text
+        className={cx(
+          "mt-0.5 text-base font-bold leading-tight",
+          accent ? "text-emphasis" : "text-text-primary",
+        )}
+      >
+        {value}
+      </Text>
     </View>
   );
 }
@@ -239,7 +291,7 @@ export function ExerciseLogSummary({
   reps,
   notes,
   timeBased,
-  onEdit,
+  layout = "standalone",
 }: {
   exerciseName: string;
   setCount: number;
@@ -247,31 +299,70 @@ export function ExerciseLogSummary({
   reps: number;
   notes?: string;
   timeBased?: boolean;
-  onEdit?: () => void;
+  /** standalone = karta w aktywnym treningu; afterSets = stopka pod tabelą serii w historii */
+  layout?: "standalone" | "afterSets";
 }) {
   const isTime = timeBased ?? isTimeBasedExercise(exerciseName);
   const est1rm = !isTime ? epley1rm(weightKg, reps) : 0;
   const volume = !isTime ? exerciseVolume(weightKg, reps, setCount) : 0;
+  const totalReps = setCount * reps;
 
   return (
-    <View>
-      <Text className="text-text-secondary text-sm">
-        {isTime
-          ? `${setCount} × ${reps}s`
-          : `${setCount} × ${weightKg} kg × ${reps} pow.`}
-      </Text>
+    <View className={layout === "afterSets" ? "mt-3 pt-3 border-t border-border" : undefined}>
+      {layout === "standalone" ? (
+        <View className="flex-row gap-2 mb-2">
+          <SummaryMetric label="Serie" value={String(setCount)} className="flex-1" />
+          {isTime ? (
+            <>
+              <SummaryMetric label="Czas" value={`${reps}s`} className="flex-1" />
+              <SummaryMetric
+                label="Łącznie"
+                value={`${totalReps}s`}
+                className="flex-1"
+              />
+            </>
+          ) : (
+            <>
+              <SummaryMetric label="Ciężar" value={`${formatWeightKg(weightKg)}`} className="flex-1" />
+              <SummaryMetric label="Powt." value={String(reps)} className="flex-1" />
+            </>
+          )}
+        </View>
+      ) : null}
+
       {!isTime && (est1rm > 0 || volume > 0) ? (
-        <Text className="text-text-muted text-xs mt-1">
-          Est. 1RM {formatWeightKg(est1rm)} · Objętość {formatVolumeKg(volume)}
+        <View className="flex-row gap-2">
+          {est1rm > 0 ? (
+            <SummaryMetric
+              label="Est. 1RM"
+              value={formatWeightKg(est1rm)}
+              accent
+              className="flex-1"
+            />
+          ) : null}
+          {volume > 0 ? (
+            <SummaryMetric
+              label="Objętość"
+              value={formatVolumeKg(volume)}
+              className="flex-1"
+            />
+          ) : null}
+        </View>
+      ) : null}
+
+      {layout === "afterSets" && !isTime && totalReps > 0 ? (
+        <Text className="text-text-muted text-xs mt-2">
+          Łącznie {totalReps} powt. · {setCount} {setCount === 1 ? "seria" : setCount < 5 ? "serie" : "serii"} × {formatWeightKg(weightKg)} × {reps}
         </Text>
       ) : null}
+
       {notes?.trim() ? (
-        <Text className="text-text-muted text-xs mt-1" numberOfLines={2}>
-          {notes.trim()}
-        </Text>
-      ) : null}
-      {onEdit ? (
-        <Button label="Edytuj" variant="secondary" size="sm" onPress={onEdit} className="mt-3 self-start" />
+        <View className="mt-2 rounded-xl border border-border bg-surface-muted px-3 py-2">
+          <Text className="text-text-muted text-[10px] font-semibold uppercase tracking-wide mb-1">
+            Uwagi
+          </Text>
+          <Text className="text-text-secondary text-sm leading-5">{notes.trim()}</Text>
+        </View>
       ) : null}
     </View>
   );

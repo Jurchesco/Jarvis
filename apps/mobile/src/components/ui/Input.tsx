@@ -10,6 +10,15 @@ type InputProps = TextInputProps & {
   leftIcon?: LucideIcon;
   containerClassName?: string;
   inputClassName?: string;
+  /**
+   * Font size in px, applied via inline `style` (default 16).
+   * On web, react-native-web sets an inline `font: 14px System` on
+   * TextInput that Tailwind/NativeWind text-size classes can't override —
+   * anything below 16px triggers Android Chrome's auto-zoom-on-focus,
+   * which makes fields feel unresponsive/misaligned on mobile web.
+   * Always keep this >= 16 unless you know what you're doing.
+   */
+  fontSize?: number;
 };
 
 export function Input({
@@ -21,6 +30,8 @@ export function Input({
   inputClassName,
   placeholderTextColor = "#7c8aa5",
   multiline,
+  fontSize = 16,
+  style,
   ...props
 }: InputProps) {
   return (
@@ -47,10 +58,11 @@ export function Input({
           multiline={multiline}
           placeholderTextColor={placeholderTextColor}
           className={cx(
-            "flex-1 text-text-primary text-base",
+            "flex-1 text-text-primary",
             multiline ? "min-h-[84px]" : "",
             inputClassName,
           )}
+          style={[{ fontSize }, style]}
           textAlignVertical={multiline ? "top" : "center"}
         />
       </View>

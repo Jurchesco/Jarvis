@@ -134,7 +134,7 @@ To **główne i najdokładniejsze** źródło wiedzy o progresie siłowym. Każd
 
 **Kolumny:**
 
-Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol / Niggle, Uwagi, Czas serii
+Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol / Niggle, Uwagi, Czas serii, Session ID, Exercise ID
 
 **Zasady interpretacji:**
 
@@ -147,6 +147,7 @@ Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol
 - **„Volume”** to łączna objętość ćwiczenia w sesji: ciężar × powtórzenia × liczba serii. Do oceny objętości sesji lub tygodnia sumuj Volume wierszy.
 - **„PR”** ma wartość **„Tak”**, jeśli ciężar pierwszej serii pobił dotychczasowy rekord ciężaru dla tego ćwiczenia; w przeciwnym razie pole jest **puste**.
 - **„Czas serii”** — kolumna techniczna, zwykle pusta; ignoruj ją.
+- **„Session ID”** i **„Exercise ID”** — kolumny techniczne synchronizacji z JJ Workout Tool; **ignoruj** przy analizie treningu.
 - **„Bol / Niggle”** — notatki per ćwiczenie w sesji (jeśli użytkownik je wpisał).
 - **„Uwagi”** — notatki ogólne sesji. Puste pole jest normalne, nie zgłaszaj tego jako braku danych.
 - Jeden wiersz = jedno ćwiczenie w sesji; kilka wierszy z tą samą datą to różne ćwiczenia z tego samego treningu.

@@ -8,6 +8,8 @@ import {
   ChevronRight,
   Clock3,
   Flame,
+  PencilLine,
+  Trash2,
 } from "lucide-react-native";
 import type { SessionDetailFull, WorkoutSessionWithSheet } from "@bhmt3wp/shared";
 import {
@@ -18,8 +20,12 @@ import {
   formatVolumeKg,
   sessionDurationSec,
 } from "@bhmt3wp/shared";
-import { useCompletedSessions, useDeleteSession, useSessionsByIds } from "../../../src/api/hooks";
-import { OverflowMenu } from "../../../src/components/OverflowMenu";
+import {
+  useCompletedSessions,
+  useDeleteSession,
+  useSessionsByIds,
+} from "../../../src/api/hooks";
+import { formatSessionWhenShort, sessionDateKey } from "../../../src/lib/sessionDate";
 import {
   Card,
   ICON_SIZE,
@@ -94,10 +100,7 @@ export default function HistoryScreen() {
     const set = new Set<string>();
     if (sessions) {
       for (const s of sessions) {
-        if (s.completedAt) {
-          const d = new Date(s.completedAt);
-          set.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`);
-        }
+        set.add(sessionDateKey(s.startedAt));
       }
     }
     return set;
@@ -106,8 +109,7 @@ export default function HistoryScreen() {
   const monthSessions = useMemo(() => {
     if (!sessions) return [];
     return sessions.filter((s) => {
-      if (!s.completedAt) return false;
-      const d = new Date(s.completedAt);
+      const d = new Date(s.startedAt);
       return d.getFullYear() === calYear && d.getMonth() === calMonth;
     });
   }, [sessions, calYear, calMonth]);
@@ -127,11 +129,9 @@ export default function HistoryScreen() {
       totalSets += stats.setCount;
     }
 
-    const completedDates = (sessions ?? [])
-      .map((s) => s.completedAt)
-      .filter((d): d is string => !!d);
-    const globalStreak = computeWorkoutStreak(completedDates);
-    const monthBestStreak = computeMonthBestStreak(completedDates, calYear, calMonth);
+    const startedDates = (sessions ?? []).map((s) => s.startedAt);
+    const globalStreak = computeWorkoutStreak(startedDates);
+    const monthBestStreak = computeMonthBestStreak(startedDates, calYear, calMonth);
 
     return { totalVolume, totalSets, globalStreak, monthBestStreak };
   }, [monthSessionIds, sessionsById, sessions, calYear, calMonth]);
@@ -234,7 +234,6 @@ export default function HistoryScreen() {
   };
 
   const renderSession = ({ item }: { item: WorkoutSessionWithSheet }) => {
-    const date = item.completedAt ? new Date(item.completedAt) : new Date(item.startedAt);
     const detail: SessionDetailFull | undefined = sessionsById.get(item.id);
     const stats = detail ? computeSessionLiveStats(detail.logs) : null;
     const durationSec = detail
@@ -255,13 +254,7 @@ export default function HistoryScreen() {
             <View className="mt-1 flex-row items-center">
               <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
               <Text className="ml-1.5 text-text-muted text-sm">
-                {date.toLocaleDateString("pl-PL", {
-                  weekday: "short",
-                  day: "numeric",
-                  month: "short",
-                })}
-                {" · "}
-                {date.toLocaleTimeString("pl-PL", { hour: "2-digit", minute: "2-digit" })}
+                {formatSessionWhenShort(item.startedAt, item.completedAt)}
               </Text>
             </View>
 
@@ -280,19 +273,22 @@ export default function HistoryScreen() {
             ) : null}
           </TouchableOpacity>
 
-          <OverflowMenu
-            actions={[
-              {
-                label: "Usuń trening",
-                destructive: true,
-                onPress: () => confirmDeleteSession(item.id, item.sheetName),
-              },
-            ]}
-            accessibilityLabel={`Menu treningu ${item.sheetName}`}
-            className="mr-1"
-          />
-
-          <ChevronRight size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#7c8aa5" />
+          <View className="flex-row items-center gap-2">
+            <TouchableOpacity
+              onPress={() => router.push(`/history/${item.id}`)}
+              className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+              accessibilityLabel={`Edytuj ${sessionLabel(item.sheetName)}`}
+            >
+              <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => confirmDeleteSession(item.id, item.sheetName)}
+              className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+              accessibilityLabel={`Usuń ${sessionLabel(item.sheetName)}`}
+            >
+              <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
+            </TouchableOpacity>
+          </View>
         </View>
       </Card>
     );
@@ -400,7 +396,7 @@ export default function HistoryScreen() {
                     : `Brak sesji w ${MONTHS_LOCATIVE[calMonth]}`}
                 </Text>
                 <Text className="text-text-muted text-xs mt-1">
-                  Dotknij wpis, aby zobaczyć szczegóły. Usuwanie — menu ⋮.
+                  Dotknij wpis, aby zobaczyć szczegóły. Ołówek — edycja, kosz — usuń.
                 </Text>
               </View>
             </>

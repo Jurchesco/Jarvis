@@ -68,6 +68,37 @@ def date_key(value: str) -> str:
     return value[:10] if len(value) >= 10 else value
 
 
+def normalize_datetime_for_key(value: str) -> str:
+    """Normalizuje datę z arkusza (ISO lub PL) do klucza upsert yyyy-MM-dd HH:mm:ss."""
+    import re
+
+    value = (value or "").strip()
+    if not value:
+        return ""
+
+    pl_match = re.match(
+        r"^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}:\d{2}(?::\d{2})?))?$",
+        value,
+    )
+    if pl_match:
+        day, month, year, time_part = pl_match.groups()
+        time_part = time_part or "00:00:00"
+        if len(time_part) == 5:
+            time_part = f"{time_part}:00"
+        return f"{year}-{month.zfill(2)}-{day.zfill(2)} {time_part}"
+
+    if " " in value:
+        date_part, time_part = value.split(" ", 1)
+        time_part = time_part.strip()
+        if len(time_part) == 5:
+            time_part = f"{time_part}:00"
+        return f"{date_part} {time_part}"
+
+    if len(value) >= 10:
+        return f"{value[:10]} 00:00:00"
+    return value
+
+
 def combine_date_time(date_str: str, time_str: str) -> str:
     date_part = date_key(date_str)
     time_part = (time_str or "").strip()

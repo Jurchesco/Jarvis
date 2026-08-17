@@ -12,7 +12,7 @@ export default function HistoryLayout() {
       }}
     >
       <Stack.Screen name="index" options={{ headerShown: false }} />
-      <Stack.Screen name="[id]" options={{ title: "Sesja", headerBackTitle: "Historia" }} />
+      <Stack.Screen name="[id]" options={{ headerShown: false }} />
     </Stack>
   );
 }

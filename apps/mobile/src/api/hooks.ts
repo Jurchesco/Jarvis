@@ -10,6 +10,7 @@ import type {
   CreateExerciseSetInput,
   UpdateExerciseSetInput,
   CreateWorkoutSessionInput,
+  UpdateWorkoutSessionInput,
   CreateSessionSetLogInput,
   DeleteSessionSetLogInput,
   UpsertSessionExerciseNoteInput,
@@ -179,6 +180,19 @@ export function useCompleteSession() {
   });
 }
 
+export function useUpdateSession() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdateWorkoutSessionInput }) =>
+      api.sessions.update(id, data),
+    onSuccess: (_, { id }) => {
+      qc.invalidateQueries({ queryKey: ["sessions"] });
+      qc.invalidateQueries({ queryKey: ["sessions", id] });
+      qc.invalidateQueries({ queryKey: ["sessions", "completed"] });
+    },
+  });
+}
+
 export function useDeleteSession() {
   const qc = useQueryClient();
   return useMutation({
@@ -280,6 +294,15 @@ export function useLastSessionBySheet(sheetId: string) {
   return useQuery({
     queryKey: ["sessions", "last-by-sheet", sheetId],
     queryFn: () => api.sessions.lastBySheet(sheetId),
+    enabled: !!sheetId,
+  });
+}
+
+/** Not-yet-completed session for a sheet, if any — lets Home offer "Kontynuuj trening" instead of starting a new one. */
+export function useIncompleteSession(sheetId: string | undefined) {
+  return useQuery({
+    queryKey: ["sessions", "incomplete", sheetId],
+    queryFn: () => api.sessions.findIncomplete(sheetId!),
     enabled: !!sheetId,
   });
 }

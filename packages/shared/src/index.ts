@@ -99,6 +99,12 @@ export interface CreateWorkoutSessionInput {
   notes?: string;
 }
 
+export interface UpdateWorkoutSessionInput {
+  startedAt?: string;
+  completedAt?: string | null;
+  notes?: string | null;
+}
+
 // --- Session Set Log (actual performance per set) ---
 export interface SessionSetLog {
   id: string;

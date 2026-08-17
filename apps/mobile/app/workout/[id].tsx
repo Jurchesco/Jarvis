@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Platform,
@@ -7,15 +7,18 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useNavigation } from "@react-navigation/native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   useCompleteSession,
+  useDeleteSession,
   useLastSessionBySheet,
   useSession,
   useSessionExerciseNotes,
   useSheet,
+  useUpdateSession,
 } from "../../src/api/hooks";
 import type { CatalogExercise, ExerciseFull, SessionSetLog } from "@bhmt3wp/shared";
 import {
@@ -26,11 +29,14 @@ import {
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
 import {
+  CalendarClock,
   Check,
   Flame,
   PencilLine,
   Plus,
+  Trash2,
 } from "lucide-react-native";
+import { EditSessionDateSheet } from "../../src/components/EditSessionDateSheet";
 import { ExercisePicker } from "../../src/components/ExercisePicker";
 import {
   createDraftFromLogs,
@@ -40,6 +46,7 @@ import {
 } from "../../src/components/ExerciseLogForm";
 import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
 import { getAutofillPrevious } from "../../src/lib/appPreferences";
+import { discardSessionExercise } from "../../src/lib/discardSessionExercise";
 import { hapticSuccess } from "../../src/lib/haptics";
 import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../src/lib/saveExerciseLogBatch";
 import {
@@ -138,11 +145,16 @@ export default function WorkoutScreen() {
   const { id, sheetId } = useLocalSearchParams<{ id: string; sheetId: string }>();
   const sessionId = id!;
   const router = useRouter();
+  const navigation = useNavigation();
   const queryClient = useQueryClient();
+  const leavingIntentionallyRef = useRef(false);
 
   const { data: sheet, refetch: refetchSheet } = useSheet(sheetId!);
   const { data: session, refetch: refetchSession } = useSession(sessionId);
   const completeSession = useCompleteSession();
+  const updateSession = useUpdateSession();
+  const deleteSession = useDeleteSession();
+  const [showEditStart, setShowEditStart] = useState(false);
   const { data: lastSessionData } = useLastSessionBySheet(sheetId!);
   const { data: exerciseNotes } = useSessionExerciseNotes(sessionId);
 
@@ -153,6 +165,7 @@ export default function WorkoutScreen() {
   const [showExercisePicker, setShowExercisePicker] = useState(false);
   const [isAddingExercise, setIsAddingExercise] = useState(false);
   const [savingExerciseId, setSavingExerciseId] = useState<string | null>(null);
+  const [discardingExerciseId, setDiscardingExerciseId] = useState<string | null>(null);
   const [autofillPrevious, setAutofillPrevious] = useState(true);
 
   useEffect(() => {
@@ -218,6 +231,26 @@ export default function WorkoutScreen() {
     return () => clearInterval(timer);
   }, [session?.startedAt]);
 
+  // Soft guard: warn before leaving an unfinished workout (back button/gesture).
+  // Data itself is never lost (it's saved to Supabase per exercise), and Home
+  // now offers "Kontynuuj trening" — but most exits are accidental, so we
+  // confirm first rather than silently stranding the session.
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (leavingIntentionallyRef.current) return;
+      e.preventDefault();
+      confirmAction(
+        "Wyjść z treningu?",
+        "Trening nie jest zakończony. Zapisane ćwiczenia są bezpieczne — możesz go dokończyć później przyciskiem „Kontynuuj trening” na ekranie głównym.",
+        () => {
+          leavingIntentionallyRef.current = true;
+          navigation.dispatch(e.data.action);
+        },
+      );
+    });
+    return unsubscribe;
+  }, [navigation]);
+
   const refreshData = useCallback(async () => {
     await Promise.all([
       refetchSheet(),
@@ -277,6 +310,46 @@ export default function WorkoutScreen() {
       .filter((log) => log.exerciseId === exerciseId)
       .sort((a, b) => a.setNumber - b.setNumber);
 
+  const removeExerciseFromLocalState = (exerciseId: string) => {
+    setSessionExerciseIds((prev) => {
+      const next = new Set(prev);
+      next.delete(exerciseId);
+      return next;
+    });
+    setSavedExerciseIds((prev) => {
+      const next = new Set(prev);
+      next.delete(exerciseId);
+      return next;
+    });
+    setEditingExerciseId((prev) => (prev === exerciseId ? null : prev));
+  };
+
+  const handleDeleteExercise = (exercise: ExerciseFull) => {
+    confirmAction(
+      "Usuń ćwiczenie",
+      `Usunąć "${exercise.name}" z tego treningu razem ze wszystkimi zapisanymi seriami?`,
+      async () => {
+        setDiscardingExerciseId(exercise.id);
+        try {
+          await discardSessionExercise(sessionId, exercise.id);
+          removeExerciseFromLocalState(exercise.id);
+          await refreshData();
+        } catch (err) {
+          const msg = err instanceof Error ? err.message : "Nie można usunąć ćwiczenia";
+          if (Platform.OS === "web") window.alert(msg);
+          else Alert.alert("Błąd", msg);
+        } finally {
+          setDiscardingExerciseId(null);
+        }
+      },
+    );
+  };
+
+  const handleDiscardDraftExercise = (exerciseId: string) => {
+    // Nothing was ever saved to the server for a draft — just drop it locally.
+    removeExerciseFromLocalState(exerciseId);
+  };
+
   const handleFinishWorkout = () => {
     const loggedSets = session?.logs.length ?? 0;
     if (loggedSets === 0) {
@@ -292,6 +365,7 @@ export default function WorkoutScreen() {
     confirmAction("Zakończ trening", "Czy chcesz teraz zakończyć tę sesję?", async () => {
       try {
         await completeSession.mutateAsync(sessionId);
+        leavingIntentionallyRef.current = true;
         router.replace(`/workout/summary/${sessionId}`);
       } catch (error: unknown) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -302,6 +376,25 @@ export default function WorkoutScreen() {
         }
       }
     });
+  };
+
+  const handleCancelWorkout = () => {
+    confirmAction(
+      "Anuluj trening",
+      "Usunąć tę sesję? Zapisane ćwiczenia znikną. Tej operacji nie można odwrócić.",
+      async () => {
+        try {
+          leavingIntentionallyRef.current = true;
+          await deleteSession.mutateAsync(sessionId);
+          router.replace("/");
+        } catch (error: unknown) {
+          leavingIntentionallyRef.current = false;
+          const msg = error instanceof Error ? error.message : String(error);
+          if (Platform.OS === "web") window.alert(`Błąd: ${msg}`);
+          else Alert.alert("Błąd", msg);
+        }
+      },
+    );
   };
 
   if (!sheet) {
@@ -325,6 +418,25 @@ export default function WorkoutScreen() {
                 </Text>
               </View>
               <Text className="text-text-primary text-xl font-bold mt-1 leading-tight">Freestyle</Text>
+              {session?.startedAt ? (
+                <TouchableOpacity
+                  onPress={() => setShowEditStart(true)}
+                  className="flex-row items-center mt-1.5"
+                  accessibilityLabel="Edytuj godzinę rozpoczęcia"
+                >
+                  <CalendarClock size={13} strokeWidth={2} color="#7c8aa5" />
+                  <Text className="ml-1 text-text-muted text-xs">
+                    Rozpoczęto{" "}
+                    {new Date(session.startedAt).toLocaleString("pl-PL", {
+                      day: "numeric",
+                      month: "short",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {" · Popraw"}
+                  </Text>
+                </TouchableOpacity>
+              ) : null}
             </View>
 
             <Button
@@ -344,6 +456,15 @@ export default function WorkoutScreen() {
             elapsedSec={elapsedSec}
             bestEst1rm={liveStats.bestEst1rm}
             totalReps={liveStats.totalReps}
+          />
+
+          <Button
+            label="Anuluj trening"
+            variant="ghost"
+            size="sm"
+            onPress={handleCancelWorkout}
+            loading={deleteSession.isPending}
+            className="mt-3"
           />
         </Card>
       </View>
@@ -379,17 +500,46 @@ export default function WorkoutScreen() {
 
             return (
               <Card key={exercise.id} className="mb-3" padding="md">
-                <View className="flex-row items-start justify-between mb-3">
-                  <Text className="text-text-primary text-lg font-bold flex-1 pr-3">{exercise.name}</Text>
+                <View className="flex-row items-center mb-3">
+                  <View className="w-20" />
+                  <Text
+                    className="flex-1 text-center text-text-primary text-lg font-bold leading-tight px-1"
+                    numberOfLines={2}
+                  >
+                    {exercise.name}
+                  </Text>
                   {isSaved && !isEditing ? (
-                    <TouchableOpacity
-                      onPress={() => setEditingExerciseId(exercise.id)}
-                      className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
-                      accessibilityLabel={`Edytuj ${exercise.name}`}
-                    >
-                      <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-                    </TouchableOpacity>
-                  ) : null}
+                    <View className="w-20 flex-row items-center justify-end gap-2">
+                      <TouchableOpacity
+                        onPress={() => setEditingExerciseId(exercise.id)}
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                        accessibilityLabel={`Edytuj ${exercise.name}`}
+                      >
+                        <PencilLine size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => handleDeleteExercise(exercise)}
+                        disabled={discardingExerciseId === exercise.id}
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                        accessibilityLabel={`Usuń ${exercise.name} z treningu`}
+                      >
+                        <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : isSaved && isEditing ? (
+                    <View className="w-20 flex-row items-center justify-end">
+                      <TouchableOpacity
+                        onPress={() => handleDeleteExercise(exercise)}
+                        disabled={discardingExerciseId === exercise.id}
+                        className="h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                        accessibilityLabel={`Usuń ${exercise.name} z treningu`}
+                      >
+                        <Trash2 size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ) : (
+                    <View className="w-20" />
+                  )}
                 </View>
 
                 {isEditing ? (
@@ -405,6 +555,8 @@ export default function WorkoutScreen() {
                         ? () => setEditingExerciseId(null)
                         : undefined
                     }
+                    onDiscard={isSaved ? undefined : () => handleDiscardDraftExercise(exercise.id)}
+                    discardLabel="Usuń tę kartę"
                     loading={savingExerciseId === exercise.id}
                     saveLabel={isSaved ? "Zaktualizuj" : "Zapisz ćwiczenie"}
                   />
@@ -416,7 +568,6 @@ export default function WorkoutScreen() {
                     reps={logs[0]?.reps ?? 0}
                     notes={notesByExercise[exercise.id]}
                     timeBased={isTimeBasedExercise(exercise.name)}
-                    onEdit={() => setEditingExerciseId(exercise.id)}
                   />
                 )}
               </Card>
@@ -443,6 +594,23 @@ export default function WorkoutScreen() {
         onSelectCustom={(name) => handleAddFromCatalog({ name })}
         loading={isAddingExercise}
       />
+
+      {session?.startedAt ? (
+        <EditSessionDateSheet
+          visible={showEditStart}
+          onClose={() => setShowEditStart(false)}
+          initialStartedIso={session.startedAt}
+          saving={updateSession.isPending}
+          title="Popraw godzinę rozpoczęcia"
+          subtitle="Jeśli zacząłeś trening wcześniej, a otworzyłeś aplikację później, popraw tutaj."
+          onSave={({ startedAt }) => {
+            updateSession.mutate(
+              { id: sessionId, data: { startedAt } },
+              { onSuccess: () => setShowEditStart(false) },
+            );
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

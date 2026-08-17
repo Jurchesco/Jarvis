@@ -28,7 +28,13 @@ export const HEADERS = [
   "Bol / Niggle",
   "Uwagi",
   "Czas serii",
+  "Session ID",
+  "Exercise ID",
 ];
+
+const COL_SESSION_ID = 12;
+const COL_EXERCISE_ID = 13;
+const LEGACY_HEADERS = HEADERS.slice(0, 12);
 
 type SetLog = {
   session_id: string;
@@ -62,8 +68,85 @@ function brzycki1rm(weight: number, reps: number): number {
   return Math.round((weight / (1.0278 - 0.0278 * reps)) * 10) / 10;
 }
 
-function makeKey(row: (string | number)[]): string {
-  return [row[0], row[2]].map(String).join("|");
+function normalizeDatetimeForKey(value: string): string {
+  const v = value.trim();
+  if (!v) return "";
+
+  const plMatch = /^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}:\d{2}(?::\d{2})?))?$/.exec(v);
+  if (plMatch) {
+    const [, day, month, year, timePart] = plMatch;
+    let time = timePart ?? "00:00:00";
+    if (time.length === 5) time = `${time}:00`;
+    return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")} ${time}`;
+  }
+
+  if (v.includes(" ")) {
+    const [datePart, timePartRaw] = v.split(" ", 2);
+    let timePart = timePartRaw.trim();
+    if (timePart.length === 5) timePart = `${timePart}:00`;
+    return `${datePart} ${timePart}`;
+  }
+
+  if (v.length >= 10) return `${v.slice(0, 10)} 00:00:00`;
+  return v;
+}
+
+function makeStableKey(sessionId: string, exerciseId: string): string {
+  return `${sessionId}|${exerciseId}`;
+}
+
+function makeLegacyKey(row: (string | number)[]): string {
+  const data = normalizeDatetimeForKey(String(row[0] ?? ""));
+  const exercise = String(row[2] ?? "").trim();
+  if (!data || !exercise) return "";
+  return `${data}|${exercise}`;
+}
+
+function padRow(row: string[]): string[] {
+  return [...row, ...Array(Math.max(0, HEADERS.length - row.length)).fill("")].slice(
+    0,
+    HEADERS.length,
+  );
+}
+
+function buildExistingRowMaps(values: string[][]): {
+  stableMap: Map<string, number>;
+  legacyMap: Map<string, number>;
+} {
+  const stableMap = new Map<string, number>();
+  const legacyMap = new Map<string, number>();
+
+  for (let i = 1; i < values.length; i++) {
+    const row = values[i];
+    if (!row?.[0]?.trim()) continue;
+    const padded = padRow(row);
+
+    const sessionId = padded[COL_SESSION_ID]?.trim();
+    const exerciseId = padded[COL_EXERCISE_ID]?.trim();
+    if (sessionId && exerciseId) {
+      stableMap.set(makeStableKey(sessionId, exerciseId), i + 1);
+    }
+
+    const legacyKey = makeLegacyKey(padded);
+    if (legacyKey) legacyMap.set(legacyKey, i + 1);
+  }
+
+  return { stableMap, legacyMap };
+}
+
+function resolveExistingRow(
+  sessionId: string,
+  exerciseId: string,
+  row: (string | number)[],
+  stableMap: Map<string, number>,
+  legacyMap: Map<string, number>,
+): number | undefined {
+  const stable = stableMap.get(makeStableKey(sessionId, exerciseId));
+  if (stable != null) return stable;
+
+  const legacyKey = makeLegacyKey(row);
+  if (!legacyKey) return undefined;
+  return legacyMap.get(legacyKey);
 }
 
 function formatDatetimeWarsaw(iso: string): string {
@@ -263,6 +346,7 @@ export async function runWorkoutImport(options: {
     const weight = first.weight_kg ?? 0;
     const reps = first.reps ?? 0;
     const exerciseId = group.exerciseId;
+    const sessionId = group.sessionId;
 
     const prevMax = maxWeightByExercise.get(exerciseId) ?? 0;
     const isPr = weight > 0 && weight > prevMax;
@@ -271,7 +355,7 @@ export async function runWorkoutImport(options: {
     const dataValue = formatDatetimeWarsaw(session.started_at);
     const splitName = session.workout_sheets?.name ?? "Brak";
     const exerciseName = exercises.get(exerciseId) ?? "Nieznane cwiczenie";
-    const noteKey = `${group.sessionId}:${exerciseId}`;
+    const noteKey = `${sessionId}:${exerciseId}`;
     const volume = weight * reps * setCount;
 
     rowsToUpsert.push([
@@ -287,6 +371,8 @@ export async function runWorkoutImport(options: {
       exerciseNotes.get(noteKey) ?? "",
       session.notes ?? "",
       "",
+      sessionId,
+      exerciseId,
     ]);
   }
 
@@ -298,30 +384,31 @@ export async function runWorkoutImport(options: {
   await getOrCreateWorksheet(accessToken, options.spreadsheetId, WORKSHEET_NAME);
 
   let values = await readWorksheetValues(accessToken, options.spreadsheetId, WORKSHEET_NAME);
-  if (values.length === 0 || values[0].slice(0, HEADERS.length).join("|") !== HEADERS.join("|")) {
+  const headerMatches =
+    values.length > 0 && values[0].slice(0, HEADERS.length).join("|") === HEADERS.join("|");
+  const legacyHeaderMatches =
+    values.length > 0 &&
+    values[0].slice(0, LEGACY_HEADERS.length).join("|") === LEGACY_HEADERS.join("|");
+
+  if (values.length === 0 || (!headerMatches && !legacyHeaderMatches)) {
     await writeHeaderRow(accessToken, options.spreadsheetId, WORKSHEET_NAME, HEADERS);
     values = [HEADERS];
+  } else if (legacyHeaderMatches && !headerMatches) {
+    await writeHeaderRow(accessToken, options.spreadsheetId, WORKSHEET_NAME, HEADERS);
+    values = [HEADERS, ...values.slice(1)];
   }
 
-  const existingRows = new Map<string, number>();
-  for (let i = 1; i < values.length; i++) {
-    const row = values[i];
-    if (!row?.[0]?.trim()) continue;
-    const padded = [...row, ...Array(Math.max(0, HEADERS.length - row.length)).fill("")].slice(
-      0,
-      HEADERS.length,
-    );
-    existingRows.set(makeKey(padded), i + 1);
-  }
-
+  const { stableMap, legacyMap } = buildExistingRowMaps(values);
   const pendingUpdates: Array<{ rowNumber: number; values: (string | number)[] }> = [];
   const appendedRows: (string | number)[][] = [];
 
   for (const row of rowsToUpsert) {
-    const key = makeKey(row);
-    const existing = existingRows.get(key);
+    const sessionId = String(row[COL_SESSION_ID]);
+    const exerciseId = String(row[COL_EXERCISE_ID]);
+    const existing = resolveExistingRow(sessionId, exerciseId, row, stableMap, legacyMap);
     if (existing != null) {
       pendingUpdates.push({ rowNumber: existing, values: row });
+      stableMap.set(makeStableKey(sessionId, exerciseId), existing);
     } else {
       appendedRows.push(row);
     }

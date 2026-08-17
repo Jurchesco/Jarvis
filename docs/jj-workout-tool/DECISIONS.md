@@ -199,7 +199,7 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 **Context**: Sync do `Silownia_import` tworzył osobny wiersz na każdą serię. Użytkownik preferuje jeden wiersz na ćwiczenie w sesji.
 
 **Decision**:
-- Import (`importWorkout.ts`, `workout.py`): grupowanie po `session_id:exercise_id`; kolumna **Set** = liczba serii; **Volume** = ciężar × powtórzenia × serie; ciężar/powt. z pierwszej serii (logowanie zbiorcze); klucz upsert = `Data|Cwiczenie`.
+- Import (`importWorkout.ts`, `workout.py`): grupowanie po `session_id:exercise_id`; kolumna **Set** = liczba serii; **Volume** = ciężar × powtórzenia × serie; ciężar/powt. z pierwszej serii (logowanie zbiorcze); klucz upsert historycznie = `Data|Cwiczenie` (zastąpiony przez **D015**).
 - **Nazwa produktu**: **JJ Workout Tool**, wersja **1.0.0** w UI (`branding.ts`, `app.json`).
 
 ---
@@ -215,6 +215,21 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Importer Python: `workout.py` / `import_workout()`; Edge Function: `importWorkout.ts` / `runWorkoutImport()`.
 - Expo: `slug` + `scheme` = `jj-workout-tool`, bundle/package = `com.jjworkout.tool`.
 - Sekret Supabase: **`JJ_WORKOUT_ALLOWED_USER_ID`**; fallback na stary `STRAVIO_ALLOWED_USER_ID` w Edge Function.
+
+---
+
+## D015: Stabilny klucz upsert Silownia_import (Session ID + Exercise ID)
+
+**Date**: 2026-08-17  
+**Status**: Active
+
+**Context**: Edycja daty startu sesji lub ponowny import przy lokalizacji PL arkusza powodował dopisywanie duplikatów zamiast aktualizacji wierszy (`Data|Cwiczenie` nie jest stabilny).
+
+**Decision**:
+- Kolumny **`Session ID`** i **`Exercise ID`** w `Silownia_import` (techniczne; Gem ignoruje).
+- Klucz upsert: `session_id|exercise_id`; fallback na znormalizowany `Data|Cwiczenie` dla starych wierszy bez ID.
+- Normalizacja daty w kluczu legacy: ISO + format PL (`15.08.2026` → `2026-08-15`) w `dates.py` / `importWorkout.ts`.
+- Zakres zapisu w Sheets: kolumny A–N.
 
 ---
 

@@ -59,7 +59,7 @@ curl -X POST "http://localhost:54321/functions/v1/sync-sheets" \
 
 - Weryfikuje JWT użytkownika (musi być zalogowany w JJ Workout Tool).
 - Pobiera serie z Supabase (service role), filtruje po `user_id`.
-- Upsert do `Silownia_import` — ta sama logika co `Scripts/import/jarvis_import/importers/workout.py`.
+- Upsert do `Silownia_import` — ta sama logika co `Scripts/import/jarvis_import/importers/workout.py` (klucz: `Session ID|Exercise ID`, fallback legacy).
 - Strefa czasowa: `Europe/Warsaw`.
 
 ## Twój UUID (JJ_WORKOUT_ALLOWED_USER_ID)

@@ -86,7 +86,7 @@ rows_to_upsert.append([
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
 | **1.1** | `blocked` | Filtr `JJ_WORKOUT_USER_ID` / `user_id` w importerze | `config.py`, `workout.py`, `.env.example`, workflow | Sesja obcego konta nie trafia do arkusza | **Wysoki** (jeśli Vercel publiczny) |
-| **1.2** | `todo` | Odporny `date_key` na lokalizację PL + normalizacja `Czas serii` w kluczu upsert | `dates.py`, `workout.py:26-32` | Dwa kolejne importy → `dopisano 0` | **Wysoki** (jeśli D-2 potwierdzone) |
+| **1.2** | `done` | Odporny klucz upsert Silownia (`Session ID` + `Exercise ID`, fallback `Data|Cwiczenie` + normalizacja PL) | `dates.py`, `workout.py`, `importWorkout.ts` | Dwa kolejne importy → `dopisano 0` (po backfill ID) | **Wysoki** |
 | **1.3** | `todo` | `restlessMomentsCount` z Garmina zamiast własnego liczenia | `importers/sleep.py:114-119` | Kolumna `Niespokojne momenty` > 0 gdy Garmin raportuje | Średni |
 | **1.4** | `todo` | Rename nagłówka `Tętno min. średnie`; guard Brzycki `reps > 15`; tempo `"5:30 /km"` | `daily.py`, `workout.py`, `activities.py`, `docs/jarvis/GEM_INSTRUKCJA.md` | Brak absurdalnych Est. 1RM; tempo nie jako godzina w Sheets | Średni |
 | **1.5** | `todo` | `date.today()` → data w `Europe/Warsaw`; filtr `<= end_date` w aktywnościach; `utcfromtimestamp` → `fromtimestamp(tz=utc)` | `config.py`, `activities.py`, `sleep.py` | Brak DeprecationWarning w CI | Niski |
@@ -189,7 +189,7 @@ python -m jarvis_import --no-prompt --only silownia --days 30
 
 **W arkuszu (ręcznie):**
 
-- [ ] `Silownia_import` — duplikaty (Data + Ćwiczenie + Set)?
+- [x] `Silownia_import` — duplikaty (Session ID + Exercise ID upsert, 2026-08-17)
 - [ ] `Bol / Niggle` — czy to wskazówki techniczne powtarzane co sesję?
 - [ ] Liczba wierszy `Silownia_import` — czy > 1000?
 - [ ] `Sen` — `Godziny snu` vs Garmin Connect (1 noc)
