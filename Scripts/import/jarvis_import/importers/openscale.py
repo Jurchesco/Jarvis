@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import sqlite3
 import tempfile
 import zipfile
@@ -60,22 +61,37 @@ def number_or_blank(value):
 
 
 def extract_db_path(backup_path: Path) -> Path:
-    """Rozpakowuje openScale.db z zip backupu do pliku tymczasowego."""
+    """Rozpakowuje openScale.db z zip backupu do katalogu tymczasowego.
+
+    openScale pakuje też SQLite WAL (`openScale.db-wal`). Same `.db` bez WAL
+    pomija najnowsze pomiary, które jeszcze nie zostały zcheckpointowane.
+    """
     suffix = backup_path.suffix.lower()
     if suffix == ".zip":
-        tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
-        tmp.close()
-        db_path = Path(tmp.name)
+        tmp_dir = Path(tempfile.mkdtemp(prefix="openscale-"))
         with zipfile.ZipFile(backup_path) as archive:
             names = archive.namelist()
             db_name = "openScale.db" if "openScale.db" in names else None
             if db_name is None:
-                db_candidates = [n for n in names if n.endswith(".db") and "/" not in n and "\\" not in n]
+                db_candidates = [
+                    n for n in names
+                    if n.endswith(".db") and "/" not in n and "\\" not in n
+                ]
                 if not db_candidates:
+                    shutil.rmtree(tmp_dir, ignore_errors=True)
                     raise RuntimeError(f"Brak pliku .db w archiwum: {backup_path}")
                 db_name = db_candidates[0]
-            with archive.open(db_name) as src, db_path.open("wb") as dst:
-                dst.write(src.read())
+            sidecars = [n for n in names if n in (f"{db_name}-wal", f"{db_name}-shm")]
+            for member in [db_name, *sidecars]:
+                with archive.open(member) as src, (tmp_dir / Path(member).name).open("wb") as dst:
+                    dst.write(src.read())
+
+        db_path = tmp_dir / Path(db_name).name
+        con = sqlite3.connect(db_path)
+        try:
+            con.execute("PRAGMA wal_checkpoint(FULL)")
+        finally:
+            con.close()
         return db_path
 
     if suffix == ".db":
@@ -195,8 +211,8 @@ def read_openscale_rows(source: Path, tz) -> list[list]:
     try:
         return read_measurements_from_db(db_path, tz)
     finally:
-        if extracted and db_path.exists():
-            db_path.unlink(missing_ok=True)
+        if extracted:
+            shutil.rmtree(db_path.parent, ignore_errors=True)
 
 
 def detect_header_format(headers: list[str]) -> str:
