@@ -8,7 +8,7 @@ from zoneinfo import ZoneInfo
 
 from dotenv import load_dotenv
 
-from .dates import resolve_timezone
+from .dates import resolve_timezone, today_in_timezone
 
 PACKAGE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = PACKAGE_DIR.parent
@@ -20,6 +20,8 @@ class Config:
     google_credentials_file: Path
     garmin_token_dir: Path
     openscale_backup: Path | None
+    openscale_drive_file_id: str | None
+    openscale_drive_folder_id: str | None
     supabase_url: str | None
     supabase_secret_key: str | None
     default_days: int
@@ -77,6 +79,8 @@ def load_config(env_file: Path | None = None) -> Config:
         google_credentials_file=credentials_path,
         garmin_token_dir=token_path,
         openscale_backup=backup_path,
+        openscale_drive_file_id=os.getenv("OPENSCALE_DRIVE_FILE_ID") or None,
+        openscale_drive_folder_id=os.getenv("OPENSCALE_DRIVE_FOLDER_ID") or None,
         supabase_url=os.getenv("SUPABASE_URL"),
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY"),
         default_days=int(os.getenv("DEFAULT_DAYS", "7")),
@@ -86,16 +90,24 @@ def load_config(env_file: Path | None = None) -> Config:
     )
 
 
-def date_range(days: int, end: date | None = None) -> tuple[date, date]:
+def date_range(
+    days: int,
+    end: date | None = None,
+    tz: ZoneInfo | None = None,
+) -> tuple[date, date]:
     if days < 1:
         raise ValueError("Liczba dni musi być >= 1")
-    end_date = end or date.today()
+    end_date = end or today_in_timezone(tz)
     start_date = end_date - timedelta(days=days - 1)
     return start_date, end_date
 
 
-def date_range_from_start(start: date, end: date | None = None) -> tuple[date, date]:
-    end_date = end or date.today()
+def date_range_from_start(
+    start: date,
+    end: date | None = None,
+    tz: ZoneInfo | None = None,
+) -> tuple[date, date]:
+    end_date = end or today_in_timezone(tz)
     if start > end_date:
         raise ValueError("Data początkowa importu jest późniejsza niż dziś")
     return start, end_date

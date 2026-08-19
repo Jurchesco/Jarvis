@@ -56,6 +56,8 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | cialo | openScale backup | Cialo |
 | silownia | JJ Workout Tool | Silownia_import |
 
+`cialo` bierze **najnowszy** backup z folderu (lokalnie albo na Drive) i importuje wszystkie pomiary od `IMPORT_START_DATE` — nie tylko okno `--days`. Harmonogram co godzinę (`DEFAULT_DAYS=1`) nie gubi więc wczorajszych ważeń, gdy openScale wrzuci zip z opóźnieniem.
+
 ## Flagi
 
 | Flaga | Opis |

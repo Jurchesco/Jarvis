@@ -67,7 +67,7 @@ Jeden folder, jeden skrypt — Garmin, openScale i JJ Workout Tool.
 - Konto Garmin Connect
 - Google Cloud Service Account z dostępem do Google Sheets API
 - (Opcjonalnie) Klucz `service_role` Supabase — moduł `silownia`
-- (Opcjonalnie) Auto backup openScale (`.zip` / `.db`) lub `OPENSCALE_DRIVE_FILE_ID` — moduł `cialo`
+- (Opcjonalnie) Auto backup openScale (`.zip` / `.db` / folder) albo `OPENSCALE_DRIVE_FOLDER_ID` — moduł `cialo`
 
 ### Instalacja
 
@@ -86,7 +86,9 @@ copy .env.example .env
 | `GOOGLE_SHEET_ID` | tak | ID arkusza Google Sheets |
 | `SUPABASE_URL` | dla silownia | URL projektu Supabase |
 | `SUPABASE_SECRET_KEY` | dla silownia | Klucz `service_role` (nie `anon`!) |
-| `OPENSCALE_BACKUP` | dla cialo | Ścieżka do auto backupu openScale (`.zip` lub `.db`) |
+| `OPENSCALE_BACKUP` | dla cialo | Ścieżka do auto backupu openScale (`.zip` / `.db`) albo folder z backupami |
+| `OPENSCALE_DRIVE_FILE_ID` | dla cialo (CI) | ID pliku backupu na Drive (fallback) |
+| `OPENSCALE_DRIVE_FOLDER_ID` | dla cialo (CI) | ID folderu z backupami — importer bierze najnowszy plik |
 | `DEFAULT_DAYS` | nie | Domyślna liczba dni w prompcie (domyślnie 7) |
 
 **Google Service Account:**

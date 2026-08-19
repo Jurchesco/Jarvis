@@ -165,13 +165,13 @@ def run() -> int:
 
     days = resolve_days(args, config.default_days)
     if args.all:
-        start_date, end_date = date_range_from_start(config.import_start_date)
+        start_date, end_date = date_range_from_start(config.import_start_date, tz=config.timezone)
         days = (end_date - start_date).days + 1
     else:
         if days < 1:
             print("Błąd: liczba dni musi być >= 1")
             return 1
-        start_date, end_date = date_range(days)
+        start_date, end_date = date_range(days, tz=config.timezone)
 
     try:
         importers = resolve_importers(args.only, args.skip)

@@ -19,14 +19,23 @@ Skrypt wyświetli listę sekretów i zapisze pliki tymczasowe w `%TEMP%\jarvis-g
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | **Cała** zawartość pliku `google-service-account.json` |
 | `SUPABASE_URL` | URL projektu Supabase (ten sam co JJ Workout Tool) |
 | `SUPABASE_SECRET_KEY` | Klucz `service_role` (nie `anon`!) |
-| `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive |
+| `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive (fallback) |
+| `OPENSCALE_DRIVE_FOLDER_ID` | **Zalecane** — ID folderu z backupami openScale (importer bierze najnowszy zip) |
 | `GARMINCONNECT_ZIP` | Base64 archiwum folderu `.garminconnect/` (wymagany dla modułów Garmin w chmurze) |
 
 ## Google Drive — openScale
 
-1. W Google Drive znajdź plik `openScale.db_auto_backup.zip`.
-2. Kliknij **Udostępnij** → dodaj email Service Account (`client_email` z JSON).
-3. ID pliku z URL: `https://drive.google.com/file/d/`**TUTAJ**`/view`
+openScale przy auto-backupie **często tworzy nowy plik z datą w nazwie** zamiast nadpisywać `openScale.db_auto_backup.zip`. Jeśli Service Account ma dostęp tylko do jednego starego pliku, zakładka **Cialo** przestaje dostawać nowe ważenia (CI nadal „sukces”, ale 0 dopisanych wierszy).
+
+1. W Google Drive wejdź w folder z backupami (np. `Jarvis/openScale`).
+2. Kliknij **Udostępnij** → dodaj email Service Account (`client_email` z JSON) z rolą **Reader**.
+3. ID folderu z URL: `https://drive.google.com/drive/folders/`**TUTAJ**
+4. Wklej jako secret `OPENSCALE_DRIVE_FOLDER_ID`.
+5. (Opcjonalnie) zostaw też `OPENSCALE_DRIVE_FILE_ID` — importer i tak wybierze **najnowszy** zip/db z folderu.
+
+W openScale włącz automatyczny backup do tego folderu. Najlepiej opcja **nadpisuj ostatni backup**, ale nawet przy plikach z datą importer weźmie najświeższy.
+
+Moduł `cialo` importuje **wszystkie** pomiary od `IMPORT_START_DATE` (nie tylko `DEFAULT_DAYS=1`), żeby opóźniony backup nie gubił wczorajszych ważeń.
 
 ## Włącz Google Drive API
 

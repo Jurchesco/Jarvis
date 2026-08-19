@@ -41,6 +41,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       OPENSCALE_DRIVE_FILE_ID: ${{ secrets.OPENSCALE_DRIVE_FILE_ID }}
+      OPENSCALE_DRIVE_FOLDER_ID: ${{ secrets.OPENSCALE_DRIVE_FOLDER_ID }}
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
       GARMIN_TOKEN_DIR: .garminconnect
       DEFAULT_DAYS: "1"
