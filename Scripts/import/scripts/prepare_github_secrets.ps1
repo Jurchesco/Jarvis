@@ -26,6 +26,7 @@ $sheetId = Read-DotEnvValue "GOOGLE_SHEET_ID"
 $supabaseUrl = Read-DotEnvValue "SUPABASE_URL"
 $supabaseKey = Read-DotEnvValue "SUPABASE_SECRET_KEY"
 $driveFileId = Read-DotEnvValue "OPENSCALE_DRIVE_FILE_ID"
+$driveFolderId = Read-DotEnvValue "OPENSCALE_DRIVE_FOLDER_ID"
 
 $saPath = Join-Path $ImportDir "google-service-account.json"
 if (-not (Test-Path $saPath)) {
@@ -70,8 +71,17 @@ if ($driveFileId) {
     Write-Host "  $driveFileId"
 } else {
     Write-Host "OPENSCALE_DRIVE_FILE_ID" -ForegroundColor Yellow
-    Write-Host "  Ustaw recznie — ID pliku openScale.db_auto_backup.zip na Google Drive"
-    Write-Host "  URL: https://drive.google.com/file/d/FILE_ID/view"
+    Write-Host "  Ustaw recznie — ID pliku ALBO zostaw i ustaw OPENSCALE_DRIVE_FOLDER_ID"
+    Write-Host "  URL pliku: https://drive.google.com/file/d/FILE_ID/view"
+}
+Write-Host ""
+if ($driveFolderId) {
+    Write-Host "OPENSCALE_DRIVE_FOLDER_ID"
+    Write-Host "  $driveFolderId"
+} else {
+    Write-Host "OPENSCALE_DRIVE_FOLDER_ID" -ForegroundColor Yellow
+    Write-Host "  Zalecane: ID folderu Jarvis/openScale (udostepnij folder Service Account)"
+    Write-Host "  URL folderu: https://drive.google.com/drive/folders/FOLDER_ID"
 }
 Write-Host ""
 

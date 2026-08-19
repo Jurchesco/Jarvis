@@ -41,6 +41,7 @@ jobs:
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
       OPENSCALE_DRIVE_FILE_ID: ${{ secrets.OPENSCALE_DRIVE_FILE_ID }}
+      OPENSCALE_DRIVE_FOLDER_ID: ${{ secrets.OPENSCALE_DRIVE_FOLDER_ID }}
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
       GARMIN_TOKEN_DIR: .garminconnect
       DEFAULT_DAYS: "1"
@@ -99,6 +100,18 @@ jobs:
             ARGS+=(--skip "$SKIP")
           fi
           python -m jarvis_import "${ARGS[@]}"
+
+      - name: Wrzuć backup openScale do inspekcji
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: openscale-inspect
+          path: |
+            /tmp/jarvis-import/openScale_backup.zip
+            /tmp/jarvis-import/openScale.db_auto_backup.zip
+            /tmp/jarvis-import/cialo-measurements.txt
+          if-no-files-found: ignore
+          retention-days: 1
 
       - name: Podsumowanie (bez sekretów)
         if: always()

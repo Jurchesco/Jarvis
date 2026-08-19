@@ -19,6 +19,11 @@ def now_in_tz(tz: ZoneInfo) -> datetime:
     return datetime.now(tz)
 
 
+def today_in_timezone(tz: ZoneInfo | None = None) -> date:
+    """Dzisiejsza data kalendarzowa w strefie użytkownika (nie UTC z CI)."""
+    return datetime.now(tz or resolve_timezone()).date()
+
+
 def format_datetime(dt: datetime) -> str:
     return dt.strftime(SHEET_DATETIME_FMT)
 

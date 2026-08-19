@@ -4,9 +4,10 @@ import shutil
 import sqlite3
 import tempfile
 import zipfile
+from datetime import date
 from pathlib import Path
 
-from ..dates import date_key, format_datetime, timestamp_ms_to_local
+from ..dates import date_key, format_datetime, timestamp_ms_to_local, today_in_timezone
 from ..openscale_source import resolve_openscale_backup
 from ..sheets import ImportResult, batch_update_rows
 from ..sort_sheets import sort_worksheet_by_name
@@ -60,38 +61,100 @@ def number_or_blank(value):
         return value
 
 
+def zip_db_members(names: list[str]) -> tuple[str, list[str]]:
+    """Znajdź openScale.db i plik WAL. SHM z Androida świadomie pomijamy."""
+    files = [name for name in names if name and not name.endswith("/") and not name.endswith("\\")]
+    db_members = [name for name in files if Path(name).name.lower() == "openscale.db"]
+    if not db_members:
+        db_members = [name for name in files if Path(name).name.lower().endswith(".db")]
+    if not db_members:
+        raise RuntimeError("Brak pliku .db w archiwum backupu openScale")
+    db_name = db_members[0]
+    db_basename = Path(db_name).name.lower()
+    wal_members = [
+        name
+        for name in files
+        if Path(name).name.lower() == f"{db_basename}-wal"
+    ]
+    return db_name, wal_members
+
+
+def describe_zip_members(backup_path: Path) -> str:
+    with zipfile.ZipFile(backup_path) as archive:
+        parts = [
+            f"{info.filename} ({info.file_size} B)"
+            for info in archive.infolist()
+            if not info.is_dir()
+        ]
+    return ", ".join(parts) if parts else "(puste)"
+
+
+def _table_count(con: sqlite3.Connection, table: str) -> int | None:
+    try:
+        row = con.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()
+    except sqlite3.Error:
+        return None
+    return int(row[0]) if row else 0
+
+
+def checkpoint_extracted_wal(db_path: Path) -> None:
+    """Zastosuj WAL bez indeksu SHM z telefonu.
+
+    openScale pakuje gorącą kopię działającej bazy (db + wal + shm) bez SQLite
+    Backup API. Indeks ``-shm`` z Androida na Linuxie wygląda na poprawny i
+    każe SQLite pominąć ramki WAL — wtedy znikają najnowsze pomiary.
+    """
+    wal_path = db_path.parent / f"{db_path.name}-wal"
+    shm_path = db_path.parent / f"{db_path.name}-shm"
+    wal_size = wal_path.stat().st_size if wal_path.exists() else 0
+    if shm_path.exists():
+        shm_path.unlink()
+        print(f"  Usuwam {shm_path.name} (indeks WAL z Androida)")
+
+    con = sqlite3.connect(str(db_path))
+    try:
+        mode = con.execute("PRAGMA journal_mode=WAL").fetchone()[0]
+        before = _table_count(con, "Measurement")
+        checkpoint = con.execute("PRAGMA wal_checkpoint(FULL)").fetchone()
+        after = _table_count(con, "Measurement")
+        busy, log_frames, checkpointed = checkpoint or (None, None, None)
+        print(
+            f"  WAL {wal_size} B, journal_mode={mode}, "
+            f"checkpoint busy={busy} log={log_frames} checkpointed={checkpointed}, "
+            f"Measurement {before} → {after}"
+        )
+        if wal_size and log_frames == 0:
+            print(
+                "  UWAGA: SQLite zignorował WAL (niespójny snapshot z gorącej kopii). "
+                "W openScale zrób ręczny backup po zamknięciu aplikacji albo "
+                "„eksport bazy” jeszcze raz."
+            )
+    finally:
+        con.close()
+
+
 def extract_db_path(backup_path: Path) -> Path:
     """Rozpakowuje openScale.db z zip backupu do katalogu tymczasowego.
 
     openScale pakuje też SQLite WAL (`openScale.db-wal`). Same `.db` bez WAL
     pomija najnowsze pomiary, które jeszcze nie zostały zcheckpointowane.
+    Pliku ``-shm`` nie używamy — patrz ``checkpoint_extracted_wal``.
     """
     suffix = backup_path.suffix.lower()
     if suffix == ".zip":
         tmp_dir = Path(tempfile.mkdtemp(prefix="openscale-"))
         with zipfile.ZipFile(backup_path) as archive:
-            names = archive.namelist()
-            db_name = "openScale.db" if "openScale.db" in names else None
-            if db_name is None:
-                db_candidates = [
-                    n for n in names
-                    if n.endswith(".db") and "/" not in n and "\\" not in n
-                ]
-                if not db_candidates:
-                    shutil.rmtree(tmp_dir, ignore_errors=True)
-                    raise RuntimeError(f"Brak pliku .db w archiwum: {backup_path}")
-                db_name = db_candidates[0]
-            sidecars = [n for n in names if n in (f"{db_name}-wal", f"{db_name}-shm")]
-            for member in [db_name, *sidecars]:
+            try:
+                db_name, wal_members = zip_db_members(archive.namelist())
+            except RuntimeError:
+                shutil.rmtree(tmp_dir, ignore_errors=True)
+                raise RuntimeError(f"Brak pliku .db w archiwum: {backup_path}") from None
+            for member in [db_name, *wal_members]:
                 with archive.open(member) as src, (tmp_dir / Path(member).name).open("wb") as dst:
                     dst.write(src.read())
 
         db_path = tmp_dir / Path(db_name).name
-        con = sqlite3.connect(db_path)
-        try:
-            con.execute("PRAGMA wal_checkpoint(FULL)")
-        finally:
-            con.close()
+        checkpoint_extracted_wal(db_path)
         return db_path
 
     if suffix == ".db":
@@ -165,6 +228,18 @@ def read_measurements_from_db(db_path: Path, tz) -> list[list]:
         if cur.fetchone() is None:
             raise RuntimeError("Plik backupu nie zawiera tabeli Measurement (niepoprawny backup openScale)")
 
+        cur.execute("SELECT COUNT(*) FROM Measurement")
+        measurement_count = int(cur.fetchone()[0])
+        columns = {row[1] for row in cur.execute("PRAGMA table_info(Measurement)")}
+        if "userId" in columns:
+            dump_sql = "SELECT id, userId, timestamp FROM Measurement ORDER BY timestamp"
+        else:
+            dump_sql = "SELECT id, NULL, timestamp FROM Measurement ORDER BY timestamp"
+        for mid, user_id, timestamp_ms in cur.execute(dump_sql):
+            dt = timestamp_ms_to_local(timestamp_ms, tz)
+            user_part = f" user={user_id}" if user_id is not None else ""
+            print(f"  DB Measurement id={mid}{user_part} {format_datetime(dt)}")
+
         rows: list[list] = []
         for (
             _mid,
@@ -200,6 +275,20 @@ def read_measurements_from_db(db_path: Path, tz) -> list[list]:
                     comment,
                 )
             )
+        if measurement_count and measurement_count != len(rows):
+            print(
+                f"  UWAGA: tabela Measurement ma {measurement_count} wierszy, "
+                f"ale z wagą (WEIGHT) odczytano {len(rows)}"
+            )
+        cur.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
+        tables = [name for (name,) in cur.fetchall()]
+        if tables:
+            counts = []
+            for table in tables:
+                n = _table_count(con, table)
+                if n:
+                    counts.append(f"{table}={n}")
+            print(f"  Tabele w backupie: {', '.join(counts) if counts else ', '.join(tables)}")
         return rows
     finally:
         con.close()
@@ -342,6 +431,23 @@ def resolve_existing_row(existing_exact, existing_fuzzy, row) -> int | None:
     return existing_fuzzy.get(make_row_key(row, fuzzy=True))
 
 
+def warn_if_backup_stale(rows: list[list], tz) -> None:
+    today = today_in_timezone(tz)
+    if not rows:
+        print("  UWAGA: backup nie zawiera żadnych pomiarów z wagą.")
+        return
+    latest = date.fromisoformat(date_key(rows[-1][COL_DATETIME]))
+    age_days = (today - latest).days
+    if age_days >= 2:
+        print(
+            f"  UWAGA: najnowszy pomiar w backupie to {latest} ({age_days} dni temu). "
+            "Drive przy „nadpisz backup” często tworzy nowy zip (nowe ID) bez udostępnienia. "
+            "Udostępnij folder Jarvis/openScale oraz aktualny plik na "
+            "garmin-importer@veo-experiments-463809.iam.gserviceaccount.com "
+            "i zaktualizuj OPENSCALE_DRIVE_FILE_ID / OPENSCALE_DRIVE_FOLDER_ID."
+        )
+
+
 def import_openscale(ctx: ImportContext) -> ImportResult:
     backup_path = resolve_openscale_backup(ctx.config)
     if backup_path is None:
@@ -349,15 +455,37 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
     if not backup_path.exists():
         return ImportResult("cialo", error=f"Nie znaleziono backupu: {backup_path}")
 
-    print(f"\n[CIALO] Zakres: {ctx.start_date} – {ctx.end_date}")
-    print(f"  Backup: {backup_path}")
+    from_date = ctx.config.import_start_date
+    to_date = ctx.end_date
+    print(f"\n[CIALO] Zakres: {from_date} – {to_date} (backup openScale, niezależnie od --days)")
+    print(f"  Backup: {backup_path} ({backup_path.stat().st_size // 1024} KB)")
+    if backup_path.suffix.lower() == ".zip":
+        print(f"  Zawartość zip: {describe_zip_members(backup_path)}")
 
     all_rows = read_openscale_rows(backup_path, ctx.config.timezone)
     filtered_rows = [
         row for row in all_rows
-        if ctx.start_date.isoformat() <= date_key(row[COL_DATETIME]) <= ctx.end_date.isoformat()
+        if from_date.isoformat() <= date_key(row[COL_DATETIME]) <= to_date.isoformat()
     ]
-    print(f"  Odczytano {len(all_rows)} pomiarów, w zakresie: {len(filtered_rows)}")
+    if all_rows:
+        first = date_key(all_rows[0][COL_DATETIME])
+        last = date_key(all_rows[-1][COL_DATETIME])
+        print(f"  Odczytano {len(all_rows)} pomiarów ({first} – {last}), w zakresie: {len(filtered_rows)}")
+        print("  Daty w backupie: " + ", ".join(date_key(row[COL_DATETIME]) for row in all_rows))
+        dump_path = Path("/tmp/jarvis-import/cialo-measurements.txt")
+        dump_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_path.write_text(
+            "\n".join(
+                f"{row[COL_DATETIME]}\t{row[COL_WEIGHT]}"
+                for row in all_rows
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print(f"  Dump pomiarów: {dump_path}")
+    else:
+        print(f"  Odczytano 0 pomiarów, w zakresie: 0")
+    warn_if_backup_stale(all_rows, ctx.config.timezone)
 
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
     migrate_worksheet_layout(worksheet)

@@ -19,14 +19,29 @@ Skrypt wyświetli listę sekretów i zapisze pliki tymczasowe w `%TEMP%\jarvis-g
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | **Cała** zawartość pliku `google-service-account.json` |
 | `SUPABASE_URL` | URL projektu Supabase (ten sam co JJ Workout Tool) |
 | `SUPABASE_SECRET_KEY` | Klucz `service_role` (nie `anon`!) |
-| `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive |
+| `OPENSCALE_DRIVE_FILE_ID` | ID pliku backupu openScale na Google Drive (fallback) |
+| `OPENSCALE_DRIVE_FOLDER_ID` | **Zalecane** — ID folderu z backupami openScale (importer bierze najnowszy zip) |
 | `GARMINCONNECT_ZIP` | Base64 archiwum folderu `.garminconnect/` (wymagany dla modułów Garmin w chmurze) |
 
 ## Google Drive — openScale
 
-1. W Google Drive znajdź plik `openScale.db_auto_backup.zip`.
-2. Kliknij **Udostępnij** → dodaj email Service Account (`client_email` z JSON).
-3. ID pliku z URL: `https://drive.google.com/file/d/`**TUTAJ**`/view`
+Service Account (ten sam co arkusz):
+
+`garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`
+
+**Typowy objaw:** w Drive klikasz aktualny `openScale.db_auto_backup.zip` → Udostępnij → **brak żadnego maila**. To nie jest ten sam plik, który czyta CI.
+
+openScale przy auto-backupie kopiuje żywą bazę (`db`+`wal`+`shm`) bez checkpointu SQLite. Jeśli backup odpali się w tej samej minucie co ważenie, nowy pomiar może nie wejść do zipu.
+
+**Zalecane w openScale:** dzienny backup **bez** nadpisywania ostatniego pliku. Powstają `openscale_backup_<timestamp>.zip`. Importer bierze najnowszy z folderu; jutrzejszy plik ma już dzisiejsze ważenie, a zepsuty poranny zip nic nie kasuje.
+
+1. Udostępnij **folder** `Jarvis/openScale` (nie pojedynczy plik) na mail powyżej — rola **Czytelnik**. Nowe nadpisania w tym folderze dziedziczą dostęp.
+2. ID folderu z URL: `https://drive.google.com/drive/folders/`**TUTAJ** → secret `OPENSCALE_DRIVE_FOLDER_ID`.
+3. Dodatkowo udostępnij **aktualny** zip na ten sam mail (na wszelki wypadek).
+4. Skopiuj ID **tego** zipu z URL `https://drive.google.com/file/d/`**TUTAJ**`/view` i zaktualizuj secret `OPENSCALE_DRIVE_FILE_ID`, jeśli się zmienił.
+5. Actions → Jarvis Import → Run workflow.
+
+Moduł `cialo` importuje **wszystkie** pomiary od `IMPORT_START_DATE` z **najnowszego** zipu w folderze (`auto_backup` albo `openscale_backup_<epoch>`).
 
 ## Włącz Google Drive API
 
