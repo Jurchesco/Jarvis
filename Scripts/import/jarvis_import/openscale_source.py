@@ -6,17 +6,17 @@ from pathlib import Path
 from .config import Config
 from .drive import (
     download_latest_openscale_backup,
-    is_openscale_backup_name,
+    is_openscale_auto_backup_name,
 )
 
 
 def iter_local_openscale_backups(path: Path) -> list[Path]:
-    """Plik z konfiguracji plus rodzeństwo w folderze (openScale często dopisuje datę do nazwy)."""
+    """Skonfigurowany auto-backup plus ewentualne nowsze kopie o tej samej konwencji nazwy."""
     folder = path if path.is_dir() else path.parent
     found: list[Path] = []
     if folder.is_dir():
         for child in folder.iterdir():
-            if child.is_file() and is_openscale_backup_name(child.name):
+            if child.is_file() and is_openscale_auto_backup_name(child.name):
                 found.append(child)
     if path.is_file() and path not in found:
         found.append(path)

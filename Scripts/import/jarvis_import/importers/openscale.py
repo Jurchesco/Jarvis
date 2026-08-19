@@ -230,10 +230,15 @@ def read_measurements_from_db(db_path: Path, tz) -> list[list]:
 
         cur.execute("SELECT COUNT(*) FROM Measurement")
         measurement_count = int(cur.fetchone()[0])
-        cur.execute("SELECT id, userId, timestamp FROM Measurement ORDER BY timestamp")
-        for mid, user_id, timestamp_ms in cur.fetchall():
+        columns = {row[1] for row in cur.execute("PRAGMA table_info(Measurement)")}
+        if "userId" in columns:
+            dump_sql = "SELECT id, userId, timestamp FROM Measurement ORDER BY timestamp"
+        else:
+            dump_sql = "SELECT id, NULL, timestamp FROM Measurement ORDER BY timestamp"
+        for mid, user_id, timestamp_ms in cur.execute(dump_sql):
             dt = timestamp_ms_to_local(timestamp_ms, tz)
-            print(f"  DB Measurement id={mid} user={user_id} {format_datetime(dt)}")
+            user_part = f" user={user_id}" if user_id is not None else ""
+            print(f"  DB Measurement id={mid}{user_part} {format_datetime(dt)}")
 
         rows: list[list] = []
         for (

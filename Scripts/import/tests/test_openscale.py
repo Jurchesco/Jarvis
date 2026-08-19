@@ -49,10 +49,10 @@ def _create_openscale_db(path: Path, measurements: list[tuple[int, int, float]])
 class DriveSelectionTests(unittest.TestCase):
     def test_is_openscale_backup_name(self):
         self.assertTrue(is_openscale_backup_name("openScale.db_auto_backup.zip"))
-        self.assertTrue(is_openscale_backup_name("openScale_2026-08-19.zip"))
-        self.assertTrue(is_openscale_backup_name("openScale.db"))
+        self.assertFalse(is_openscale_backup_name("openscale_backup_1787123462988.zip"))
+        self.assertFalse(is_openscale_backup_name("openScale_2026-08-19.zip"))
+        self.assertFalse(is_openscale_backup_name("openScale.db"))
         self.assertFalse(is_openscale_backup_name("notes.txt"))
-        self.assertFalse(is_openscale_backup_name("openScale.csv"))
 
     def test_pick_latest_backup_by_modified_time(self):
         older = DriveFile(
@@ -63,7 +63,7 @@ class DriveSelectionTests(unittest.TestCase):
         )
         newer = DriveFile(
             id="new",
-            name="openScale_2026-08-19.zip",
+            name="openScale.db_auto_backup.zip",
             modified_time="2026-08-19T06:00:00.000Z",
             size=18000,
         )
@@ -72,23 +72,21 @@ class DriveSelectionTests(unittest.TestCase):
 
 
 class LocalBackupTests(unittest.TestCase):
-    def test_picks_newer_sibling_in_folder(self):
+    def test_picks_newer_auto_backup_not_manual_export(self):
         with tempfile.TemporaryDirectory() as raw:
             folder = Path(raw)
-            stale = folder / "openScale.db_auto_backup.zip"
-            fresh = folder / "openScale_2026-08-19.zip"
-            stale.write_bytes(b"PK\x03\x04stale")
-            fresh.write_bytes(b"PK\x03\x04fresh-and-bigger")
-            stale_mtime = 1_700_000_000
-            fresh_mtime = 1_800_000_000
+            auto = folder / "openScale.db_auto_backup.zip"
+            manual = folder / "openscale_backup_1787123462988.zip"
+            auto.write_bytes(b"PK\x03\x04auto")
+            manual.write_bytes(b"PK\x03\x04manual-newer-and-bigger")
             import os
 
-            os.utime(stale, (stale_mtime, stale_mtime))
-            os.utime(fresh, (fresh_mtime, fresh_mtime))
+            os.utime(auto, (1_700_000_000, 1_700_000_000))
+            os.utime(manual, (1_800_000_000, 1_800_000_000))
 
-            candidates = iter_local_openscale_backups(stale)
-            self.assertEqual(len(candidates), 2)
-            self.assertEqual(pick_latest_local_backup(candidates), fresh)
+            candidates = iter_local_openscale_backups(auto)
+            self.assertEqual(candidates, [auto])
+            self.assertEqual(pick_latest_local_backup(candidates), auto)
 
 
 class ZipExtractTests(unittest.TestCase):

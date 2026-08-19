@@ -56,9 +56,9 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | cialo | openScale backup | Cialo |
 | silownia | JJ Workout Tool | Silownia_import |
 
-`cialo` bierze **najnowszy** backup z folderu (lokalnie albo na Drive) i importuje wszystkie pomiary od `IMPORT_START_DATE` — nie tylko okno `--days`. Harmonogram co godzinę (`DEFAULT_DAYS=1`) nie gubi więc wczorajszych ważeń, gdy openScale wrzuci zip z opóźnieniem.
+`cialo` importuje **auto-backup** `openScale.db_auto_backup.zip` (nie ręczny `openscale_backup_<timestamp>.zip`). Wszystkie pomiary od `IMPORT_START_DATE`. Harmonogram co godzinę (`DEFAULT_DAYS=1`) nie gubi wczorajszych ważeń, gdy auto-backup spóźni się o dzień.
 
-Na CI plik na Drive musi być udostępniony Service Accountowi `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`. „Nadpisz backup” w openScale często zostawia **nowy** zip bez tego udostępnienia — wtedy importer czyta stary, kiedyś udostępniony plik. Udostępnij **folder** `Jarvis/openScale`, nie tylko jeden zip.
+Na CI plik musi być udostępniony Service Accountowi `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`. Udostępnij **folder** `Jarvis/openScale` oraz sam `openScale.db_auto_backup.zip`.
 
 ## Flagi
 
