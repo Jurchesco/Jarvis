@@ -230,6 +230,10 @@ def read_measurements_from_db(db_path: Path, tz) -> list[list]:
 
         cur.execute("SELECT COUNT(*) FROM Measurement")
         measurement_count = int(cur.fetchone()[0])
+        cur.execute("SELECT id, userId, timestamp FROM Measurement ORDER BY timestamp")
+        for mid, user_id, timestamp_ms in cur.fetchall():
+            dt = timestamp_ms_to_local(timestamp_ms, tz)
+            print(f"  DB Measurement id={mid} user={user_id} {format_datetime(dt)}")
 
         rows: list[list] = []
         for (
@@ -463,6 +467,17 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
         last = date_key(all_rows[-1][COL_DATETIME])
         print(f"  Odczytano {len(all_rows)} pomiarów ({first} – {last}), w zakresie: {len(filtered_rows)}")
         print("  Daty w backupie: " + ", ".join(date_key(row[COL_DATETIME]) for row in all_rows))
+        dump_path = Path("/tmp/jarvis-import/cialo-measurements.txt")
+        dump_path.parent.mkdir(parents=True, exist_ok=True)
+        dump_path.write_text(
+            "\n".join(
+                f"{row[COL_DATETIME]}\t{row[COL_WEIGHT]}"
+                for row in all_rows
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        print(f"  Dump pomiarów: {dump_path}")
     else:
         print(f"  Odczytano 0 pomiarów, w zakresie: 0")
     warn_if_backup_stale(all_rows, ctx.config.timezone)
