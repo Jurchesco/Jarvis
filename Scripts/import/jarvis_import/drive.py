@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import io
+import re
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from google.oauth2.service_account import Credentials
@@ -11,6 +13,7 @@ from googleapiclient.http import MediaIoBaseDownload
 DRIVE_SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
 DRIVE_FIELDS = "id,name,mimeType,modifiedTime,size,md5Checksum,parents,shortcutDetails"
 SHORTCUT_MIME = "application/vnd.google-apps.shortcut"
+_EPOCH_MS = re.compile(r"(?<!\d)(\d{13})(?!\d)")
 
 
 @dataclass(frozen=True)
@@ -33,14 +36,30 @@ class DriveFile:
         )
 
 
-def is_openscale_auto_backup_name(name: str) -> bool:
-    """Tylko auto-backup openScale (`openScale.db_auto_backup.zip`), nie ręczny `openscale_backup_<epoch>.zip`."""
-    lower = (name or "").replace(" ", "").lower()
-    return "auto_backup" in lower and (lower.endswith(".zip") or lower.endswith(".db"))
-
-
 def is_openscale_backup_name(name: str) -> bool:
-    return is_openscale_auto_backup_name(name)
+    """Auto-backup (`openScale.db_auto_backup.zip`) albo nowy plik dzienny (`openscale_backup_<epoch>.zip`)."""
+    lower = (name or "").replace(" ", "").lower()
+    if not (lower.endswith(".zip") or lower.endswith(".db")):
+        return False
+    if "auto_backup" in lower:
+        return True
+    return "openscale_backup_" in lower
+
+
+def backup_recency_ms(name: str, modified_time: str = "", mtime: float | None = None) -> int:
+    """Czas backupu: epoch z nazwy openScale, potem modifiedTime z Drive, potem mtime pliku."""
+    match = _EPOCH_MS.search(name or "")
+    if match:
+        return int(match.group(1))
+    if modified_time:
+        iso = modified_time.replace("Z", "+00:00")
+        try:
+            return int(datetime.fromisoformat(iso).timestamp() * 1000)
+        except ValueError:
+            pass
+    if mtime is not None:
+        return int(mtime * 1000)
+    return 0
 
 
 def parse_drive_file(raw: dict) -> DriveFile:
@@ -64,7 +83,10 @@ def parse_drive_file(raw: dict) -> DriveFile:
 def pick_latest_backup(files: list[DriveFile]) -> DriveFile:
     if not files:
         raise ValueError("Brak plików backupu openScale")
-    return max(files, key=lambda item: (item.modified_time or "", item.size, item.name))
+    return max(
+        files,
+        key=lambda item: (backup_recency_ms(item.name, item.modified_time), item.size, item.name),
+    )
 
 
 def build_drive_service(credentials_file: Path):
@@ -124,15 +146,17 @@ def collect_openscale_drive_candidates(
     for parent_id in folder_ids:
         try:
             for item in _list_files(service, f"'{parent_id}' in parents and trashed=false"):
-                if is_openscale_auto_backup_name(item.name):
+                if is_openscale_backup_name(item.name):
                     candidates[item.id] = item
         except Exception as error:
             print(f"  Nie mogę listować folderu Drive {parent_id[:8]}...: {error}")
 
     try:
-        query = "trashed=false and name contains 'auto_backup'"
+        query = (
+            "trashed=false and (name contains 'auto_backup' or name contains 'openscale_backup')"
+        )
         for item in _list_files(service, query):
-            if is_openscale_auto_backup_name(item.name):
+            if is_openscale_backup_name(item.name):
                 candidates[item.id] = item
     except Exception as error:
         print(f"  Wyszukiwanie backupów openScale na Drive nieudane: {error}")
@@ -175,13 +199,13 @@ def download_latest_openscale_backup(
     configured, candidates = collect_openscale_drive_candidates(service, file_id, folder_id)
     print(f"  Drive (skonfigurowany): {configured.describe()}")
     if len(candidates) > 1:
-        print(f"  Znaleziono {len(candidates)} plików auto-backup openScale")
+        print(f"  Znaleziono {len(candidates)} backupów openScale w folderze")
 
     chosen = pick_latest_backup(candidates)
     if chosen.id != configured.id:
-        print(f"  Nowszy auto-backup niż OPENSCALE_DRIVE_FILE_ID: {chosen.describe()}")
+        print(f"  Nowszy backup niż OPENSCALE_DRIVE_FILE_ID: {chosen.describe()}")
     else:
-        print(f"  Pobieram auto-backup: {chosen.describe()}")
+        print(f"  Pobieram: {chosen.describe()}")
 
     suffix = ".db" if chosen.name.lower().endswith(".db") else ".zip"
     destination = destination_dir / f"openScale_backup{suffix}"

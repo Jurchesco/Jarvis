@@ -31,7 +31,9 @@ Service Account (ten sam co arkusz):
 
 **Typowy objaw:** w Drive klikasz aktualny `openScale.db_auto_backup.zip` → Udostępnij → **brak żadnego maila**. To nie jest ten sam plik, który czyta CI.
 
-openScale przy auto-backupie kopiuje żywą bazę (`db`+`wal`+`shm`) bez checkpointu SQLite. Jeśli backup odpali się w tej samej minucie co ważenie, nowy pomiar może nie wejść do zipu — ręczny eksport chwilę później go ma. Importer czyta wyłącznie `openScale.db_auto_backup.zip` (nie `openscale_backup_<epoch>.zip`).
+openScale przy auto-backupie kopiuje żywą bazę (`db`+`wal`+`shm`) bez checkpointu SQLite. Jeśli backup odpali się w tej samej minucie co ważenie, nowy pomiar może nie wejść do zipu.
+
+**Zalecane w openScale:** dzienny backup **bez** nadpisywania ostatniego pliku. Powstają `openscale_backup_<timestamp>.zip`. Importer bierze najnowszy z folderu; jutrzejszy plik ma już dzisiejsze ważenie, a zepsuty poranny zip nic nie kasuje.
 
 1. Udostępnij **folder** `Jarvis/openScale` (nie pojedynczy plik) na mail powyżej — rola **Czytelnik**. Nowe nadpisania w tym folderze dziedziczą dostęp.
 2. ID folderu z URL: `https://drive.google.com/drive/folders/`**TUTAJ** → secret `OPENSCALE_DRIVE_FOLDER_ID`.
@@ -39,7 +41,7 @@ openScale przy auto-backupie kopiuje żywą bazę (`db`+`wal`+`shm`) bez checkpo
 4. Skopiuj ID **tego** zipu z URL `https://drive.google.com/file/d/`**TUTAJ**`/view` i zaktualizuj secret `OPENSCALE_DRIVE_FILE_ID`, jeśli się zmienił.
 5. Actions → Jarvis Import → Run workflow.
 
-Moduł `cialo` importuje **wszystkie** pomiary od `IMPORT_START_DATE` (nie tylko `DEFAULT_DAYS=1`) z pliku auto-backup.
+Moduł `cialo` importuje **wszystkie** pomiary od `IMPORT_START_DATE` z **najnowszego** zipu w folderze (`auto_backup` albo `openscale_backup_<epoch>`).
 
 ## Włącz Google Drive API
 

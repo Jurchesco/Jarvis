@@ -5,18 +5,19 @@ from pathlib import Path
 
 from .config import Config
 from .drive import (
+    backup_recency_ms,
     download_latest_openscale_backup,
-    is_openscale_auto_backup_name,
+    is_openscale_backup_name,
 )
 
 
 def iter_local_openscale_backups(path: Path) -> list[Path]:
-    """Skonfigurowany auto-backup plus ewentualne nowsze kopie o tej samej konwencji nazwy."""
+    """Wszystkie zipy auto / dated w folderze (openScale przy 'nowy plik' dodaje epoch do nazwy)."""
     folder = path if path.is_dir() else path.parent
     found: list[Path] = []
     if folder.is_dir():
         for child in folder.iterdir():
-            if child.is_file() and is_openscale_auto_backup_name(child.name):
+            if child.is_file() and is_openscale_backup_name(child.name):
                 found.append(child)
     if path.is_file() and path not in found:
         found.append(path)
@@ -26,7 +27,14 @@ def iter_local_openscale_backups(path: Path) -> list[Path]:
 def pick_latest_local_backup(files: list[Path]) -> Path:
     if not files:
         raise FileNotFoundError("Brak lokalnych plików backupu openScale")
-    return max(files, key=lambda item: (item.stat().st_mtime, item.stat().st_size, item.name))
+    return max(
+        files,
+        key=lambda item: (
+            backup_recency_ms(item.name, mtime=item.stat().st_mtime),
+            item.stat().st_size,
+            item.name,
+        ),
+    )
 
 
 def resolve_openscale_backup(config: Config) -> Path | None:
