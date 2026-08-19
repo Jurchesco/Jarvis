@@ -58,6 +58,8 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 
 `cialo` bierze **najnowszy** backup z folderu (lokalnie albo na Drive) i importuje wszystkie pomiary od `IMPORT_START_DATE` — nie tylko okno `--days`. Harmonogram co godzinę (`DEFAULT_DAYS=1`) nie gubi więc wczorajszych ważeń, gdy openScale wrzuci zip z opóźnieniem.
 
+Na CI plik na Drive musi być udostępniony Service Accountowi `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`. „Nadpisz backup” w openScale często zostawia **nowy** zip bez tego udostępnienia — wtedy importer czyta stary, kiedyś udostępniony plik. Udostępnij **folder** `Jarvis/openScale`, nie tylko jeden zip.
+
 ## Flagi
 
 | Flaga | Opis |

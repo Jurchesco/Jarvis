@@ -97,7 +97,8 @@ copy .env.example .env
 2. Włącz Google Sheets API i Google Drive API
 3. Utwórz Service Account → pobierz klucz JSON
 4. Zapisz jako `Scripts/import/google-service-account.json`
-5. Udostępnij arkusz Google Sheets na email Service Account (rola: Editor)
+5. Udostępnij arkusz Google Sheets na email Service Account (rola: Editor): `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`
+6. Ten sam mail — folder `Jarvis/openScale` na Google Drive (Reader). Samo „nadpisz backup” w openScale nie zachowuje udostępnienia, jeśli Drive tworzy nowy plik.
 
 ### Uruchomienie
 

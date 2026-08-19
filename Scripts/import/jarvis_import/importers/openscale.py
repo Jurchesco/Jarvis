@@ -382,9 +382,10 @@ def warn_if_backup_stale(rows: list[list], tz) -> None:
     if age_days >= 2:
         print(
             f"  UWAGA: najnowszy pomiar w backupie to {latest} ({age_days} dni temu). "
-            "openScale często zapisuje NOWY plik (z datą w nazwie) zamiast nadpisywać "
-            "OPENSCALE_DRIVE_FILE_ID. Udostępnij cały folder Jarvis/openScale "
-            "kontu Service Account — nie tylko jeden stary zip."
+            "Drive przy „nadpisz backup” często tworzy nowy zip (nowe ID) bez udostępnienia. "
+            "Udostępnij folder Jarvis/openScale oraz aktualny plik na "
+            "garmin-importer@veo-experiments-463809.iam.gserviceaccount.com "
+            "i zaktualizuj OPENSCALE_DRIVE_FILE_ID / OPENSCALE_DRIVE_FOLDER_ID."
         )
 
 
