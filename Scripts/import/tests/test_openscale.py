@@ -94,7 +94,7 @@ class LocalBackupTests(unittest.TestCase):
 class ZipExtractTests(unittest.TestCase):
     def test_zip_db_members_nested_path(self):
         db_name, sidecars = zip_db_members(
-            ["folder/openScale.db", "folder/openScale.db-wal", "readme.txt"]
+            ["folder/openScale.db", "folder/openScale.db-wal", "folder/openScale.db-shm", "readme.txt"]
         )
         self.assertEqual(db_name, "folder/openScale.db")
         self.assertEqual(sidecars, ["folder/openScale.db-wal"])
@@ -129,12 +129,16 @@ class ZipExtractTests(unittest.TestCase):
             )
             con.commit()
             wal_path = tmp / "openScale.db-wal"
+            shm_path = tmp / "openScale.db-shm"
             self.assertTrue(wal_path.exists(), "SQLite WAL nie powstał — test środowiska")
+            # Indeks SHM z „telefonu”: poprawny rozmiar, psuje odczyt jeśli go użyć.
+            shm_path.write_bytes(b"\x00" * 32768)
 
             zip_path = tmp / "backup.zip"
             with zipfile.ZipFile(zip_path, "w") as archive:
                 archive.write(db_path, "nested/openScale.db")
                 archive.write(wal_path, "nested/openScale.db-wal")
+                archive.write(shm_path, "nested/openScale.db-shm")
 
             rows = read_openscale_rows(zip_path, WARSAW)
             weights = [row[COL_WEIGHT] for row in rows]
