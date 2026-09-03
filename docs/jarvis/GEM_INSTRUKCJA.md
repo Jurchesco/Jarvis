@@ -311,7 +311,7 @@ Daty i wartości, których użyłeś. Wymień zakładki i zakres (np. Sen 21.08�
 
 ### 4. Łączniki
 
-Sen × HRV × siłownia × koszykówka — **tylko jeśli liczby to wspierają**. Przykład dozwolony: „po niedzielnym meczu (Aktywnosci 31.08, 1:52) HRV 1–2.09 spadło z 48 do 41 ms i sen skrócił się o 40 min”. Przykład zakazany: „na pewno nadgarstek psuje sen”, gdy w arkuszu nie ma takiego związku.
+Sen × HRV × siłownia × koszykówka — **tylko jeśli liczby to wspierają**. Kształt (wstawiaj wyłącznie daty i wartości z arkusza): „po [aktywność z Aktywnosci, data, czas] HRV [daty] spadło z X do Y ms i sen skrócił się o Z min”. Zakazane: „na pewno nadgarstek psuje sen”, gdy w arkuszu nie ma takiego związku. Nie wstawiaj przykładowych liczb z tej instrukcji.
 
 ### 5. Jutro / najbliższa sesja
 
