@@ -324,11 +324,12 @@ export default function WorkoutScreen() {
       showToast({ tone: "success", message: "Zapisano ćwiczenie" });
       await refreshData();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
+      const raw = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
+      const msg = raw.trim() || "Nie udało się zapisać";
       if (Platform.OS === "web") {
         window.alert(msg);
       } else {
-        showToast({ tone: "error", message: "Nie udało się zapisać" });
+        showToast({ tone: "error", message: msg });
       }
     } finally {
       setSavingExerciseId(null);

@@ -107,6 +107,7 @@ export function Toast({
   onDismiss,
 }: ToastCardProps) {
   const Icon = TONE_ICON[tone];
+  const label = message.trim();
 
   return (
     <View
@@ -115,10 +116,12 @@ export function Toast({
         tone === "error" && "border-danger/40 bg-danger/10",
       )}
       accessibilityLiveRegion="polite"
-      accessibilityRole="text"
+      accessibilityLabel={label}
     >
       <Icon size={ICON_SIZE} strokeWidth={ICON_STROKE} color={TONE_ICON_COLOR[tone]} />
-      <Text className="text-sm font-semibold text-text-primary flex-1">{message}</Text>
+      <View className="flex-1 min-w-0">
+        <Text className="text-sm font-semibold text-text-primary">{label}</Text>
+      </View>
       {actionLabel && onAction ? (
         <Pressable
           onPress={() => {
@@ -166,7 +169,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     (options: ShowToastOptions) => {
       clearTimer();
       idRef.current += 1;
-      const next = { ...options, id: idRef.current };
+      const message = options.message.trim();
+      const next = { ...options, message, id: idRef.current };
       setToast(next);
       const duration =
         options.durationMs ?? (options.tone === "error" ? ERROR_DURATION_MS : DEFAULT_DURATION_MS);
