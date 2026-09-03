@@ -8,12 +8,61 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Pressable, Text, View } from "react-native";
+import {
+  Dimensions,
+  Keyboard,
+  Platform,
+  Pressable,
+  Text,
+  View,
+  type KeyboardEvent,
+} from "react-native";
 import Animated, { FadeInUp, FadeOutDown } from "react-native-reanimated";
 import { Check, CircleAlert, Info } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { ICON_SIZE, ICON_STROKE } from "./icons";
 import { cx } from "./utils";
+
+const TOAST_BOTTOM_GAP = 24;
+
+/** Lift overlay above the keyboard without double-counting Android adjustResize. */
+function useToastKeyboardLift() {
+  const [lift, setLift] = useState(0);
+
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      if (typeof window === "undefined") return;
+      const vv = window.visualViewport;
+      if (!vv) return;
+      const update = () => {
+        setLift(Math.max(0, window.innerHeight - vv.height - vv.offsetTop));
+      };
+      update();
+      vv.addEventListener("resize", update);
+      vv.addEventListener("scroll", update);
+      return () => {
+        vv.removeEventListener("resize", update);
+        vv.removeEventListener("scroll", update);
+      };
+    }
+
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const onShow = (event: KeyboardEvent) => {
+      const windowHeight = Dimensions.get("window").height;
+      setLift(Math.max(0, windowHeight - event.endCoordinates.screenY));
+    };
+    const onHide = () => setLift(0);
+    const showSub = Keyboard.addListener(showEvent, onShow);
+    const hideSub = Keyboard.addListener(hideEvent, onHide);
+    return () => {
+      showSub.remove();
+      hideSub.remove();
+    };
+  }, []);
+
+  return lift;
+}
 
 export type ToastTone = "success" | "error" | "info";
 
@@ -96,6 +145,7 @@ export function Toast({
 
 export function ToastProvider({ children }: { children: ReactNode }) {
   const insets = useSafeAreaInsets();
+  const keyboardLift = useToastKeyboardLift();
   const [toast, setToast] = useState<(ShowToastOptions & { id: number }) | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const idRef = useRef(0);
@@ -141,9 +191,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={toast.id}
             entering={FadeInUp.duration(220)}
             exiting={FadeOutDown.duration(180)}
-            className="absolute left-4 right-4 bottom-6 z-50"
+            className="absolute left-4 right-4 z-50"
             style={{
-              paddingBottom: insets.bottom,
+              bottom: TOAST_BOTTOM_GAP + (keyboardLift > 0 ? keyboardLift : insets.bottom),
               elevation: 12,
               zIndex: 50,
               pointerEvents: "box-none",

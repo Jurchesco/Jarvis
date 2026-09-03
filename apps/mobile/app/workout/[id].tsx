@@ -325,9 +325,11 @@ export default function WorkoutScreen() {
       await refreshData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
-      showToast({ tone: "error", message: "Nie udało się zapisać" });
-      if (Platform.OS === "web") window.alert(msg);
-      else Alert.alert("Błąd", msg);
+      if (Platform.OS === "web") {
+        window.alert(msg);
+      } else {
+        showToast({ tone: "error", message: "Nie udało się zapisać" });
+      }
     } finally {
       setSavingExerciseId(null);
     }
