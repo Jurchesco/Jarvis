@@ -8,7 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { AuthProvider, useAuth } from "../src/contexts/AuthContext";
 import { init as initNotifications } from "../src/lib/notifications";
-import { StateBlock } from "../src/components/ui";
+import { StateBlock, ToastProvider } from "../src/components/ui";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -75,23 +75,25 @@ export default function RootLayout() {
       <AuthProvider>
         <QueryClientProvider client={queryClient}>
           <SafeAreaProvider>
-            <StatusBar style="light" />
-            <AuthGate>
-              <Stack
-                screenOptions={{
-                  headerStyle: { backgroundColor: "#121b2e" },
-                  headerTintColor: "#f8fafc",
-                  headerTitleStyle: { fontWeight: "700" },
-                  headerShadowVisible: false,
-                  contentStyle: { backgroundColor: "#0b1220" },
-                }}
-              >
-                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                <Stack.Screen name="auth" options={{ headerShown: false }} />
-                <Stack.Screen name="sheet" options={{ headerShown: false }} />
-                <Stack.Screen name="workout" options={{ headerShown: false }} />
-              </Stack>
-            </AuthGate>
+            <ToastProvider>
+              <StatusBar style="light" />
+              <AuthGate>
+                <Stack
+                  screenOptions={{
+                    headerStyle: { backgroundColor: "#121b2e" },
+                    headerTintColor: "#f8fafc",
+                    headerTitleStyle: { fontWeight: "700" },
+                    headerShadowVisible: false,
+                    contentStyle: { backgroundColor: "#0b1220" },
+                  }}
+                >
+                  <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                  <Stack.Screen name="auth" options={{ headerShown: false }} />
+                  <Stack.Screen name="sheet" options={{ headerShown: false }} />
+                  <Stack.Screen name="workout" options={{ headerShown: false }} />
+                </Stack>
+              </AuthGate>
+            </ToastProvider>
           </SafeAreaProvider>
         </QueryClientProvider>
       </AuthProvider>

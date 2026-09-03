@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, FlatList, Platform, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -23,10 +23,14 @@ import {
 import {
   useCompletedSessions,
   useDeleteSession,
+  useIncompleteSession,
   useSessionsByIds,
 } from "../../../src/api/hooks";
 import { formatSessionWhenShort, sessionDateKey } from "../../../src/lib/sessionDate";
+import { ensureFreestyleSheet } from "../../../src/lib/ensureFreestyleSheet";
+import { formatExerciseCount, formatSetCount } from "../../../src/lib/polishCount";
 import {
+  Badge,
   Card,
   ICON_SIZE,
   ICON_STROKE,
@@ -91,6 +95,15 @@ export default function HistoryScreen() {
   const router = useRouter();
   const { data: sessions, isLoading } = useCompletedSessions();
   const deleteSession = useDeleteSession();
+  const [freestyleSheetId, setFreestyleSheetId] = useState<string | null>(null);
+
+  useEffect(() => {
+    ensureFreestyleSheet()
+      .then(({ sheetId }) => setFreestyleSheetId(sheetId))
+      .catch(() => {});
+  }, []);
+
+  const { data: incompleteSession } = useIncompleteSession(freestyleSheetId ?? undefined);
 
   const today = new Date();
   const [calYear, setCalYear] = useState(today.getFullYear());
@@ -248,9 +261,12 @@ export default function HistoryScreen() {
             activeOpacity={0.8}
             className="flex-1 pr-3"
           >
-            <Text className="text-text-primary text-base font-bold leading-tight">
-              {sessionLabel(item.sheetName)}
-            </Text>
+            <View className="flex-row flex-wrap items-center gap-2">
+              <Text className="text-text-primary text-base font-bold leading-tight">
+                {sessionLabel(item.sheetName)}
+              </Text>
+              {!item.completedAt ? <Badge label="W trakcie" tone="accent" /> : null}
+            </View>
             <View className="mt-1 flex-row items-center">
               <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
               <Text className="ml-1.5 text-text-muted text-sm">
@@ -259,16 +275,15 @@ export default function HistoryScreen() {
             </View>
 
             {stats && stats.setCount > 0 ? (
-              <View className="mt-2 flex-row flex-wrap gap-x-3 gap-y-1">
+              <View className="mt-2 flex-row flex-wrap items-center gap-2">
                 {durationSec > 0 ? (
                   <Text className="text-text-secondary text-xs">{formatDuration(durationSec)}</Text>
                 ) : null}
                 {stats.totalVolume > 0 ? (
                   <Text className="text-text-secondary text-xs">{formatVolumeKg(stats.totalVolume)}</Text>
                 ) : null}
-                <Text className="text-text-secondary text-xs">
-                  {stats.exerciseCount} ćw. · {stats.setCount} serii
-                </Text>
+                <Badge label={formatExerciseCount(stats.exerciseCount)} tone="neutral" />
+                <Badge label={formatSetCount(stats.setCount)} tone="outline" />
               </View>
             ) : null}
           </TouchableOpacity>
@@ -305,7 +320,7 @@ export default function HistoryScreen() {
           data={monthSessions}
           keyExtractor={(item) => item.id}
           renderItem={renderSession}
-          extraData={[deleteSession.isPending, sessionsById]}
+          extraData={[deleteSession.isPending, sessionsById, incompleteSession]}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 130 }}
           ListHeaderComponent={
             <>
@@ -386,6 +401,33 @@ export default function HistoryScreen() {
                       {monthSummary.globalStreak.current === 1 ? "dzień" : "dni"} z rzędu
                     </Text>
                   ) : null}
+                </Card>
+              ) : null}
+
+              {incompleteSession && freestyleSheetId ? (
+                <Card className="mb-4 border-emphasis/30" padding="md">
+                  <TouchableOpacity
+                    onPress={() =>
+                      router.push(`/workout/${incompleteSession.id}?sheetId=${freestyleSheetId}`)
+                    }
+                    activeOpacity={0.8}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kontynuuj trening w trakcie"
+                  >
+                    <View className="flex-row items-center justify-between gap-3">
+                      <View className="flex-1 min-w-0">
+                        <View className="flex-row flex-wrap items-center gap-2">
+                          <Text className="text-text-primary text-base font-bold leading-tight">
+                            Trening freestyle
+                          </Text>
+                          <Badge label="W trakcie" tone="accent" />
+                        </View>
+                        <Text className="text-text-muted text-xs mt-1">
+                          Niedokończona sesja — wróć, żeby nic nie zgubić.
+                        </Text>
+                      </View>
+                    </View>
+                  </TouchableOpacity>
                 </Card>
               ) : null}
 
