@@ -141,9 +141,13 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             key={toast.id}
             entering={FadeInUp.duration(220)}
             exiting={FadeOutDown.duration(180)}
-            pointerEvents="box-none"
             className="absolute left-4 right-4 bottom-6 z-50"
-            style={{ paddingBottom: insets.bottom, elevation: 12, zIndex: 50 }}
+            style={{
+              paddingBottom: insets.bottom,
+              elevation: 12,
+              zIndex: 50,
+              pointerEvents: "box-none",
+            }}
           >
             <Toast
               tone={toast.tone}
