@@ -63,7 +63,7 @@ jj-workout-tool/                    # repo GitHub (Jurchesco/jj-workout-tool)
 
 Gem analizuje trendy 7–14 dni, łączy Forma + Sen + Dzien, progres siłowy z **Silownia_import** (nie z Garmina).
 
-Instrukcja systemowa Gema (profil + szablon 6 sekcji; źródło Hermes `jarvis-trener`): [GEM_INSTRUKCJA.md](./GEM_INSTRUKCJA.md)
+Instrukcja systemowa Gema (trener prowadzi 4 sekcjami; cron Telegram: druga wiadomość tylko `data/dowód`; źródło Hermes `jarvis-trener`): [GEM_INSTRUKCJA.md](./GEM_INSTRUKCJA.md)
 
 Plan naprawczy (audyt → kolejne kroki): [PLAN_NAPRAWCZY.md](./PLAN_NAPRAWCZY.md)
 
