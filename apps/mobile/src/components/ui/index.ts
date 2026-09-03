@@ -1,3 +1,5 @@
+export { Badge } from "./Badge";
+export type { BadgeSize, BadgeTone } from "./Badge";
 export { BottomSheet } from "./BottomSheet";
 export { Button } from "./Button";
 export { Pills } from "./Pills";
@@ -6,5 +8,7 @@ export { Card } from "./Card";
 export { Input } from "./Input";
 export { ScreenHeader } from "./ScreenHeader";
 export { StateBlock } from "./StateBlock";
+export { Toast, ToastProvider, useToast } from "./Toast";
+export type { ShowToastOptions, ToastTone } from "./Toast";
 export { ICON_SIZE, ICON_SIZE_SM, ICON_SIZE_LG, ICON_STROKE } from "./icons";
 export { cx } from "./utils";

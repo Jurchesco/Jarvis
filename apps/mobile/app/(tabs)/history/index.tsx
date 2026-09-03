@@ -27,6 +27,7 @@ import {
 } from "../../../src/api/hooks";
 import { formatSessionWhenShort, sessionDateKey } from "../../../src/lib/sessionDate";
 import {
+  Badge,
   Card,
   ICON_SIZE,
   ICON_STROKE,
@@ -248,9 +249,12 @@ export default function HistoryScreen() {
             activeOpacity={0.8}
             className="flex-1 pr-3"
           >
-            <Text className="text-text-primary text-base font-bold leading-tight">
-              {sessionLabel(item.sheetName)}
-            </Text>
+            <View className="flex-row flex-wrap items-center gap-2">
+              <Text className="text-text-primary text-base font-bold leading-tight">
+                {sessionLabel(item.sheetName)}
+              </Text>
+              {!item.completedAt ? <Badge label="W trakcie" tone="accent" /> : null}
+            </View>
             <View className="mt-1 flex-row items-center">
               <Clock3 size={14} strokeWidth={2} color="#7c8aa5" />
               <Text className="ml-1.5 text-text-muted text-sm">

@@ -55,6 +55,7 @@ import {
   Card,
   ICON_STROKE,
   StateBlock,
+  useToast,
 } from "../../src/components/ui";
 
 function useVisualViewportInset() {
@@ -168,6 +169,7 @@ export default function WorkoutScreen() {
   const router = useRouter();
   const navigation = useNavigation();
   const queryClient = useQueryClient();
+  const { showToast } = useToast();
   const leavingIntentionallyRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const keyboardInset = useVisualViewportInset();
@@ -319,11 +321,16 @@ export default function WorkoutScreen() {
       setSavedExerciseIds((prev) => new Set(prev).add(exercise.id));
       setEditingExerciseId(null);
       await hapticSuccess();
+      showToast({ tone: "success", message: "Zapisano ćwiczenie" });
       await refreshData();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
-      if (Platform.OS === "web") window.alert(msg);
-      else Alert.alert("Błąd", msg);
+      const raw = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
+      const msg = raw.trim() || "Nie udało się zapisać";
+      if (Platform.OS === "web") {
+        window.alert(msg);
+      } else {
+        showToast({ tone: "error", message: msg });
+      }
     } finally {
       setSavingExerciseId(null);
     }

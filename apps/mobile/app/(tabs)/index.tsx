@@ -20,11 +20,13 @@ import {
 } from "../../src/api/hooks";
 import { ensureFreestyleSheet } from "../../src/lib/ensureFreestyleSheet";
 import {
+  Badge,
   Button,
   Card,
   ICON_STROKE,
   ScreenHeader,
 } from "../../src/components/ui";
+import { formatExerciseCount, formatSetCount } from "../../src/lib/polishCount";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -154,7 +156,12 @@ export default function HomeScreen() {
                 <Clock3 size={20} strokeWidth={ICON_STROKE} color="#3b82f6" />
               </View>
               <View className="ml-3 flex-1">
-                <Text className="text-text-primary text-xl font-bold leading-tight">Trening w toku</Text>
+                <View className="flex-row items-center gap-2">
+                  <Text className="text-text-primary text-xl font-bold leading-tight flex-1">
+                    Trening w toku
+                  </Text>
+                  <Badge label="W trakcie" tone="accent" />
+                </View>
                 <Text className="text-text-muted text-xs mt-0.5">
                   Zacząłeś {formatDuration(elapsedSinceStart)} temu
                 </Text>
@@ -236,12 +243,15 @@ export default function HomeScreen() {
             <Text className="text-text-primary text-base font-bold leading-tight">
               {lastSessionStats.stats.totalVolume > 0
                 ? formatVolumeKg(lastSessionStats.stats.totalVolume)
-                : `${lastSessionStats.stats.setCount} serii`}
+                : formatSetCount(lastSessionStats.stats.setCount)}
               {lastSessionStats.duration > 0 ? ` · ${formatDuration(lastSessionStats.duration)}` : ""}
             </Text>
-            <Text className="text-text-muted text-xs mt-1">
-              {lastSessionStats.stats.exerciseCount} ćwiczeń · {lastSessionStats.stats.setCount} serii
-            </Text>
+            <View className="mt-2 flex-row flex-wrap items-center gap-2">
+              <Badge label={formatExerciseCount(lastSessionStats.stats.exerciseCount)} tone="neutral" />
+              {lastSessionStats.stats.setCount > 0 ? (
+                <Badge label={formatSetCount(lastSessionStats.stats.setCount)} tone="outline" />
+              ) : null}
+            </View>
           </Card>
         ) : null}
 
