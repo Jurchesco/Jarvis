@@ -53,8 +53,11 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | dzien | Garmin | Dzien |
 | forma | Garmin | Forma |
 | aktywnosci | Garmin | Aktywnosci |
+| wydolnosc | Garmin | Wydolnosc |
 | cialo | openScale backup | Cialo |
 | silownia | JJ Workout Tool | Silownia_import |
+
+`wydolnosc` zbiera metryki wydolnościowe/treningowe z zegarka, których nie ma w innych zakładkach: VO2max (bieg/kolarstwo), wiek sprawnościowy, status i obciążenie treningowe (ostre/przewlekłe, ACWR, balans tlenowy/beztlenowy), gotowość treningową (Training Readiness), czas regeneracji, tygodniową HRV, wynik wytrzymałości i podbiegów, aklimatyzację oraz predykcje czasów (5K/10K/półmaraton/maraton). Zakładka `Wydolnosc` jest **tworzona automatycznie** z nagłówkami przy pierwszym imporcie. Każdy endpoint jest opcjonalny dla profilu (np. brak biegania → puste predykcje) i pobierany odpornie — błąd jednego nie kasuje pozostałych metryk dnia.
 
 `cialo` bierze **najnowszy** zip z folderu: `openScale.db_auto_backup.zip` albo `openscale_backup_<timestamp>.zip` (gdy openScale nie nadpisuje, tylko dokłada nowy plik). Importuje wszystkie pomiary od `IMPORT_START_DATE`.
 

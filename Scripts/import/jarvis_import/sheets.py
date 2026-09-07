@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 import gspread
-from gspread.exceptions import APIError
+from gspread.exceptions import APIError, WorksheetNotFound
 
 BATCH_UPDATE_CHUNK = 100
 
@@ -33,6 +33,29 @@ class SheetsClient:
 
     def worksheet(self, name: str):
         return self._gc.open_by_key(self._spreadsheet_id).worksheet(name)
+
+    def get_or_create_worksheet(self, name: str, headers: list[str]):
+        """Zwróć zakładkę o nazwie `name`, tworząc ją z nagłówkami, jeśli nie istnieje.
+
+        Nagłówki zapisujemy tylko wtedy, gdy pierwszy wiersz jest pusty, aby nie
+        nadpisać ręcznych zmian użytkownika w istniejącej zakładce.
+        """
+        spreadsheet = self._gc.open_by_key(self._spreadsheet_id)
+        try:
+            worksheet = spreadsheet.worksheet(name)
+        except WorksheetNotFound:
+            worksheet = spreadsheet.add_worksheet(
+                title=name, rows=200, cols=max(len(headers), 26)
+            )
+
+        try:
+            first_row = worksheet.row_values(1)
+        except Exception:
+            first_row = []
+        if not any((cell or "").strip() for cell in first_row):
+            worksheet.update("A1", [headers], value_input_option="USER_ENTERED")
+
+        return worksheet
 
 
 def get_existing_rows_by_key(

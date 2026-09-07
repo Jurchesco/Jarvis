@@ -14,16 +14,18 @@ from .importers.forma import import_forma
 from .importers.openscale import import_openscale
 from .importers.sleep import import_sleep
 from .importers.workout import import_workout
+from .importers.wydolnosc import import_wydolnosc
 from .sheets import ImportResult, SheetsClient
 from .sort_sheets import WORKSHEET_SORT, sort_all_worksheets
 
-ALL_IMPORTERS = ("sen", "dzien", "forma", "aktywnosci", "cialo", "silownia")
+ALL_IMPORTERS = ("sen", "dzien", "forma", "aktywnosci", "wydolnosc", "cialo", "silownia")
 
 GARMIN_IMPORTERS = {
     "sen": import_sleep,
     "dzien": import_daily,
     "forma": import_forma,
     "aktywnosci": import_activities,
+    "wydolnosc": import_wydolnosc,
 }
 
 
@@ -35,7 +37,7 @@ def prompt_days(default: int) -> int:
     print()
     print(f"Ostatni import: {get_last_import_label()}")
     print()
-    print("Moduły: sen, dzien, forma, aktywnosci, cialo, silownia")
+    print("Moduły: sen, dzien, forma, aktywnosci, wydolnosc, cialo, silownia")
     print(f"Domyślnie: ostatnie {default} dni (Enter = domyślnie)")
     print()
 
@@ -97,6 +99,7 @@ SORT_MODULE_TO_SHEET = {
     "dzien": "Dzien",
     "forma": "Forma",
     "aktywnosci": "Aktywnosci",
+    "wydolnosc": "Wydolnosc",
     "cialo": "Cialo",
     "silownia": "Silownia_import",
 }
