@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **D016 — logowanie per seria** — wiersze kg/powt. (lub czas) na serię; rampa w `session_set_logs`; Volume w Sheets = suma serii
 - **Plany z katalogu (D018 / PR #13)** — Home: Freestyle | Wybierz plan; stack `/plans`; edytor `sheet/[id]`; start sesji z ćwiczeniami planu
 - **Freestyle trening** — szybki start; ćwiczenia z katalogu w trakcie sesji (`ExercisePicker`)
 - **Katalog ćwiczeń PPL** — `packages/shared/src/exerciseCatalog.ts` (43 ćwiczenia, push/pull/legs/abs)
@@ -30,6 +31,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 
 ### Changed
 - **Model produktu** — freestyle-first (**D009**) + plany obok freestyle (**D018**); bez seed PPL / auto-splitów; plany **nie** są zakładką tab bara
+- **D016 / import Silownia** — Volume = suma serii; Ciezar/Powt./1RM = seria z najlepszym Brzycki; PR = max ciężar w sesji
 - **Home** — dwa CTA: Freestyle | Wybierz plan
 - **`app/sheet/[id].tsx`** — przywrócony edytor planu (wcześniej redirect Home)
 - **Produkcja web** — kanon: **https://stravio-kappa.vercel.app/**

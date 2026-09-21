@@ -146,7 +146,8 @@ Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol
 - **„Set”** to **liczba serii** danego ćwiczenia w tej sesji (nie numer pojedynczej serii).
 - **„Ciezar (kg)”** i **„Powtorzenia”** to wartości z pierwszej serii (przy logowaniu zbiorczym serie mają ten sam ciężar i powtórzenia).
 - **„Est. 1RM”** to szacowany ciężar maksymalny na jedno powtórzenie, liczony wzorem **Brzyckiego**: `ciężar / (1,0278 − 0,0278 × powtórzenia)`. Liczone z ciężaru i powtórzeń pierwszej serii.
-- **„Volume”** to łączna objętość ćwiczenia w sesji: ciężar × powtórzenia × liczba serii. Do oceny objętości sesji lub tygodnia sumuj Volume wierszy.
+- **„Volume”** to łączna objętość ćwiczenia w sesji: **suma (ciężar × powtórzenia) po wszystkich seriach** (przy rampie ≠ pierwsza×N). Do oceny objętości sesji lub tygodnia sumuj Volume wierszy.
+- Kolumny **Ciezar / Powtorzenia / Est. 1RM** reprezentują serię z **najlepszym Est. 1RM (Brzycki)** w tej sesji — przy rampie nie zakładaj, że wszystkie serie były identyczne.
 - **„PR”** ma wartość **„Tak”**, jeśli ciężar pierwszej serii pobił dotychczasowy rekord ciężaru dla tego ćwiczenia; w przeciwnym razie pole jest **puste**.
 - **„Czas serii”** — kolumna techniczna, zwykle pusta; ignoruj ją.
 - **„Session ID”** i **„Exercise ID”** — kolumny techniczne synchronizacji z JJ Workout Tool; **ignoruj** przy analizie treningu.

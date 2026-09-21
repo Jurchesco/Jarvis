@@ -41,6 +41,7 @@ import { EditSessionDateSheet } from "../../src/components/EditSessionDateSheet"
 import { ExercisePicker } from "../../src/components/ExercisePicker";
 import {
   createDraftFromLogs,
+  createDraftFromPrevious,
   ExerciseLogForm,
   ExerciseLogSummary,
   type ExerciseLogDraft,
@@ -529,7 +530,7 @@ export default function WorkoutScreen() {
           {activeExercises.length === 0 ? (
             <StateBlock
               title="Dodaj pierwsze ćwiczenie"
-              description="Wybierz ćwiczenie z katalogu, wpisz liczbę serii, ciężar i powtórzenia — resztę policzymy za Ciebie."
+              description="Wybierz ćwiczenie z katalogu, wpisz ciężar i powtórzenia dla każdej serii — objętość i 1RM policzymy za Ciebie."
               actionLabel="Dodaj ćwiczenie"
               onAction={() => setShowExercisePicker(true)}
               className="mt-1"
@@ -543,12 +544,7 @@ export default function WorkoutScreen() {
               const previousLog = autofillPrevious ? rawPreviousLog : null;
               const initialDraft = isSaved
                 ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-                : {
-                    setCount: "1",
-                    weightKg: previousLog ? String(previousLog.weightKg) : "0",
-                    reps: previousLog ? String(previousLog.reps) : "10",
-                    notes: notesByExercise[exercise.id] ?? "",
-                  };
+                : createDraftFromPrevious(previousLog, notesByExercise[exercise.id] ?? "");
 
               return (
                 <Card key={exercise.id} className="mb-3" padding="md">
@@ -603,9 +599,7 @@ export default function WorkoutScreen() {
                   ) : (
                     <ExerciseLogSummary
                       exerciseName={exercise.name}
-                      setCount={logs.length}
-                      weightKg={logs[0]?.weightKg ?? 0}
-                      reps={logs[0]?.reps ?? 0}
+                      logs={logs}
                       notes={notesByExercise[exercise.id]}
                       timeBased={isTimeBasedExercise(exercise.name)}
                     />

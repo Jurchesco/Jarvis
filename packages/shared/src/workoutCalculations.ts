@@ -21,6 +21,24 @@ export function exerciseVolume(weightKg: number, reps: number, setCount: number)
   return setVolume(weightKg, reps) * setCount;
 }
 
+/** Łączna objętość z różnych serii (rampa / D016) */
+export function exerciseVolumeFromSets(
+  sets: { weightKg: number; reps: number }[],
+): number {
+  return sets.reduce((sum, set) => sum + setVolume(set.weightKg, set.reps), 0);
+}
+
+/** Najlepszy est. 1RM (Epley) spośród serii */
+export function bestEpley1rmFromSets(
+  sets: { weightKg: number; reps: number }[],
+): number {
+  let best = 0;
+  for (const set of sets) {
+    best = Math.max(best, epley1rm(set.weightKg, set.reps));
+  }
+  return best;
+}
+
 export function formatWeightKg(value: number): string {
   return `${value.toFixed(1)} kg`;
 }

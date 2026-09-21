@@ -342,21 +342,35 @@ export async function runWorkoutImport(options: {
 
     const sortedLogs = [...group.logs].sort((a, b) => a.set_number - b.set_number);
     const setCount = sortedLogs.length;
-    const first = sortedLogs[0];
-    const weight = first.weight_kg ?? 0;
-    const reps = first.reps ?? 0;
+    // Representative set = best Brzycki 1RM; Volume = sum of real sets (D016 / ramp)
+    let bestLog = sortedLogs[0];
+    let best1rm = -1;
+    let volume = 0;
+    let maxSetWeight = 0;
+    for (const log of sortedLogs) {
+      const w = log.weight_kg ?? 0;
+      const r = log.reps ?? 0;
+      volume += w * r;
+      if (w > maxSetWeight) maxSetWeight = w;
+      const est = brzycki1rm(w, r);
+      if (est > best1rm || (est === best1rm && w > (bestLog.weight_kg ?? 0))) {
+        best1rm = est;
+        bestLog = log;
+      }
+    }
+    const weight = bestLog.weight_kg ?? 0;
+    const reps = bestLog.reps ?? 0;
     const exerciseId = group.exerciseId;
     const sessionId = group.sessionId;
 
     const prevMax = maxWeightByExercise.get(exerciseId) ?? 0;
-    const isPr = weight > 0 && weight > prevMax;
-    if (weight > prevMax) maxWeightByExercise.set(exerciseId, weight);
+    const isPr = maxSetWeight > 0 && maxSetWeight > prevMax;
+    if (maxSetWeight > prevMax) maxWeightByExercise.set(exerciseId, maxSetWeight);
 
     const dataValue = formatDatetimeWarsaw(session.started_at);
     const splitName = session.workout_sheets?.name ?? "Brak";
     const exerciseName = exercises.get(exerciseId) ?? "Nieznane cwiczenie";
     const noteKey = `${sessionId}:${exerciseId}`;
-    const volume = weight * reps * setCount;
 
     rowsToUpsert.push([
       dataValue,

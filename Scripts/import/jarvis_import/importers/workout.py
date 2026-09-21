@@ -246,16 +246,30 @@ def import_workout(ctx: ImportContext) -> ImportResult:
 
         sorted_logs = sorted(group["logs"], key=lambda item: item["set_number"])
         set_count = len(sorted_logs)
-        first = sorted_logs[0]
-        weight = first["weight_kg"] or 0
-        reps = first["reps"] or 0
+        # Reprezentatywna seria = najlepszy Est. 1RM (Brzycki); Volume = suma realnych serii (D016 / rampa)
+        best_log = sorted_logs[0]
+        best_1rm = -1.0
+        volume = 0.0
+        max_set_weight = 0.0
+        for log in sorted_logs:
+            w = log["weight_kg"] or 0
+            r = log["reps"] or 0
+            volume += w * r
+            if w > max_set_weight:
+                max_set_weight = w
+            est = brzycki_1rm(w, r)
+            if est > best_1rm or (est == best_1rm and w > (best_log["weight_kg"] or 0)):
+                best_1rm = est
+                best_log = log
+        weight = best_log["weight_kg"] or 0
+        reps = best_log["reps"] or 0
         exercise_id = group["exercise_id"]
         session_id = group["session_id"]
 
         prev_max = max_weight_by_exercise.get(exercise_id, 0)
-        is_pr = weight > 0 and weight > prev_max
-        if weight > prev_max:
-            max_weight_by_exercise[exercise_id] = weight
+        is_pr = max_set_weight > 0 and max_set_weight > prev_max
+        if max_set_weight > prev_max:
+            max_weight_by_exercise[exercise_id] = max_set_weight
 
         session_date = utc_iso_to_local(session["started_at"], tz)
         data_value = format_datetime(session_date)
@@ -265,7 +279,6 @@ def import_workout(ctx: ImportContext) -> ImportResult:
 
         exercise_name = exercises.get(exercise_id, "Nieznane cwiczenie")
         note_key = f"{session_id}:{exercise_id}"
-        volume = weight * reps * set_count
 
         rows_to_upsert.append([
             data_value,
