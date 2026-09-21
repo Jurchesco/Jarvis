@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-21:** Home = **Freestyle** albo **plan z katalogu** (PR #13 / D018). Logowanie zbiorcze (D011) stabilne. **Następny krok produktowy:** UI polish (dokładka QA Toast/Badge) albo **D016** (edycja per seria). Dokumenty UI poniżej = filozofia + backlog polish, nie „tylko freestyle”.
+> **Stan na 2026-09-21:** Home = **Freestyle** albo **plan z katalogu** (PR #13 / D018). Logowanie zbiorcze (D011) stabilne. **Następny krok produktowy:** UI polish (QA Toast/Badge) albo **D016** (edycja per seria). Inspiracja UX: FORGE (znajomy) — kolejka poniżej / **D019**.
 
 ---
 
@@ -20,8 +20,8 @@
 - [ ] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
 - [ ] Drobne polish wg `UI_REDESIGN_PROPOSAL.md` / `UI_PROPOSAL GEMINI.md` (mapowanie zaktualizowane 2026-09-21)
 
-**B — Logowanie**
-- [ ] **D016 — edycja per seria** — rampa ciężarów; wierny zapis w `session_set_logs` / Sheets
+**B — Logowanie (priorytet FORGE → D019)**
+- [ ] **D016 — edycja / logowanie per seria** — rampa kg/powt.; wierny zapis w `session_set_logs` / Sheets (wzorzec FORGE: wiersz per seria + checkbox)
 
 **C — Integracje**
 - [ ] **Deploy + sekrety** (jeśli nowe środowisko) — `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, opcjonalnie `JJ_WORKOUT_ALLOWED_USER_ID`
@@ -31,23 +31,45 @@
 
 ---
 
+## Inspiracja FORGE (2026-09-21) — kolejka
+
+Źródło: [FORGE/PRO](https://forgeproapp.github.io/Aplikacja-treningowa-FORGE/) (PWA znajomego). **Nie** kopiujemy modelu plan-first / Firebase — zostajemy przy log-first (D009) + plany opcjonalne (D018) + Supabase/Sheets. Szczegóły: **D019**.
+
+### Kolejka wdrożeń (proponowana)
+1. [ ] **D016 per-set** — jak wyżej
+2. [ ] **Rest timer overlay** — pasek: −15s / +30s / ✕ + opcjonalny beep; pref w Ustawieniach; **nie** w scrollu sesji
+3. [ ] **Tagi partii + objętość tygodniowa** — partia główna (+ opcjonalnie pomocnicza 0.5); paski serii/tydzień w Stats
+4. [ ] **Export / import JSON** — backup planu+historii (plik / wklejka / share); osobno od sync Sheets
+5. [ ] **UX sesji (polish)** — pasek % ukończonych serii; czytelniejszy chip „Ostatnio…” (ghost); toast z tonażem przy końcu (summary już jest)
+
+### Świadomie pomijamy / odkładamy
+- Pełny mezocykl N tygodni + auto-awans tygodnia + RIR per tydzień — osobny epik (FORGE = plan-cycle-first)
+- Pomiary obwodów w apce — waga z openScale → Sheets; obwody tylko jeśli zdecydujemy UI (dziś nie priorytet)
+- Drugi backend (Firebase) — zostaje Supabase
+
+---
+
 ## BACKLOG (funkcje)
 
 ### Wysoki priorytet
-- [ ] **D016** — edycja / logowanie per seria (patrz wyżej)
+- [ ] **D016** — edycja / logowanie per seria (patrz CURRENT §B)
+- [ ] **Rest timer overlay** — FORGE-like (kolejka §2)
+- [ ] **Objętość per partia** — tagi + paski tygodniowe (kolejka §3)
 - [ ] **PowerSync** — offline-first sync (SQLite cache + Supabase)
 
 ### Średni priorytet
+- [ ] **Export / import JSON** — backup lokalny (kolejka §4); CSV/PDF osobno
+- [ ] **Pasek postępu sesji + ghost chip polish** (kolejka §5)
 - [ ] **Sheet templates** — duplikowanie / szablony planów
-- [ ] **PR / rekordy** — wizualizacja PR w Stats (Sheets: Brzycki; UI: Epley — D010)
-- [ ] **Rest timer** — overlay + ustawienie domyślnego czasu (nie w scrollu)
+- [ ] **PR / rekordy + trend 1RM (Epley)** — Stats (Sheets: Brzycki; UI: Epley — D010)
 - [ ] **Scroll horizontally** — swipe między zakładkami (opcjonalnie)
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN
-- [ ] **Data export** — CSV / PDF
+- [ ] **Data export** — CSV / PDF (po JSON backup)
 - [ ] **Multi-user assignments** — model owner/assignee
 - [ ] **Zakładka tab „Plany”** — tylko jeśli stack `/plans` okaże się niewystarczający (obecnie **nie** planowane; D018 = stack)
+- [ ] **Mezocykl / RIR per tydzień** — epik; nie w najbliższym sprincie (D019)
 
 ---
 

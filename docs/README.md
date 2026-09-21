@@ -27,8 +27,8 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 | Plik | Opis |
 |------|------|
 | [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) | System design: Freestyle + plany |
-| [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje D001–D018 (m.in. D009 freestyle, D018 plany, D016 backlog) |
-| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — QA UI / D016 / PowerSync |
+| [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje D001–D019 (m.in. D009 freestyle, D018 plany, D016 backlog, D019 FORGE) |
+| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — QA UI / D016 / inspiracja FORGE |
 | [jj-workout-tool/CHANGELOG.md](./jj-workout-tool/CHANGELOG.md) | Historia wersji |
 | [jj-workout-tool/RELEASE.md](./jj-workout-tool/RELEASE.md) | Build i publikacja |
 | [**jj-workout-tool/UI_REDESIGN_PROPOSAL.md**](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) | Audyt UI + plan faz UI-A…E |

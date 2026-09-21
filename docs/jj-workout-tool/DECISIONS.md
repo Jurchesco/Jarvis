@@ -280,11 +280,36 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D019: Inspiracja FORGE — co bierzemy, czego nie
+
+**Date**: 2026-09-21  
+**Status**: Active (kierunek produktowy; backlog w `TODO.md`)
+
+**Context**: Przegląd PWA znajomego — [FORGE/PRO](https://forgeproapp.github.io/Aplikacja-treningowa-FORGE/) (`Forgeproapp/Aplikacja-treningowa-FORGE`). FORGE jest *plan- / mezocykl-first* (tygodnie, RIR, edytor w centrum). Jarvis zostaje *log-first* (D009) z opcjonalnymi planami (D018).
+
+**Bierzemy (kolejka):**
+1. Logowanie **per seria** → **D016**
+2. **Rest timer** jako pływający overlay (−15 / +30 / zamknij; opcjonalny dźwięk)
+3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats
+4. **Export / import JSON** (backup lokalny; nie zamiast Sheets)
+5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu
+
+**Nie bierzemy teraz:**
+- Pełny mezocykl z auto-awansem tygodnia / RIR per tydzień jako rdzeń produktu
+- Pomiary obwodów w apce (waga: openScale → Sheets)
+- Firebase / drugi backend (zostaje Supabase)
+
+**Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
+
+---
+
 ## Future Decisions (TODO)
 
-- **D016 implementacja**: edycja / logowanie per seria (rampa)
+- **D016 implementacja**: edycja / logowanie per seria (rampa); wzorzec UX z FORGE (D019)
+- **Objętość per partia**: schemat tagów mięśniowych w katalogu / exercises
 - **PowerSync**: Offline-first sync between local SQLite and Supabase
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications
-- **Data export**: CSV/PDF export of workout history
-- **Rest timer overlay**: opcjonalny powrót (pref w Ustawieniach; nie w scrollu sesji)
+- **Data export**: JSON backup first (D019), potem CSV/PDF
+- **Rest timer overlay**: FORGE-like; pref w Ustawieniach; nie w scrollu sesji
+- **Mezocykl / RIR**: tylko po świadomej decyzji produktowej (nie domyślny model Home)
