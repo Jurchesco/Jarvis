@@ -212,7 +212,7 @@ export default function HomeScreen() {
           <Card padding="lg" className="border-emphasis/25 bg-surface">
             <View className="flex-row items-center mb-2">
               <View className="h-10 w-10 items-center justify-center rounded-xl bg-emphasis/15 border border-emphasis/30">
-                <Flame size={20} strokeWidth={ICON_STROKE} color="#22c55e" />
+                <Flame size={20} strokeWidth={ICON_STROKE} color="#ef4444" />
               </View>
               <View className="ml-3 flex-1">
                 <Text className="text-text-primary text-xl font-bold leading-tight">Gotowy do treningu?</Text>
