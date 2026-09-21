@@ -37,10 +37,13 @@ Use `./docs/*` as the canonical source for product/project documentation. Keep t
 
 Product snapshot (2026-09-21): Home = Freestyle **or** catalog plan (`/plans`, D018). Set logging = **batch or per-set** (D016, on kappa). Coach = Hermes; Gem = backup (D017). Next backlog: rest timer / muscle volume (D019).
 
+**Cloud Agents / E2E:** see `AGENTS.md` — test account via env secrets `JJ_TEST_EMAIL` + `JJ_TEST_PASSWORD` (never commit passwords).
+
+- `AGENTS.md` — Cloud Agent E2E + local Supabase notes
 - `docs/README.md` — documentation index
-- `docs/jj-workout-tool/ARCHITECTURE.md` — app architecture (Freestyle + plans)
+- `docs/jj-workout-tool/ARCHITECTURE.md` — app architecture (Freestyle + plans + D016)
 - `docs/jj-workout-tool/CHANGELOG.md` — release-by-release change history
-- `docs/jj-workout-tool/DECISIONS.md` — D001–D018
+- `docs/jj-workout-tool/DECISIONS.md` — D001–D019
 - `docs/jj-workout-tool/RELEASE.md` — release process and checklist
 - `docs/jj-workout-tool/TODO.md` — prioritized app roadmap
 - `docs/jarvis/PLAN_NAPRAWCZY.md` — Jarvis ecosystem remediation plan
