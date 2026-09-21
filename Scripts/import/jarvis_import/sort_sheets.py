@@ -11,6 +11,7 @@ WORKSHEET_SORT: dict[str, dict] = {
     "Dzien": {"columns": [0]},
     "Sen": {"columns": [0]},
     "Forma": {"columns": [0]},
+    "Wydolnosc": {"columns": [0]},
     "Cialo": {"columns": [0]},
     "Aktywnosci": {"columns": [0]},
     "Silownia_import": {"columns": [0, 1, 2, 3], "numeric_columns": {3}},
