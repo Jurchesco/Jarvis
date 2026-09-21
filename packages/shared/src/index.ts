@@ -196,9 +196,11 @@ export {
   searchCatalogExercises,
 } from "./exerciseCatalog";
 export {
+  bestEpley1rmFromSets,
   computeSessionLiveStats,
   epley1rm,
   exerciseVolume,
+  exerciseVolumeFromSets,
   formatDuration,
   formatVolumeKg,
   formatWeightKg,

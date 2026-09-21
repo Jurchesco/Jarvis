@@ -234,18 +234,20 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
-## D016: Edycja per seria (rampa) — backlog produktowy
+## D016: Edycja per seria (rampa)
 
 **Date**: 2026-08-19 (feedback siłownia)  
-**Status**: Proposed (brak w kodzie `main` / `8d9c407`)
+**Updated**: 2026-09-21  
+**Status**: Active (UI + zapis + import Volume)
 
-**Context**: Logowanie zbiorcze (D011) zapisuje N identycznych serii. Przy rampie (różne ciężary/powt. w seriach) Sheets pokazuje pierwszą serię — Volume ≠ 1RM; trener nie powinien ufać kolumnie PR bez kontekstu.
+**Context**: Logowanie zbiorcze (D011) zapisywało N identycznych serii. Przy rampie Sheets pokazywało pierwszą serię, a Volume = ciężar₁ × powt.₁ × N — mylące dla Hermesa.
 
-**Decision (kierunek)**:
-- Docelowo: edycja / logowanie **per seria** (lub edycja po zapisie zbiorczym), żeby rampa była wiernie w `session_set_logs` i w `Silownia_import`.
-- Do czasu wdrożenia: Hermes/Gem traktują ciężar z pierwszej serii ostrożnie przy rampie.
-
-**Nie mylić z D011** — D011 pozostaje aktualnym modelem UI; D016 to rozszerzenie, nie revert.
+**Decision**:
+- UI: formularz z trybem **Zbiorczo** (jedna wartość × N serii) albo **Per seria** (wiersz na serię); przełącznik na karcie + domyślne w Ustawieniach (zapamiętywane).
+- Przy edycji istniejącej rampy (różne serie) tryb wymuszany na **Per seria**, żeby nie zwinąć wartości.
+- Zapis: każda seria osobno w `session_set_logs` / szablonach `exercise_sets`.
+- Import `Silownia_import`: **Volume** = suma ciężar×powt. po seriach; kolumny Ciezar/Powtorzenia/Est. 1RM = seria z najlepszym Brzycki 1RM; PR = max ciężar w sesji vs historia.
+- D011 pozostaje historycznym modelem „szybki wpis jednakowych serii” — D016 go rozszerza o wybór trybu, nie revertuje.
 
 ---
 
@@ -282,7 +284,6 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ## Future Decisions (TODO)
 
-- **D016 implementacja**: edycja / logowanie per seria (rampa)
 - **PowerSync**: Offline-first sync between local SQLite and Supabase
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications

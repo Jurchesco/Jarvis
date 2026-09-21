@@ -352,9 +352,7 @@ export default function SessionDetailScreen() {
                     </View>
                     <ExerciseLogSummary
                       exerciseName={exercise.name}
-                      setCount={logs.length}
-                      weightKg={logs[0]?.weightKg ?? 0}
-                      reps={logs[0]?.reps ?? 0}
+                      logs={logs}
                       notes={notesByExercise[exercise.id]}
                       timeBased={isTimeBasedExercise(exercise.name)}
                       layout="afterSets"

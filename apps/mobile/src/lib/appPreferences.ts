@@ -4,11 +4,20 @@ const KEYS = {
   hapticsEnabled: "pref_haptics_enabled",
   autofillPrevious: "pref_autofill_previous",
   defaultRestSec: "pref_default_rest_sec",
+  exerciseLogFillMode: "pref_exercise_log_fill_mode",
 } as const;
 
 export type DefaultRestSec = 30 | 60 | 90 | 120;
+export type ExerciseLogFillMode = "batch" | "per-set";
 
 export const DEFAULT_REST_OPTIONS: DefaultRestSec[] = [30, 60, 90, 120];
+export const EXERCISE_LOG_FILL_MODE_OPTIONS: {
+  value: ExerciseLogFillMode;
+  label: string;
+}[] = [
+  { value: "batch", label: "Zbiorczo" },
+  { value: "per-set", label: "Per seria" },
+];
 
 export async function getHapticsEnabled(): Promise<boolean> {
   return getPrefBool(KEYS.hapticsEnabled, true);
@@ -36,4 +45,13 @@ export async function getDefaultRestSec(): Promise<DefaultRestSec> {
 
 export async function setDefaultRestSec(sec: DefaultRestSec): Promise<void> {
   await setPref(KEYS.defaultRestSec, String(sec));
+}
+
+export async function getExerciseLogFillMode(): Promise<ExerciseLogFillMode> {
+  const val = await getPref(KEYS.exerciseLogFillMode);
+  return val === "batch" || val === "per-set" ? val : "per-set";
+}
+
+export async function setExerciseLogFillMode(mode: ExerciseLogFillMode): Promise<void> {
+  await setPref(KEYS.exerciseLogFillMode, mode);
 }

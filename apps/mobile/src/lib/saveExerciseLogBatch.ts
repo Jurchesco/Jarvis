@@ -3,10 +3,13 @@ import { isTimeBasedExercise } from "@bhmt3wp/shared";
 import { api } from "../api/client";
 import type { ExerciseLogDraft } from "../components/ExerciseLogForm";
 
-export type ParsedExerciseLog = {
-  setCount: number;
+export type ParsedExerciseSet = {
   weightKg: number;
   reps: number;
+};
+
+export type ParsedExerciseLog = {
+  sets: ParsedExerciseSet[];
   notes: string;
   timeBased: boolean;
 };
@@ -16,33 +19,39 @@ export function parseExerciseLogDraft(
   draft: ExerciseLogDraft,
 ): ParsedExerciseLog {
   const timeBased = isTimeBasedExercise(exerciseName);
-  const setCount = Math.max(1, parseInt(draft.setCount, 10) || 1);
-
-  if (timeBased) {
-    return {
-      setCount,
-      weightKg: 0,
-      reps: Math.max(1, parseInt(draft.reps, 10) || 1),
-      notes: draft.notes.trim(),
-      timeBased: true,
-    };
-  }
+  const sets = (draft.sets.length > 0 ? draft.sets : [{ weightKg: "0", reps: "1" }]).map(
+    (set) => {
+      if (timeBased) {
+        return {
+          weightKg: 0,
+          reps: Math.max(1, parseInt(set.reps, 10) || 1),
+        };
+      }
+      return {
+        weightKg: parseFloat(set.weightKg) || 0,
+        reps: Math.max(1, parseInt(set.reps, 10) || 1),
+      };
+    },
+  );
 
   return {
-    setCount,
-    weightKg: parseFloat(draft.weightKg) || 0,
-    reps: Math.max(1, parseInt(draft.reps, 10) || 1),
+    sets,
     notes: draft.notes.trim(),
-    timeBased: false,
+    timeBased,
   };
 }
 
-/** Zapisuje N serii naraz — tworzy/aktualizuje szablony i logi sesji. */
+/** Zapisuje serie (mogą mieć różne kg/powt.) — tworzy/aktualizuje szablony i logi sesji. */
 export async function saveExerciseLogBatch(
   sessionId: string,
   exercise: ExerciseFull,
   parsed: ParsedExerciseLog,
 ): Promise<void> {
+  const setCount = parsed.sets.length;
+  if (setCount < 1) {
+    throw new Error("Dodaj przynajmniej jedną serię");
+  }
+
   const existingLogs = await api.sessions.get(sessionId).then((session) =>
     session.logs.filter((log) => log.exerciseId === exercise.id),
   );
@@ -56,7 +65,7 @@ export async function saveExerciseLogBatch(
   }
 
   for (const set of exercise.sets) {
-    if (set.setNumber > parsed.setCount) {
+    if (set.setNumber > setCount) {
       await api.sets.delete(set.id);
     }
   }
@@ -65,20 +74,21 @@ export async function saveExerciseLogBatch(
   const current = refreshed.exercises.find((item) => item.id === exercise.id);
   const currentSets = current?.sets ?? [];
 
-  for (let setNumber = 1; setNumber <= parsed.setCount; setNumber++) {
+  for (let setNumber = 1; setNumber <= setCount; setNumber++) {
+    const parsedSet = parsed.sets[setNumber - 1];
     const existing = currentSets.find((set) => set.setNumber === setNumber);
 
     if (existing) {
       await api.sets.update(existing.id, {
-        weightKg: parsed.weightKg,
-        reps: parsed.reps,
+        weightKg: parsedSet.weightKg,
+        reps: parsedSet.reps,
       });
     } else {
       await api.sets.create({
         exerciseId: exercise.id,
         setNumber,
-        reps: parsed.reps,
-        weightKg: parsed.weightKg,
+        reps: parsedSet.reps,
+        weightKg: parsedSet.weightKg,
         restTimeSec: 60,
       });
     }
@@ -87,8 +97,8 @@ export async function saveExerciseLogBatch(
       sessionId,
       exerciseId: exercise.id,
       setNumber,
-      reps: parsed.reps,
-      weightKg: parsed.weightKg,
+      reps: parsedSet.reps,
+      weightKg: parsedSet.weightKg,
     });
   }
 

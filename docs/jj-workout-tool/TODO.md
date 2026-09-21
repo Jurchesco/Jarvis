@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-21:** Home = **Freestyle** albo **plan z katalogu** (PR #13 / D018). Logowanie zbiorcze (D011) stabilne. **Następny krok produktowy:** UI polish (dokładka QA Toast/Badge) albo **D016** (edycja per seria). Dokumenty UI poniżej = filozofia + backlog polish, nie „tylko freestyle”.
+> **Stan na 2026-09-21:** Home = **Freestyle** albo **plan z katalogu** (PR #13 / D018). **D016** (logowanie per seria / rampa) wdrożone. **Następny krok:** UI polish (QA Toast/Badge) albo rest timer overlay.
 
 ---
 
@@ -9,7 +9,8 @@
 ### Zrobione (produkt)
 - [x] **Freestyle** — szybki start z katalogu
 - [x] **Plany z katalogu** — `/plans` + `sheet/[id]` (D018); nie zakładka tab bara
-- [x] Logowanie zbiorcze serii (D011)
+- [x] Logowanie zbiorcze serii (D011) — historyczny model; rozszerzone przez D016
+- [x] **D016 — logowanie per seria** — wiersz kg/powt. (lub czas) na serię; Volume w Sheets = suma serii
 - [x] Sync Sheets / Edge Function `sync-sheets` (e2e 2026-09-03)
 - [x] UI-A…UI-C polish (Home, summary, settings, stats, history)
 - [x] UI-D komponenty `Toast` + `Badge` w kodzie (PR #4) — QA w apce `[do weryfikacji]`
@@ -20,8 +21,8 @@
 - [ ] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
 - [ ] Drobne polish wg `UI_REDESIGN_PROPOSAL.md` / `UI_PROPOSAL GEMINI.md` (mapowanie zaktualizowane 2026-09-21)
 
-**B — Logowanie**
-- [ ] **D016 — edycja per seria** — rampa ciężarów; wierny zapis w `session_set_logs` / Sheets
+**B — Sesja (kolejne po D016)**
+- [ ] **Rest timer overlay** — pasek −15s / +30s / ✕; pref w Ustawieniach
 
 **C — Integracje**
 - [ ] **Deploy + sekrety** (jeśli nowe środowisko) — `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, opcjonalnie `JJ_WORKOUT_ALLOWED_USER_ID`
@@ -34,13 +35,12 @@
 ## BACKLOG (funkcje)
 
 ### Wysoki priorytet
-- [ ] **D016** — edycja / logowanie per seria (patrz wyżej)
+- [ ] **Rest timer overlay** — patrz CURRENT §B
 - [ ] **PowerSync** — offline-first sync (SQLite cache + Supabase)
 
 ### Średni priorytet
 - [ ] **Sheet templates** — duplikowanie / szablony planów
 - [ ] **PR / rekordy** — wizualizacja PR w Stats (Sheets: Brzycki; UI: Epley — D010)
-- [ ] **Rest timer** — overlay + ustawienie domyślnego czasu (nie w scrollu)
 - [ ] **Scroll horizontally** — swipe między zakładkami (opcjonalnie)
 
 ### Niski priorytet
