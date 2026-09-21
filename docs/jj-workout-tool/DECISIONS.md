@@ -200,7 +200,7 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 **Context**: Sync do `Silownia_import` tworzył osobny wiersz na każdą serię. Użytkownik preferuje jeden wiersz na ćwiczenie w sesji.
 
 **Decision**:
-- Import (`importWorkout.ts`, `workout.py`): grupowanie po `session_id:exercise_id`; kolumna **Set** = liczba serii; **Volume** = ciężar × powtórzenia × serie; ciężar/powt. z pierwszej serii (logowanie zbiorcze); klucz upsert historycznie = `Data|Cwiczenie` (zastąpiony przez **D015**).
+- Import (`importWorkout.ts`, `workout.py`): grupowanie po `session_id:exercise_id`; kolumna **Set** = liczba serii; historycznie Volume = ciężar × powt. × serie z pierwszej serii (logowanie zbiorcze). **Od D016:** Volume = suma serii; reprezentatywny ciężar = best Brzycki.
 - **Nazwa produktu**: **JJ Workout Tool**, wersja **1.0.0** w UI (`branding.ts`, `app.json`).
 
 ---
@@ -282,10 +282,35 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D019: Inspiracja FORGE — co bierzemy, czego nie
+
+**Date**: 2026-09-21  
+**Status**: Active (kierunek produktowy; backlog w `TODO.md`)
+
+**Context**: Przegląd PWA znajomego — [FORGE/PRO](https://forgeproapp.github.io/Aplikacja-treningowa-FORGE/) (`Forgeproapp/Aplikacja-treningowa-FORGE`). FORGE jest *plan- / mezocykl-first*. Jarvis zostaje *log-first* (D009) z opcjonalnymi planami (D018).
+
+**Bierzemy (kolejka):**
+1. Logowanie **per seria** + tryb zbiorczy → **D016** ✅ (PR #17 / produkcja)
+2. **Rest timer** jako pływający overlay (−15 / +30 / zamknij; opcjonalny dźwięk)
+3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats
+4. **Export / import JSON** (backup lokalny; nie zamiast Sheets)
+5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu
+
+**Nie bierzemy teraz:**
+- Pełny mezocykl z auto-awansem tygodnia / RIR per tydzień jako rdzeń produktu
+- Pomiary obwodów w apce (waga: openScale → Sheets)
+- Firebase / drugi backend (zostaje Supabase)
+
+**Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
+
+---
+
 ## Future Decisions (TODO)
 
+- **Objętość per partia**: tagi mięśniowe w katalogu / exercises (D019)
 - **PowerSync**: Offline-first sync between local SQLite and Supabase
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications
-- **Data export**: CSV/PDF export of workout history
-- **Rest timer overlay**: opcjonalny powrót (pref w Ustawieniach; nie w scrollu sesji)
+- **Data export**: JSON backup first (D019), potem CSV/PDF
+- **Rest timer overlay**: FORGE-like; pref w Ustawieniach; nie w scrollu sesji
+- **Mezocykl / RIR**: tylko po świadomej decyzji produktowej (nie domyślny model Home)

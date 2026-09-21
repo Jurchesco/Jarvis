@@ -1,6 +1,6 @@
 ## Architecture
 
-> **Stan na 2026-09-21:** Home oferuje **Freestyle** albo **plan z katalogu** (PR #13, `8d9c407`). Freestyle zostaje domyślnym, szybkim flow; plany to osobny stack `/plans` (nie zakładka tab bara). Schemat DB bez zmian.
+> **Stan na 2026-09-21 (produkcja):** Home = **Freestyle** albo **plan** (D018). Logowanie ćwiczeń: tryb **Zbiorczo** albo **Per seria** (**D016**, PR #17). Schemat DB bez zmian.
 
 ### Produkcja web
 
@@ -12,6 +12,7 @@ Jedyna właściwa wersja: **https://stravio-kappa.vercel.app/**
 apps/mobile/          ← Expo universal app (Android APK + Vercel web SPA)
   app/
     (tabs)/index.tsx  ← Home: Freestyle | Wybierz plan
+    (tabs)/settings/  ← m.in. domyślny tryb wypełniania serii
     plans/index.tsx   ← Lista planów (arkusze ≠ „Freestyle”)
     sheet/[id].tsx    ← Edytor planu: katalog, kolejność, start sesji
     workout/[id].tsx  ← Aktywna sesja + logowanie ćwiczeń
@@ -19,11 +20,11 @@ apps/mobile/          ← Expo universal app (Android APK + Vercel web SPA)
   src/
     api/              ← Supabase client + React Query hooks
     components/       ← ExercisePicker, ExerciseLogForm, OverflowMenu, ui/*
-    lib/              ← ensureFreestyleSheet, saveExerciseLogBatch, addCatalogExercise
+    lib/              ← ensureFreestyleSheet, saveExerciseLogBatch, appPreferences, …
     contexts/         ← AuthContext
 packages/shared/
   exerciseCatalog.ts  ← Katalog PPL (43 ćwiczenia)
-  workoutCalculations.ts ← Epley 1RM, objętość, statystyki sesji
+  workoutCalculations.ts ← Epley 1RM, volumeFromSets, stats sesji
 supabase/             ← Postgres schema + RLS + Edge Function sync-sheets
 Scripts/import/       ← Jarvis → Google Sheets (Split = nazwa arkusza)
 ```
@@ -42,6 +43,11 @@ Home
        └─ Istniejący plan → sheet/[id]
             └─ „Rozpocznij plan” → session z ćwiczeniami już na ekranie
                  └─ workout/[sessionId] → „Zakończ” → summary → Historia / import
+
+W sesji — ExerciseLogForm:
+  ├─ tryb „Zbiorczo”  → N identycznych serii (D011 UX)
+  └─ tryb „Per seria” → osobne kg/powt. (lub czas) na wiersz (D016)
+       (domyślne w Ustawieniach; przełącznik na karcie; rampa wymusza Per seria)
 ```
 
 ### Data Flow
@@ -57,9 +63,10 @@ Home
 | `lib/ensureFreestyleSheet.ts` | Tworzy/znajduje arkusz `"Freestyle"`; helper `isFreestyleSheetName` |
 | `app/plans/index.tsx` | Lista planów (filtr bez Freestyle), tworzenie/usuwanie |
 | `app/sheet/[id].tsx` | Edytor planu + start/kontynuacja sesji |
-| `lib/addCatalogExercise.ts` | Dodaje ćwiczenie do arkusza (planowanie: domyślnie 3 serie szablonu; w sesji: 1) |
-| `lib/saveExerciseLogBatch.ts` | Zapis N serii + logi sesji + uwagi |
-| `components/ExerciseLogForm.tsx` | Formularz: serie, kg, powt., uwagi, live 1RM/objętość (D011) |
+| `lib/addCatalogExercise.ts` | Dodaje ćwiczenie do arkusza |
+| `lib/saveExerciseLogBatch.ts` | Zapis serii (mogą mieć różne kg/powt.) + uwagi |
+| `lib/appPreferences.ts` | m.in. `exerciseLogFillMode`: `batch` \| `per-set` |
+| `components/ExerciseLogForm.tsx` | Formularz: Zbiorczo / Per seria, uwagi, live 1RM/objętość |
 | `components/ExercisePicker.tsx` | Modal katalogu (filtry push/pull/legs/abs) |
 
 ### Database (Supabase Postgres)
@@ -72,14 +79,14 @@ Home
 | `exercises` | Ćwiczenia na arkuszu (plan albo zbierane we freestyle) |
 | `exercise_sets` | Szablony serii |
 | `workout_sessions` | Sesja; `completed_at` null = w trakcie |
-| `session_set_logs` | Faktyczne wykonanie (źródło prawdy dla historii i importu) |
+| `session_set_logs` | Faktyczne wykonanie (źródło prawdy; możliwa rampa) |
 | `session_exercise_notes` | Uwagi per ćwiczenie w sesji |
 | `profiles` | Profil użytkownika |
 
 ### Kalkulacje
 
-- **UI:** Epley 1RM — `epley1rm()` w `workoutCalculations.ts` (jak dziennik Perplexity PWA)
-- **Importer Sheets:** Brzycki — `workout.py` (zgodnie z `GEM_INSTRUKCJA.md`)
+- **UI:** Epley 1RM — `epley1rm()` / `bestEpley1rmFromSets()`; objętość = `exerciseVolumeFromSets()` (suma serii)
+- **Importer Sheets:** Brzycki; **Volume** = Σ(kg×powt.); Ciezar/Powt./1RM = seria z najlepszym Brzycki; PR = max kg w sesji (D016)
 
 ### Auth
 

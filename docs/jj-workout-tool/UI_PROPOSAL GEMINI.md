@@ -1,19 +1,19 @@
 # Propozycja Interfejsu (UI/UX) dla JJ Workout Tool
 
-> **Stan na 2026-09-21:** Filozofia UX poniżej (ciemny motyw, one-thumb) nadal obowiązuje. **Obecna aplikacja:** Freestyle + plany z katalogu (`/plans`, D018) — patrz `ARCHITECTURE.md`. Logowanie = formularz zbiorczy (D011); per-set = **D016** (backlog). UI polish A–C zrobione; Toast/Badge = QA.
+> **Stan na 2026-09-21:** Filozofia UX poniżej nadal obowiązuje. **Produkcja:** Freestyle + plany (D018) + logowanie **Zbiorczo | Per seria** (D016). Następny krok = rest timer / QA UI (D019).
 
 ## Mapowanie: wizja Gemini → stan obecny
 
 | Gemini (sekcja) | Obecny stan | Następny krok |
 |-----------------|-------------|---------------|
 | §3 Home „Moje Plany” | **Freestyle / Wybierz plan** (D018) | Polish / QA |
-| §4 Sheet Details | **Edytor planu** `sheet/[id]` + lista `/plans` | Szablony planów (backlog) |
-| §5 Active Session | Formularz zbiorczy (serie+kg+powt.), live stats, katalog | D016 per-set (opcjonalnie) |
-| §5 Rest Timer | **Wyłączony** | Overlay + pref |
-| §5 Tabela serii wiersz-po-wierszu | **Zastąpione** `ExerciseLogForm` | Tylko przez D016 |
-| §6 Historia | Kalendarz + objętość/czas/streak | Drobny polish |
-| §7 Stats | Pills + trendy | PR/rekordy (backlog) |
-| §8 Settings | Konto, sync Sheets, haptics, motiv | Opcjonalne linki sync |
+| §4 Sheet Details | **Edytor planu** `sheet/[id]` + `/plans` | Szablony planów |
+| §5 Active Session | Formularz z trybem zbiorczym lub per-set (D016) | Rest timer overlay |
+| §5 Rest Timer | **Wyłączony** | Overlay + pref (D019) |
+| §5 Tabela serii | **Per seria** dostępna; zbiorczo = skrót | — |
+| §6 Historia | Kalendarz + tabela serii + objętość | Drobny polish |
+| §7 Stats | Pills + trendy | Objętość partii / PR (D019) |
+| §8 Settings | + tryb wypełniania serii | Opcjonalne linki sync |
 
 ---
 
