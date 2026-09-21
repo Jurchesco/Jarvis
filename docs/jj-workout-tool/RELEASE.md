@@ -7,8 +7,9 @@ This document defines the operational release flow for JJ Workout Tool v1.
 v1 goals:
 - Unified UX without role selection.
 - Signup always stored as `allievo` in DB metadata.
+- Freestyle + catalog plans (`/plans`) on Home (D009 + D018).
 - Open source distribution under AGPL-3.0.
-- Deliverable artifacts: Android build, iOS build, web deployment.
+- Deliverable artifacts: Android build, iOS build, web deployment (**https://stravio-kappa.vercel.app/**).
 
 ## Prerequisites
 
@@ -29,8 +30,9 @@ npm run web -w apps/mobile
 Then verify manually:
 - Signup works and creates user.
 - No role selection in signup UI.
-- No profile icon/name block in home header.
-- Sheet CRUD and workout session flow still work.
+- Home shows Freestyle and Wybierz plan.
+- Plans list / sheet editor / start session from plan work.
+- Freestyle session + batch exercise log still work.
 
 ## 2. Build artifacts
 

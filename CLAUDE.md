@@ -33,13 +33,18 @@ There are no automated tests in this project.
 
 Use `./docs/*` as the canonical source for product/project documentation. Keep this file concise and avoid duplicating long-form content that already exists there.
 
+**Live web (only):** https://stravio-kappa.vercel.app/ — ignore other Vercel aliases.
+
+Product snapshot (2026-09-21): Home = Freestyle **or** catalog plan (`/plans`, D018). Batch set logging = D011; per-set edit = D016 (backlog). Coach = Hermes; Gem = backup instructions (D017).
+
 - `docs/README.md` — documentation index
-- `docs/jj-workout-tool/ARCHITECTURE.md` — detailed app architecture and data flow
+- `docs/jj-workout-tool/ARCHITECTURE.md` — app architecture (Freestyle + plans)
 - `docs/jj-workout-tool/CHANGELOG.md` — release-by-release change history
-- `docs/jj-workout-tool/DECISIONS.md` — major technical/product decisions and rationale
+- `docs/jj-workout-tool/DECISIONS.md` — D001–D018
 - `docs/jj-workout-tool/RELEASE.md` — release process and checklist
 - `docs/jj-workout-tool/TODO.md` — prioritized app roadmap
 - `docs/jarvis/PLAN_NAPRAWCZY.md` — Jarvis ecosystem remediation plan
+- `.cursor/rules/jarvis-canonical-app.mdc` — canonical URL + conflict rules for agents
 
 ## Environment Setup
 

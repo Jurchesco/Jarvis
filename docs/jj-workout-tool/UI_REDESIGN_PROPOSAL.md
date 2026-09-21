@@ -2,36 +2,37 @@
 
 > Ten dokument jest **komplementarny** do `UI_PROPOSAL GEMINI.md`. Tamten opisuje ogólną filozofię UX. Ten plik — **konkretne, wdrażalne zmiany** z odniesieniem do plików w repo.
 >
-> **Stan na 2026-08-12:** warstwa **logowania ćwiczeń (freestyle) uznana za zamrożoną** — nie rozwijamy funkcji zapisu serii w najbliższym sprincie. Kolejny krok = **UI polish** wg sekcji 6 poniżej.
+> **Stan na 2026-09-21:** Freestyle + plany z katalogu (**D018** / PR #13) są w kodzie. Logowanie zbiorcze (**D011**) zamrożone funkcjonalnie — następny krok logowania = **D016** (per seria). Duża część UI-A…D zrobiona; Toast/Badge = QA. Traktuj §0 historyczne wiersze o „tylko freestyle / sheet redirect” jako **archiwum** — patrz `ARCHITECTURE.md`.
 
 ---
 
-## 0. Stan implementacji (2026-08-12)
+## 0. Stan implementacji (2026-09-21)
 
 ### Zrobione ✅
 
 | Obszar | Status |
 |--------|--------|
-| Freestyle Home (bez planów) | ✅ `app/(tabs)/index.tsx` — jeden CTA |
+| Freestyle Home | ✅ szybki start |
+| Plany z katalogu | ✅ `/plans` + `sheet/[id]` (D018) — **nie** tab bar |
 | Logowanie zbiorcze serii | ✅ `ExerciseLogForm` + `saveExerciseLogBatch` |
-| Katalog ćwiczeń w sesji | ✅ `ExercisePicker` |
+| Katalog ćwiczeń w sesji / planie | ✅ `ExercisePicker` |
 | Live stats sesji | ✅ siatka 2×3 w `workout/[id].tsx` |
-| Menu ⋮ w Historii | ✅ `OverflowMenu` — bez long-press |
+| Menu ⋮ w Historii | ✅ `OverflowMenu` |
 | Tab bar kolor | ✅ `#0b1220` |
-| Nagłówki lineHeight | ✅ częściowo `ScreenHeader` |
-| Rest timer | ⏸ **wyłączony** (decyzja produktowa) |
-| Plany / splitty / seed PPL | ❌ usunięte z UI |
-| Sheet detail | ↩ redirect Home |
+| Nagłówki lineHeight | ✅ `ScreenHeader` |
+| Toast / Badge | ✅ komponenty (PR #4) — QA w apce |
+| Rest timer | ⏸ **wyłączony** (decyzja produktowa; overlay w backlogu) |
+| Seed PPL / auto-splity | ❌ usunięte (nie wracają) |
 
-### Nieaktualne sekcje tego audytu
+### Nieaktualne sekcje tego audytu (archiwum 2026-08)
 
-Poniższe punkty odnoszą się do **starego** UI (plany, per-set rows, rest timer w scrollu). Traktuj je jako historyczne; przy implementacji UI patrz **zaktualizowaną sekcję 6**.
+Poniższe punkty odnoszą się do **starego** UI sprzed freestyle / przed D018. Przy implementacji patrz **sekcję 6** i aktualny `ARCHITECTURE.md`.
 
-- §2.1 long-press na Home — **nie dotyczy** (brak kart planów)
-- §2.2 duplikat „Utwórz plan” — **nie dotyczy**
-- §2.3 Sheet Detail SetRow — **nie dotyczy** (sheet wyłączony)
-- §2.4 Rest timer w scrollu — **timer wyłączony**; ewentualny powrót = floating overlay (Faza UI-B)
-- §4.1–4.2 Home / Sheet Detail — zastąpione freestyle (patrz `ARCHITECTURE.md`)
+- §2.1 long-press na Home — historyczne
+- §2.2 duplikat „Utwórz plan” — historyczne
+- §2.3 Sheet Detail SetRow — sheet wrócił jako edytor planu; model serii nadal zbiorczy (D011)
+- §2.4 Rest timer w scrollu — timer wyłączony; powrót = floating overlay
+- §4.1–4.2 Home / Sheet — zastąpione Freestyle + `/plans`
 
 ### Nadal aktualne 🎯
 
@@ -281,8 +282,9 @@ Dane o „ostatniej synchronizacji” najlepiej czerpać z przyszłej zakładki 
 14. *(Opcjonalnie)* sync link na summary / re-import w Historii (§6.1)
 
 ### Przyszłość (osobny epik)
-- **Zakładka Plany** — gotowe programy (stary model „Moje Plany” z Gemini §3)
-- PowerSync, PR w Stats, swipe między tabami
+- **D016** — edycja per seria (rampa)
+- Szablony / duplikacja planów (stack `/plans` już jest — D018)
+- PowerSync, PR w Stats, swipe między tabami, rest timer overlay
 
 ---
 
