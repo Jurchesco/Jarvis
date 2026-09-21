@@ -16,37 +16,41 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
-- **Freestyle trening** — Home: jeden przycisk „Rozpocznij trening”; ćwiczenia wybierane na bieżąco z katalogu (`ExercisePicker`)
+- **Plany z katalogu (D018 / PR #13)** — Home: Freestyle | Wybierz plan; stack `/plans`; edytor `sheet/[id]`; start sesji z ćwiczeniami planu
+- **Freestyle trening** — szybki start; ćwiczenia z katalogu w trakcie sesji (`ExercisePicker`)
 - **Katalog ćwiczeń PPL** — `packages/shared/src/exerciseCatalog.ts` (43 ćwiczenia, push/pull/legs/abs)
-- **Logowanie zbiorcze** — `ExerciseLogForm`: serie + ciężar + powtórzenia + uwagi w jednym formularzu; zapis wielu serii naraz (`saveExerciseLogBatch.ts`)
-- **Kalkulacje na żywo** — `workoutCalculations.ts`: Est. 1RM (Epley), objętość; statystyki sesji w nagłówku treningu (ćwiczenia, serie, objętość, czas, naj. 1RM, powtórzenia)
-- **OverflowMenu** — menu ⋮ w historii (usuwanie sesji bez long-press)
-- **`ensureFreestyleSheet`** — jeden techniczny arkusz `"Freestyle"` na użytkownika (wymóg schematu Supabase)
-- **Edycja historii** — szczegóły sesji: edycja dat start/koniec (`EditSessionDateSheet`, `CalendarPicker`), edycja/usuwanie ćwiczeń, dodawanie ćwiczeń do ukończonego treningu
-- **Silownia_import — stabilny upsert** — kolumny `Session ID` / `Exercise ID`; klucz `session_id|exercise_id` w `workout.py` i `importWorkout.ts`
+- **Logowanie zbiorcze (D011)** — `ExerciseLogForm`: serie + ciężar + powtórzenia + uwagi; `saveExerciseLogBatch.ts`
+- **Kalkulacje na żywo** — `workoutCalculations.ts`: Est. 1RM (Epley), objętość; stats w nagłówku sesji
+- **OverflowMenu** — menu ⋮ w historii
+- **`ensureFreestyleSheet`** — techniczny arkusz `"Freestyle"` (FK schematu)
+- **Edycja historii** — daty sesji, edycja/usuwanie/dodawanie ćwiczeń po zakończeniu
+- **Silownia_import — stabilny upsert (D015)** — `Session ID` / `Exercise ID`; klucz `session_id|exercise_id`
+- **UI-D** — komponenty `Toast`, `Badge` (PR #4)
 - `vercel.json`, `docs/`, `.gitignore` entries, `LICENSE` (wcześniejsze)
 
 ### Changed
-- **Model produktu v1** — plany/splitty (PUSH/PULL/…) **wyłączone z UI**; gotowe programy zaplanowane jako osobna zakładka w przyszłości
-- **Home** — z „Moje plany” na ekran startowy z CTA freestyle (bez FAB, bez drag&drop planów)
-- **`app/workout/[id].tsx`** — przebudowany flow treningu (Perplexity-like); nagłówek „Freestyle”
-- **`app/sheet/[id].tsx`** — przekierowanie na Home (ekran planów nieużywany)
-- **Tab bar** — `backgroundColor: #0b1220` (spójny z tokenem `background`)
+- **Model produktu** — freestyle-first (**D009**) + plany obok freestyle (**D018**); bez seed PPL / auto-splitów; plany **nie** są zakładką tab bara
+- **Home** — dwa CTA: Freestyle | Wybierz plan
+- **`app/sheet/[id].tsx`** — przywrócony edytor planu (wcześniej redirect Home)
+- **Produkcja web** — kanon: **https://stravio-kappa.vercel.app/**
+- **Tab bar** — `backgroundColor: #0b1220`
 - **ScreenHeader** — `leading-tight` na tytułach
-- **Importer / Gem** — kolumna Split w Sheets dla sesji freestyle = `"Freestyle"`
-- **Historia UI** — wyśrodkowany tytuł ćwiczenia, kafelki statystyk (1RM, objętość), kosz/edycja w nagłówku karty, przycisk „Wróć” do listy
+- **Importer** — kolumna Split = nazwa arkusza (`Freestyle` albo nazwa planu)
+- **Historia UI** — kafelki 1RM/objętość, menu ⋮
+- **Cron import** — `DEFAULT_DAYS=3` (od 2026-09-07)
 - **API client**: Supabase JS; UUID IDs; auth UX (wcześniejsze zmiany)
 
 ### Fixed
-- **Reset formularza ćwiczenia** — wpisane wartości nie znikały przy ticku licznika czasu sesji (usunięty `useEffect` nadpisujący `initialDraft`)
-- **Duplikaty w Silownia_import** — ponowny sync po edycji sesji dopisywał wiersze zamiast aktualizować (klucz `Data|Cwiczenie` + lokalizacja PL)
+- **Reset formularza ćwiczenia** — wartości nie znikały przy ticku licznika sesji
+- **Duplikaty w Silownia_import** — upsert po `session_id|exercise_id` (+ legacy Data|Ćwiczenie)
+- **openScale** — MeasurementType.identity (schema 16+); wybór najnowszego zip po dacie
 
 ### Removed
-- **Program PPL (seed)** — `seedPplProgram.ts`, przycisk seed na Home
+- **Program PPL (seed)** — `seedPplProgram.ts`
 - **Auto-tworzenie 4 splitów** — `ensureSplitSheets.ts`
-- **Rest timer** — tymczasowo wyłączony z UI (decyzja produktowa; może wrócić w Ustawieniach)
-- **Long-press delete** — na Home (plany usunięte); w Historii zastąpione menu ⋮
-- SQLite / Fastify / duplikat „Utwórz plan” (wcześniejsze)
+- **Rest timer** — wyłączony z UI (może wrócić jako overlay / pref)
+- **Long-press delete** — w Historii zastąpione menu ⋮
+- SQLite / Fastify (wcześniejsze)
 
 ---
 

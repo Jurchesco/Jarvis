@@ -1,14 +1,14 @@
 # JJ Workout Tool
 
-Spersonalizowany freestyle tracker treningowy (spersonalizowany freestyle tracker treningowy v1.0). Loguj sesje w aplikacji mobilnej/webowej, synchronizuj do Google Sheets (Jarvis / Gemini Gem).
+Spersonalizowany tracker treningowy w ekosystemie **Jarvis**: loguj sesje (freestyle albo plan), synchronizuj do Google Sheets → Hermes / Gem.
 
-**Wersja 1.0.0** — oficjalna pierwsza wersja spersonalizowanego narzędzia.
+**Wersja UI 1.0.0** · Web: **https://stravio-kappa.vercel.app/**
 
 ---
 
 ## O projekcie
 
-JJ Workout Tool to darmowy tracker treningowy na Android, iOS i Web.
+JJ Workout Tool to tracker treningowy na Android, iOS i Web (fork open-source; produkt użytkownika = **Jarvis**).
 
 <p align="center">
   <img src="docs/screenshots/login.png" width="200" alt="Login" />
@@ -23,29 +23,32 @@ JJ Workout Tool to darmowy tracker treningowy na Android, iOS i Web.
 
 ## Vision
 
-JJ Workout Tool is a free and open source workout logger for the gym.
-**Current product model (2026-08): freestyle-first**
+**Current product model (2026-09-21):** freestyle-first (**D009**) + optional catalog plans (**D018**)
 
-- Start a workout with one tap — pick exercises from the catalog during the session
-- Pre-built workout **plans** (PPL templates) are planned as a separate tab later; not in v1 UI
+- Start **Freestyle** with one tap — pick exercises from the catalog during the session
+- Or **choose a plan** (`/plans`) — named sheets built from the catalog; start with exercises already on screen
+- Plans are a **stack route**, not a bottom-tab item
 - Every account is stored as athlete (`allievo`); no role UI
-- Data syncs to Supabase; Jarvis pipeline can export sessions to Google Sheets
+- Data syncs to Supabase; Jarvis pipeline exports to Google Sheets (`Silownia_import`)
+- Daily coach: **Hermes**; Gem instructions = backup (`docs/jarvis/GEM_INSTRUKCJA.md`) — **D017**
 
 ## Features
 
 - **Freestyle workouts** — One-tap start; add exercises from the PPL catalog on the fly
-- **Batch set logging** — Enter sets count, weight, reps, and notes in one form per exercise
+- **Catalog plans** — Create/edit named plans, start a session from a plan
+- **Batch set logging** — Sets count, weight, reps, and notes in one form per exercise (D011)
 - **Live session stats** — Volume, time, best est. 1RM, set count in the workout header
 - **Exercise catalog** — Push / Pull / Legs / Core filters + custom exercise names
 - **Session History** — Calendar with workout days, session detail review
 - **Statistics** — Volume and frequency charts
 - **Previous session hints** — Last weight/reps when logging an exercise
 - **Exercise notes** — Per-exercise notes during a session
+- **Sheets sync** — Manual sync from Settings (`sync-sheets`) + hourly GitHub Actions import
 - **Authentication** — Email/password with persistent sessions
-- **Cross-Platform** — Android (APK) and Web (Vercel)
+- **Cross-Platform** — Android (APK) and Web (Vercel — kappa)
 - **Per-User Data Isolation** — Supabase RLS
 
-*Legacy / backlog:* rest timer UI, workout plan editor, sheet drag-and-drop — see `docs/jj-workout-tool/TODO.md`
+*Backlog:* per-set edit (D016), rest timer overlay, PowerSync — see `docs/jj-workout-tool/TODO.md`
 
 ---
 
@@ -63,10 +66,14 @@ JJ Workout Tool is a free and open source workout logger for the gym.
 ---
 
 ## APK
-the apk is aviable in this link: https://expo.dev/accounts/beccio00/projects/jj-workout-tool/builds/04e946f6-f2de-4e1e-a55e-8dc337c0ec70
 
-## Web App 
-Web app is deployed on Vercel: https://jj-workout-tool.vercel.app/
+APK (historical / Expo): https://expo.dev/accounts/beccio00/projects/jj-workout-tool/builds/04e946f6-f2de-4e1e-a55e-8dc337c0ec70
+
+## Web App
+
+Jedyna właściwa wersja produkcyjna: **https://stravio-kappa.vercel.app/**
+
+(Inne aliasy Vercel nie są kanonem Jarvisa.)
 
 ## Getting Started
 
@@ -81,8 +88,9 @@ Web app is deployed on Vercel: https://jj-workout-tool.vercel.app/
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/Jurchesco/jj-workout-tool
-cd JJ-Workout-Tool
+git clone https://github.com/Jurchesco/Jarvis.git
+cd Jarvis
+# lokalnie często: JJ-Workout-Tool/ (junction / clone)
 npm install
 
 # 2. Set up Supabase
@@ -164,27 +172,31 @@ vercel --prod
 ## Project Structure
 
 ```
-jj-workout-tool/
+Jarvis / JJ-Workout-Tool/
 ├── apps/
 │   ├── mobile/              # Expo universal app (Android + Web)
 │   │   ├── app/             # File-based routes (expo-router)
-│   │   │   ├── auth/        # Login & signup screens
-│   │   │   ├── sheet/       # Sheet detail screen
-│   │   │   ├── workout/     # Active workout screen
+│   │   │   ├── (tabs)/      # Home (Freestyle | Plan), Historia, Stats, Ustawienia
+│   │   │   ├── plans/       # Lista planów (stack)
+│   │   │   ├── auth/        # Login & signup
+│   │   │   ├── sheet/       # Edytor planu + start sesji
+│   │   │   ├── workout/     # Aktywna sesja + summary
 │   │   │   ├── history/     # Session history + detail
-│   │   │   ├── _layout.tsx  # Root layout (auth gate, providers)
-│   │   │   └── index.tsx    # Home screen (sheet list)
+│   │   │   └── _layout.tsx  # Root layout (auth gate, providers)
 │   │   └── src/
 │   │       ├── api/         # Supabase API client + React Query hooks
-│   │       ├── contexts/    # AuthContext (auth state management)
-│   │       └── lib/         # Supabase client configuration
+│   │       ├── components/  # ExercisePicker, ExerciseLogForm, ui/*
+│   │       ├── contexts/    # AuthContext
+│   │       └── lib/         # ensureFreestyleSheet, saveExerciseLogBatch, …
 ├── packages/
-│   ├── shared/              # TypeScript types shared across apps
+│   ├── shared/              # Types + exerciseCatalog + workoutCalculations
 │   └── react-native-worklets-stub/
 ├── supabase/
-│   └── schema.sql           # Postgres schema (tables, RLS, triggers)
-├── docs/                    # Architecture, decisions, changelog, TODO
-└── vercel.json              # Vercel deployment config
+│   ├── schema.sql
+│   └── functions/sync-sheets/
+├── Scripts/import/          # jarvis_import → Google Sheets
+├── docs/                    # Architecture, decisions, changelog, TODO, Jarvis
+└── vercel.json
 ```
 
 ---
@@ -196,7 +208,7 @@ The Supabase Postgres database has 7 tables:
 | Table | Purpose |
 |-------|---------|
 | `profiles` | User profiles (role, display name) — role currently defaulted to `allievo` |
-| `workout_sheets` | Workout templates owned by a user |
+| `workout_sheets` | `"Freestyle"` (hidden) **and** named user plans |
 | `exercises` | Exercises within a sheet |
 | `exercise_sets` | Template sets (reps, weight, rest time) |
 | `workout_sessions` | Actual workout logs |
@@ -215,8 +227,8 @@ Place your app screenshots in `docs/screenshots/`:
 |------|--------|
 | `login.png` | Login screen |
 | `signup.png` | Signup screen |
-| `home.png` | Home screen (sheet list) |
-| `sheet.png` | Sheet detail (exercises + sets) |
+| `home.png` | Home (Freestyle \| Plan) |
+| `sheet.png` | Plan editor |
 | `workout.png` | Active workout session |
 | `history.png` | History calendar view |
 | `session.png` | Session detail review |
@@ -227,12 +239,12 @@ Place your app screenshots in `docs/screenshots/`:
 
 See **[docs/README.md](docs/README.md)** for the full index.
 
-- [Jarvis ecosystem (PL)](docs/jarvis/ARCHITECTURE.md) — Data pipeline to Google Sheets + Gem
+- [Jarvis ecosystem (PL)](docs/jarvis/ARCHITECTURE.md) — Data pipeline to Google Sheets + Hermes/Gem
 - [Jarvis setup (PL)](docs/jarvis/SETUP.md) — Step-by-step configuration
 - [**Plan naprawczy**](docs/jarvis/PLAN_NAPRAWCZY.md) — Audit remediation (task status)
-- [Gem instructions (PL)](docs/jarvis/GEM_INSTRUKCJA.md) — System prompt for Gemini Trener AI
+- [Gem instructions (PL)](docs/jarvis/GEM_INSTRUKCJA.md) — System prompt (backup for Hermes)
 - [Architecture](docs/jj-workout-tool/ARCHITECTURE.md) — App system design and data flow
-- [Decisions](docs/jj-workout-tool/DECISIONS.md) — Technical decision records
+- [Decisions](docs/jj-workout-tool/DECISIONS.md) — D001–D018
 - [Changelog](docs/jj-workout-tool/CHANGELOG.md) — Version history
 - [TODO](docs/jj-workout-tool/TODO.md) — App roadmap
 - [Release Guide](docs/jj-workout-tool/RELEASE.md) — Build and publish flow for v1

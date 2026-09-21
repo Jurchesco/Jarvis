@@ -1,0 +1,15 @@
+# Jarvis / JJ Workout Tool — kanon deployu
+
+## Jedyna właściwa apka web
+
+**https://stravio-kappa.vercel.app/**
+
+To jedyny URL do sprawdzania i omawiania żywej aplikacji. Ignoruj inne domeny Vercel / stare aliasy (m.in. `jj-workout-tool.vercel.app`, `stravio-project.vercel.app`) — nie są kanoniczną wersją Jarvisa.
+
+## Kontekst
+
+- Produkt użytkownika: **Jarvis** (dawniej Stravio); UI: **JJ Workout Tool**
+- Repo: `Jurchesco/Jarvis` (klon lokalny: `JJ-Workout-Tool/`)
+- Przy pytaniach o stan apki / plany: kod `main` + **Obsidian** (vault w Google Drive) + ten URL
+- Decyzje: D009 (freestyle) + **D018** (plany `/plans`); D016 (per-set) = backlog; D017 Hermes=trener / Gem=zapas
+- W razie konfliktu docs vs kod: **kod `main` + Obsidian + kappa** > zaległe fragmenty docs

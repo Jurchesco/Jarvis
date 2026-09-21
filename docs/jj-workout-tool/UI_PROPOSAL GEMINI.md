@@ -1,19 +1,19 @@
 # Propozycja Interfejsu (UI/UX) dla JJ Workout Tool
 
-> **Stan na 2026-08-12:** Ten dokument opisuje **docelową wizję UX** (ciemny motyw, one-thumb, tabele serii). **Obecna aplikacja** działa w trybie **freestyle** — patrz `ARCHITECTURE.md` i sekcja *Mapowanie* poniżej. Kolejny sprint = **UI polish** wg `UI_REDESIGN_PROPOSAL.md` §6 (UI-A…UI-D), **bez** zmian logiki logowania ćwiczeń.
+> **Stan na 2026-09-21:** Filozofia UX poniżej (ciemny motyw, one-thumb) nadal obowiązuje. **Obecna aplikacja:** Freestyle + plany z katalogu (`/plans`, D018) — patrz `ARCHITECTURE.md`. Logowanie = formularz zbiorczy (D011); per-set = **D016** (backlog). UI polish A–C zrobione; Toast/Badge = QA.
 
 ## Mapowanie: wizja Gemini → stan obecny
 
-| Gemini (sekcja) | Obecny stan | UI polish (następny krok) |
-|-----------------|-------------|---------------------------|
-| §3 Home „Moje Plany” | **Freestyle** — jeden CTA „Rozpocznij trening” | Polish ekranu startowego (UI-A) |
-| §4 Sheet Details | **Wyłączone** (redirect Home) | Osobna zakładka „Plany” w przyszłości |
-| §5 Active Session | **Inny model:** formularz zbiorczy (serie+kg+powt.), live stats, katalog | Summary po treningu, haptics, BottomSheet uwag (UI-B) |
-| §5 Rest Timer | **Wyłączony** | Opcjonalny powrót jako overlay |
-| §5 Tabela serii wiersz-po-wierszu | **Zastąpione** `ExerciseLogForm` | Nie wracać do per-set bez decyzji produktowej |
-| §6 Historia | Kalendarz + lista (data, nazwa) | + objętość, czas, streak (UI-C) |
-| §7 Stats | Wykresy (ostatnie 10 sesji) | Filtry Pills, wykres per ćwiczenie (UI-C) |
-| §8 Settings | Minimalne | Pełna spec w `UI_REDESIGN_PROPOSAL.md` §4.6 |
+| Gemini (sekcja) | Obecny stan | Następny krok |
+|-----------------|-------------|---------------|
+| §3 Home „Moje Plany” | **Freestyle / Wybierz plan** (D018) | Polish / QA |
+| §4 Sheet Details | **Edytor planu** `sheet/[id]` + lista `/plans` | Szablony planów (backlog) |
+| §5 Active Session | Formularz zbiorczy (serie+kg+powt.), live stats, katalog | D016 per-set (opcjonalnie) |
+| §5 Rest Timer | **Wyłączony** | Overlay + pref |
+| §5 Tabela serii wiersz-po-wierszu | **Zastąpione** `ExerciseLogForm` | Tylko przez D016 |
+| §6 Historia | Kalendarz + objętość/czas/streak | Drobny polish |
+| §7 Stats | Pills + trendy | PR/rekordy (backlog) |
+| §8 Settings | Konto, sync Sheets, haptics, motiv | Opcjonalne linki sync |
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Jak użyć w Cursorze:** nowy chat → model Opus → wklej blok z sekcji „PROMPT” → dołącz `@docs/jarvis/GEM_INSTRUKCJA.md`, `@Scripts/import/jarvis_import/` itd.
 
-**Jak użyć poza Cursorem (Gemini Advanced, ChatGPT):** wklej prompt + podaj link do repo: https://github.com/Jurchesco/jj-workout-tool — poproś model o przejrzenie kodu z GitHub (jeśli ma dostęp) lub wklej ręcznie kluczowe pliki.
+**Jak użyć poza Cursorem (Gemini Advanced, ChatGPT):** wklej prompt + podaj link do repo: https://github.com/Jurchesco/Jarvis — poproś model o przejrzenie kodu z GitHub (jeśli ma dostęp) lub wklej ręcznie kluczowe pliki.
 
 ---
 
@@ -30,7 +30,7 @@ openScale backup   → importer Python  ↗
 ```
 
 ### Repozytorium
-- **GitHub:** https://github.com/Jurchesco/jj-workout-tool (branch `main`)
+- **GitHub:** https://github.com/Jurchesco/Jarvis (branch `main`)
 - **Import Python:** `Scripts/import/jarvis_import/`
 - **Aplikacja JJ Workout Tool:** `apps/mobile/`, `supabase/schema.sql`
 - **Workflow CI:** `.github/workflows/jarvis-import.yml`

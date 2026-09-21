@@ -1,8 +1,8 @@
 # Plan naprawczy ekosystemu Jarvis
 
 **Źródło:** audyt Opus (2026-08-11) + wstępny audyt Composer  
-**Cel:** jakość danych w Google Sheets dla Gemini Gema (Trener AI)  
-**Repozytorium:** `c:\Jarvis\JJ-Workout-Tool` · GitHub `Jurchesco/jj-workout-tool`
+**Cel:** jakość danych w Google Sheets dla Hermesa / Gema (Trener AI)  
+**Repozytorium:** `c:\Jarvis\JJ-Workout-Tool` · GitHub `Jurchesco/Jarvis`
 
 > **Dla agenta / kolejnych sesji:** przy każdej naprawie odwołuj się do tego pliku (`@docs/jarvis/PLAN_NAPRAWCZY.md`). Po ukończeniu zadania zmień status na `done` i dopisz datę w kolumnie „Ukończono”.
 

@@ -2,7 +2,7 @@
 
 Instrukcja krok po kroku dla nowego środowiska deweloperskiego.
 
-> Repozytorium: clone `https://github.com/Jurchesco/jj-workout-tool` — wszystkie ścieżki poniżej są względem roota repo.
+> Repozytorium: clone `https://github.com/Jurchesco/Jarvis` — wszystkie ścieżki poniżej są względem roota repo.
 
 ---
 
@@ -89,7 +89,7 @@ copy .env.example .env
 | `OPENSCALE_BACKUP` | dla cialo | Ścieżka do auto backupu openScale (`.zip` / `.db`) albo folder z backupami |
 | `OPENSCALE_DRIVE_FILE_ID` | dla cialo (CI) | ID pliku backupu na Drive (fallback) |
 | `OPENSCALE_DRIVE_FOLDER_ID` | dla cialo (CI) | ID folderu z backupami — importer bierze najnowszy plik |
-| `DEFAULT_DAYS` | nie | Domyślna liczba dni w prompcie (domyślnie 7) |
+| `DEFAULT_DAYS` | nie | Domyślna liczba dni; w cronie workflow = **3** (bufor wczoraj+przedwczoraj) |
 
 **Google Service Account:**
 

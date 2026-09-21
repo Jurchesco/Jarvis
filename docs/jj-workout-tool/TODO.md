@@ -1,85 +1,103 @@
 # TODO
 
-> **Stan na 2026-08-12:** logowanie ćwiczeń (freestyle) uznane za **stabilne** — nie rozwijamy tej warstwy funkcjonalnej w najbliższym sprincie. **Następny krok: UI polish** wg `UI_REDESIGN_PROPOSAL.md` + `UI_PROPOSAL GEMINI.md`.
+> **Stan na 2026-09-21:** Home = **Freestyle** albo **plan z katalogu** (PR #13 / D018). Logowanie zbiorcze (D011) stabilne. **Następny krok produktowy:** UI polish (dokładka QA Toast/Badge) albo **D016** (edycja per seria). Dokumenty UI poniżej = filozofia + backlog polish, nie „tylko freestyle”.
 
 ---
 
-## CURRENT — UI polish (następny sprint)
+## CURRENT — po PR #13
 
-Priorytet wg `UI_REDESIGN_PROPOSAL.md` §6, zaktualizowany pod obecny kod:
+### Zrobione (produkt)
+- [x] **Freestyle** — szybki start z katalogu
+- [x] **Plany z katalogu** — `/plans` + `sheet/[id]` (D018); nie zakładka tab bara
+- [x] Logowanie zbiorcze serii (D011)
+- [x] Sync Sheets / Edge Function `sync-sheets` (e2e 2026-09-03)
+- [x] UI-A…UI-C polish (Home, summary, settings, stats, history)
+- [x] UI-D komponenty `Toast` + `Badge` w kodzie (PR #4) — QA w apce `[do weryfikacji]`
 
-### Faza UI-A — szybkie poprawki
-- [x] **Fix white line** — `sceneStyle: { backgroundColor: '#0b1220' }` w tab layout
-- [x] **Fix height of text** — `leading-tight` / `leading-5` na Home i Historii
-- [x] **Historia** — objętość + czas trwania na karcie sesji + podsumowanie miesiąca
-- [x] **Home** — ostatni trening, licznik treningów w miesiącu, lepsza hierarchia CTA
+### Otwórz teraz (wybór sprintu)
 
-### Faza UI-B — aktywny trening (najważniejszy ekran)
-- [x] **Ekran podsumowania** — `app/workout/summary/[id].tsx` po „Zakończ” (statystyki, porównanie, top ćwiczenia)
-- [x] **Haptics** — `expo-haptics` przy zapisie ćwiczenia (toggle w Ustawieniach — później)
-- [x] **BottomSheet na uwagi** — `BottomSheet.tsx` + tap na wiersz uwag w `ExerciseLogForm`
-- [x] **Polish nagłówka statystyk** — siatka 2×3 z wspólną ramką w `workout/[id].tsx`
+**A — UI polish / QA**
+- [ ] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
+- [ ] Drobne polish wg `UI_REDESIGN_PROPOSAL.md` / `UI_PROPOSAL GEMINI.md` (mapowanie zaktualizowane 2026-09-21)
 
-### Faza UI-C — pozostałe zakładki
-- [x] **Enhance settings** — konto, rest timer (pref), haptics toggle, motyw, Wyloguj przeniesiony z Home
-- [x] **Stats** — Pills 1M/3M/6M/Wszystko + wykres trendu per ćwiczenie
-- [x] **History** — streak w podsumowaniu miesiąca + aktywna seria
+**B — Logowanie**
+- [ ] **D016 — edycja per seria** — rampa ciężarów; wierny zapis w `session_set_logs` / Sheets
 
-### Faza UI-D — design system
-- [ ] **`Toast`** — potwierdzenia „Zapisano ćwiczenie”
-- [x] **`BottomSheet`** — notatki w treningu
-- [x] **`Pills`** — Stats + Ustawienia
-- [ ] **`Badge`** — wg tabeli w `UI_REDESIGN_PROPOSAL.md` §3
-
-### Faza UI-E — Integracje Google Sheets (§6)
-> Wymaga **deploy Edge Function** + sekretów w Supabase — patrz `supabase/functions/sync-sheets/README.md`
-
-- [x] **Edge Function `sync-sheets`** — import Silownia_import (port logiki `workout.py`, TZ Warsaw)
-- [x] **Ustawienia → Integracje** — status + „Synchronizuj teraz” + klient `sheetSync.ts`
-- [ ] **Deploy + sekrety** — `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, opcjonalnie `JJ_WORKOUT_ALLOWED_USER_ID`
-- [ ] *(Opcjonalnie)* link „Zsynchronizuj” na ekranie podsumowania treningu (§6.1)
-- [ ] *(Opcjonalnie)* re-import sesji w szczegółach Historii (§6.1)
-- [ ] **Przyszłość:** OAuth Google / eksport CSV z Ustawień (multi-user)
+**C — Integracje**
+- [ ] **Deploy + sekrety** (jeśli nowe środowisko) — `GOOGLE_SHEET_ID`, `GOOGLE_SERVICE_ACCOUNT_JSON`, opcjonalnie `JJ_WORKOUT_ALLOWED_USER_ID`
+- [ ] *(Opcjonalnie)* link „Zsynchronizuj” na podsumowaniu treningu
+- [ ] *(Opcjonalnie)* re-import sesji w szczegółach Historii
+- [ ] **Przyszłość:** OAuth Google / eksport CSV z Ustawień
 
 ---
 
-## BACKLOG (funkcje — po UI)
+## BACKLOG (funkcje)
 
-### Wysoki priorytet (produkt)
-- [ ] **Zakładka Plany** — gotowe programy (PPL itd.) w **osobnej zakładce** tab bara; obecnie tylko freestyle
+### Wysoki priorytet
+- [ ] **D016** — edycja / logowanie per seria (patrz wyżej)
 - [ ] **PowerSync** — offline-first sync (SQLite cache + Supabase)
 
 ### Średni priorytet
-- [ ] **Sheet templates** — duplikowanie / szablony planów (gdy wróci moduł planów)
-- [ ] **PR / rekordy** — wizualizacja PR w Stats (spójnie z importerem: Est. 1RM Brzycki w Sheets, Epley w UI)
+- [ ] **Sheet templates** — duplikowanie / szablony planów
+- [ ] **PR / rekordy** — wizualizacja PR w Stats (Sheets: Brzycki; UI: Epley — D010)
+- [ ] **Rest timer** — overlay + ustawienie domyślnego czasu (nie w scrollu)
 - [ ] **Scroll horizontally** — swipe między zakładkami (opcjonalnie)
-- [ ] **Rest timer** — ponowne włączenie jako overlay + ustawienie domyślnego czasu
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN
 - [ ] **Data export** — CSV / PDF
 - [ ] **Multi-user assignments** — model owner/assignee
+- [ ] **Zakładka tab „Plany”** — tylko jeśli stack `/plans` okaże się niewystarczający (obecnie **nie** planowane; D018 = stack)
+
+---
+
+## Done (2026-09 — plany)
+
+- [x] Home: Freestyle | Wybierz plan
+- [x] `app/plans/index.tsx` — lista planów (bez Freestyle)
+- [x] `app/sheet/[id].tsx` — edytor planu + start sesji (przywrócony z redirectu)
+- [x] Import Split = nazwa planu albo `Freestyle`
 
 ---
 
 ## Done (2026-08 — freestyle sprint)
 
 - [x] Katalog ćwiczeń PPL w `@bhmt3wp/shared` (`exerciseCatalog.ts`)
-- [x] Freestyle: Home → „Rozpocznij trening” (bez wyboru planu)
+- [x] Freestyle: Home → szybki start (ukryty arkusz `"Freestyle"`)
 - [x] Logowanie zbiorcze: serie + kg + powt. + uwagi → zapis wielu `session_set_logs`
 - [x] Est. 1RM (Epley) + objętość na formularzu i w podsumowaniu ćwiczenia
 - [x] Live stats sesji w nagłówku treningu
 - [x] `OverflowMenu` w Historii (zamiast long-press delete)
 - [x] Tab bar `#0b1220`, `ScreenHeader` leading-tight
-- [x] Usunięto seed PPL i UI splitów z Home
+- [x] Usunięto seed PPL i UI auto-splitów z Home
 - [x] Fix resetu pól formularza przy odświeżaniu timera sesji
+
+---
+
+## Done (UI polish A–D — kod)
+
+### Faza UI-A
+- [x] Fix white line / height of text / Historia cards / Home hierarchy
+
+### Faza UI-B
+- [x] Ekran podsumowania, haptics, BottomSheet uwag, polish nagłówka statystyk
+
+### Faza UI-C
+- [x] Settings, Stats Pills, History streak
+
+### Faza UI-D
+- [x] Komponenty `Toast`, `Badge` (PR #4) — weryfikacja UX w apce nadal otwarta
+
+### Faza UI-E
+- [x] Edge Function `sync-sheets` + Ustawienia → Integracje
+- [ ] Deploy/sekrety / opcjonalne linki sync — patrz CURRENT §C
 
 ---
 
 ## Done (wcześniej)
 
 - [x] Initial project setup (Expo + NativeWind + monorepo)
-- [x] Workout sheets CRUD *(schemat; UI planów wyłączone)*
+- [x] Workout sheets CRUD
 - [x] Exercises CRUD with sets
 - [x] Workout sessions with set logging
 - [x] Session history with calendar view
@@ -87,7 +105,7 @@ Priorytet wg `UI_REDESIGN_PROPOSAL.md` §6, zaktualizowany pod obecny kod:
 - [x] Previous session weight/rep hints
 - [x] Exercise notes (per-session)
 - [x] Supabase Auth + RLS + migrate from SQLite
-- [x] Web build + Vercel
+- [x] Web build + Vercel (**https://stravio-kappa.vercel.app/**)
 - [x] Workout statistics (charts)
 - [x] Push notifications scaffold
-- [x] Drag-to-reorder exercises *(sheet detail — nieużywane w freestyle)*
+- [x] Drag-to-reorder exercises (sheet detail — używane w edytorze planu)
