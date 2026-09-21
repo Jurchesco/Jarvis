@@ -132,20 +132,20 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
-## D009: Freestyle-first (plany w UI wyłączone)
+## D009: Freestyle-first (log-first)
 
-**Date**: 2026-08-12
-**Status**: Active
+**Date**: 2026-08-12  
+**Updated**: 2026-09-21  
+**Status**: Active (uzupełnione przez **D018**)
 
-**Context**: Użytkownik loguje treningi jak w dzienniku Perplexity — wybór ćwiczeń w trakcie sesji, bez wcześniejszego planowania arkusza.
+**Context**: Użytkownik loguje treningi jak w dzienniku Perplexity — wybór ćwiczeń w trakcie sesji, bez obowiązkowego wcześniejszego planowania.
 
-**Decision**:
-- Home = jeden CTA „Rozpocznij trening”.
-- Ćwiczenia z katalogu (`EXERCISE_CATALOG`) dodawane w `app/workout/[id].tsx`.
+**Decision (rdzeń, nadal obowiązuje)**:
+- Freestyle pozostaje szybkim startem: ćwiczenia z katalogu (`EXERCISE_CATALOG`) w `app/workout/[id].tsx`.
 - Jeden techniczny arkusz `"Freestyle"` na użytkownika (`ensureFreestyleSheet.ts`) — wymagany przez FK `workout_sessions.sheet_id` i `exercises.sheet_id`.
-- Gotowe **plany treningowe** (PPL, szablony) → **osobna zakładka** w przyszłości, nie blokują freestyle.
+- Log-first: sesja nie wymaga gotowego planu.
 
-**UI planów** (`app/sheet/[id].tsx`) przekierowuje na Home.
+**Historycznie (2026-08-12 → 2026-09-20):** UI planów było wyłączone (`sheet/[id]` → redirect Home). **Od 2026-09-21** plany wracają jako osobny flow — patrz **D018** (nie revert D009).
 
 ---
 
@@ -177,7 +177,8 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 ## D012: Ręczny sync do Google Sheets — Edge Function (testy osobiste)
 
 **Date**: 2026-08-12  
-**Status**: Active (wymaga deploy + sekretów)
+**Updated**: 2026-09-21  
+**Status**: Active (e2e zweryfikowane 2026-09-03 — trening trafia do arkusza)
 
 **Context**: Testy na własnych treningach; dane do arkusza Jarvis / Gema. Sekrety Google i service role nie mogą trafić do klienta.
 
@@ -185,9 +186,9 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Edge Function `sync-sheets` — port `workout.py` → zakładka `Silownia_import`.
 - Jeden `GOOGLE_SHEET_ID` w sekretach (osobisty arkusz, nie SaaS).
 - Opcjonalny `JJ_WORKOUT_ALLOWED_USER_ID` — tylko właściciel wywołuje sync.
-- GitHub Actions co godzinę pozostaje jako automatyczny backup.
+- GitHub Actions co godzinę pozostaje jako automatyczny backup (`DEFAULT_DAYS=3` od 2026-09-07).
 
-**Future**: OAuth Google (własny arkusz), eksport CSV z Ustawień.
+**Future**: OAuth Google (własny arkusz), eksport CSV z Ustawień; opcjonalny link sync na podsumowaniu / w Historii.
 
 ---
 
@@ -233,9 +234,57 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D016: Edycja per seria (rampa) — backlog produktowy
+
+**Date**: 2026-08-19 (feedback siłownia)  
+**Status**: Proposed (brak w kodzie `main` / `8d9c407`)
+
+**Context**: Logowanie zbiorcze (D011) zapisuje N identycznych serii. Przy rampie (różne ciężary/powt. w seriach) Sheets pokazuje pierwszą serię — Volume ≠ 1RM; trener nie powinien ufać kolumnie PR bez kontekstu.
+
+**Decision (kierunek)**:
+- Docelowo: edycja / logowanie **per seria** (lub edycja po zapisie zbiorczym), żeby rampa była wiernie w `session_set_logs` i w `Silownia_import`.
+- Do czasu wdrożenia: Hermes/Gem traktują ciężar z pierwszej serii ostrożnie przy rampie.
+
+**Nie mylić z D011** — D011 pozostaje aktualnym modelem UI; D016 to rozszerzenie, nie revert.
+
+---
+
+## D017: Hermes = trener; Gem = zapas instrukcji
+
+**Date**: 2026-09-10  
+**Status**: Active (ekosystem Jarvis; dokumentacja sejf / Obsidian)
+
+**Context**: Codzienna rozmowa treningowa i cron analizy nie powinny dublować się między agentami.
+
+**Decision**:
+- **Hermes** (`jarvis-trener`) = bieżący trener (czat + cron 22:30).
+- **Gem** = zapas + kanoniczne zasady w `docs/jarvis/GEM_INSTRUKCJA.md` (Hermes ładuje GEM z `main` przed analizą).
+- Profil / kalendarz mikrocyklu = notatki użytkownika (Obsidian / `USER.md`), nie treść GEM.
+- Kod JJ Workout Tool nie jest edytowany przez trenera.
+
+---
+
+## D018: Plany z katalogu obok Freestyle
+
+**Date**: 2026-09-21  
+**Status**: Active (kod: PR #13, `8d9c407`)
+
+**Context**: D009 wyłączyło UI planów (redirect `sheet/[id]` → Home). Użytkownik potrzebuje zarówno szybkiego freestyle, jak i nazwanych planów z ćwiczeniami z katalogu — bez zakładki tab bara „Plany”.
+
+**Decision**:
+- Home: **Freestyle** | **Wybierz plan** → stack `/plans` (nie tab).
+- Plany = nazwane `workout_sheets` ≠ `"Freestyle"`; edycja w `sheet/[id].tsx`; start sesji z ćwiczeniami już na ekranie.
+- Freestyle nadal używa ukrytego arkusza `"Freestyle"` (D009).
+- Import: kolumna **Split** = nazwa arkusza (plan albo `Freestyle`).
+- To **uzupełnia** D009, nie wraca do seed PPL / auto-splitów.
+
+---
+
 ## Future Decisions (TODO)
 
+- **D016 implementacja**: edycja / logowanie per seria (rampa)
 - **PowerSync**: Offline-first sync between local SQLite and Supabase
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications
 - **Data export**: CSV/PDF export of workout history
+- **Rest timer overlay**: opcjonalny powrót (pref w Ustawieniach; nie w scrollu sesji)
