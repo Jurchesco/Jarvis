@@ -65,8 +65,8 @@ JJ Workout Tool is a free and open source workout logger for the gym.
 ## APK
 the apk is aviable in this link: https://expo.dev/accounts/beccio00/projects/jj-workout-tool/builds/04e946f6-f2de-4e1e-a55e-8dc337c0ec70
 
-## Web App 
-Web app is deployed on Vercel: https://jj-workout-tool.vercel.app/
+## Web App
+Jedyna właściwa wersja produkcyjna: https://stravio-kappa.vercel.app/
 
 ## Getting Started
 
