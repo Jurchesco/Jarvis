@@ -35,7 +35,7 @@ Use `./docs/*` as the canonical source for product/project documentation. Keep t
 
 **Live web (only):** https://stravio-kappa.vercel.app/ — ignore other Vercel aliases.
 
-Product snapshot (2026-09-21): Home = Freestyle **or** catalog plan (`/plans`, D018). Batch set logging = D011; per-set edit = D016 (backlog). Coach = Hermes; Gem = backup instructions (D017).
+Product snapshot (2026-09-21): Home = Freestyle **or** catalog plan (`/plans`, D018). Batch set logging = D011; per-set edit = D016 (backlog). Coach = Hermes; Gem = backup instructions (D017). FORGE-inspired backlog queue = D019 (`TODO.md`).
 
 - `docs/README.md` — documentation index
 - `docs/jj-workout-tool/ARCHITECTURE.md` — app architecture (Freestyle + plans)
