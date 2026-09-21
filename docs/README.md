@@ -2,7 +2,7 @@
 
 Indeks plików w `docs/`. Repozytorium łączy aplikację **JJ Workout Tool** z ekosystemem **Jarvis** (import → Google Sheets → Hermes + Gem).
 
-**Web (kanon):** https://stravio-kappa.vercel.app/ · **Stan apki:** 2026-09-21 — Freestyle + plany (`/plans`, D018).
+**Web (kanon):** https://stravio-kappa.vercel.app/ · **Stan apki:** 2026-09-21 — Freestyle + plany (D018) + logowanie **Zbiorczo | Per seria** (D016).
 
 ---
 
@@ -26,9 +26,9 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 
 | Plik | Opis |
 |------|------|
-| [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) | System design: Freestyle + plany |
-| [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje D001–D018 (m.in. D009 freestyle, D018 plany, D016 backlog) |
-| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — QA UI / D016 / PowerSync |
+| [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) | System design: Freestyle + plany + D016 |
+| [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje D001–D019 (D016 Active, D019 FORGE) |
+| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — rest timer / partie / JSON (po D016) |
 | [jj-workout-tool/CHANGELOG.md](./jj-workout-tool/CHANGELOG.md) | Historia wersji |
 | [jj-workout-tool/RELEASE.md](./jj-workout-tool/RELEASE.md) | Build i publikacja |
 | [**jj-workout-tool/UI_REDESIGN_PROPOSAL.md**](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) | Audyt UI + plan faz UI-A…E |
@@ -36,7 +36,7 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 
 Główny README projektu: [../README.md](../README.md)
 
-**Stan JJ Workout Tool na 2026-09-21:** Freestyle + plany z katalogu w kodzie (`main` / PR #13). Kolejny sprint = QA UI (Toast/Badge) albo **D016** (edycja per seria). Docs UI = filozofia + backlog polish.
+**Stan JJ Workout Tool na 2026-09-21:** Freestyle + plany + D016 na **kappa** (`main` / PR #17). Kolejny sprint = rest timer (D019) albo QA Toast/Badge.
 
 ---
 
@@ -47,9 +47,7 @@ Główny README projektu: [../README.md](../README.md)
 | [audit/PROMPT.md](./audit/PROMPT.md) | Prompt do audytu (mocniejszy model) |
 | [audit/README.md](./audit/README.md) | Kontekst audytu Opus 2026-08-11 |
 
-**Źródło prawdy dla napraw:** [jarvis/PLAN_NAPRAWCZY.md](./jarvis/PLAN_NAPRAWCZY.md) — tam aktualizujemy status zadań.
-
-**Stan na 2026-08-11:** sesja zamknięta (archiwum). Bieżący stan apki / importu — patrz sekcje powyżej i plan naprawczy.
+**Źródło prawdy dla napraw:** [jarvis/PLAN_NAPRAWCZY.md](./jarvis/PLAN_NAPRAWCZY.md).
 
 ---
 
@@ -64,4 +62,4 @@ Główny README projektu: [../README.md](../README.md)
 | Uruchomić import lokalnie | [Scripts/import/README.md](../Scripts/import/README.md) |
 | Zrozumieć kod aplikacji | [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) |
 | Poprawić UI aplikacji | [jj-workout-tool/UI_REDESIGN_PROPOSAL.md](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) §6 |
-| Zobaczyć decyzje (D016–D018) | [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) |
+| Zobaczyć decyzje (D016–D019) | [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) |

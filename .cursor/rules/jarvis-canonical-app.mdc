@@ -11,5 +11,5 @@ To jedyny URL do sprawdzania i omawiania żywej aplikacji. Ignoruj inne domeny V
 - Produkt użytkownika: **Jarvis** (dawniej Stravio); UI: **JJ Workout Tool**
 - Repo: `Jurchesco/Jarvis` (klon lokalny: `JJ-Workout-Tool/`)
 - Przy pytaniach o stan apki / plany: kod `main` + **Obsidian** (vault w Google Drive) + ten URL
-- Decyzje: D009 (freestyle) + **D018** (plany `/plans`); D016 (per-set) = backlog; D017 Hermes=trener / Gem=zapas
+- Decyzje: D009 (freestyle) + **D018** (plany `/plans`); **D016** Active (Zbiorczo \| Per seria, PR #17); D017 Hermes/Gem; D019 FORGE backlog
 - W razie konfliktu docs vs kod: **kod `main` + Obsidian + kappa** > zaległe fragmenty docs

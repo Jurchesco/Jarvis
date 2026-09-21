@@ -2,7 +2,7 @@
 
 > Ten dokument jest **komplementarny** do `UI_PROPOSAL GEMINI.md`. Tamten opisuje ogólną filozofię UX. Ten plik — **konkretne, wdrażalne zmiany** z odniesieniem do plików w repo.
 >
-> **Stan na 2026-09-21:** Freestyle + plany z katalogu (**D018** / PR #13) są w kodzie. Logowanie zbiorcze (**D011**) zamrożone funkcjonalnie — następny krok logowania = **D016** (per seria). Duża część UI-A…D zrobiona; Toast/Badge = QA. Traktuj §0 historyczne wiersze o „tylko freestyle / sheet redirect” jako **archiwum** — patrz `ARCHITECTURE.md`.
+> **Stan na 2026-09-21:** Freestyle + plany (**D018**) i logowanie **Zbiorczo | Per seria** (**D016**, produkcja kappa) są w kodzie. Duża część UI-A…D zrobiona; Toast/Badge = QA. Następny produkt: rest timer (D019). §0 historyczne wiersze = **archiwum** — patrz `ARCHITECTURE.md`.
 
 ---
 
@@ -14,7 +14,7 @@
 |--------|--------|
 | Freestyle Home | ✅ szybki start |
 | Plany z katalogu | ✅ `/plans` + `sheet/[id]` (D018) — **nie** tab bar |
-| Logowanie zbiorcze serii | ✅ `ExerciseLogForm` + `saveExerciseLogBatch` |
+| Logowanie zbiorcze / per seria (D016) | ✅ `ExerciseLogForm` (tryby) + `saveExerciseLogBatch` |
 | Katalog ćwiczeń w sesji / planie | ✅ `ExercisePicker` |
 | Live stats sesji | ✅ siatka 2×3 w `workout/[id].tsx` |
 | Menu ⋮ w Historii | ✅ `OverflowMenu` |
@@ -282,9 +282,9 @@ Dane o „ostatniej synchronizacji” najlepiej czerpać z przyszłej zakładki 
 14. *(Opcjonalnie)* sync link na summary / re-import w Historii (§6.1)
 
 ### Przyszłość (osobny epik)
-- **D016** — edycja per seria (rampa)
+- **Rest timer overlay**, tagi partii, JSON backup (D019)
 - Szablony / duplikacja planów (stack `/plans` już jest — D018)
-- PowerSync, PR w Stats, swipe między tabami, rest timer overlay
+- PowerSync, PR w Stats, swipe między tabami
 
 ---
 

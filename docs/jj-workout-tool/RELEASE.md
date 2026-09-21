@@ -8,6 +8,7 @@ v1 goals:
 - Unified UX without role selection.
 - Signup always stored as `allievo` in DB metadata.
 - Freestyle + catalog plans (`/plans`) on Home (D009 + D018).
+- Set logging: batch or per-set (D016).
 - Open source distribution under AGPL-3.0.
 - Deliverable artifacts: Android build, iOS build, web deployment (**https://stravio-kappa.vercel.app/**).
 
@@ -32,7 +33,7 @@ Then verify manually:
 - No role selection in signup UI.
 - Home shows Freestyle and Wybierz plan.
 - Plans list / sheet editor / start session from plan work.
-- Freestyle session + batch exercise log still work.
+- Freestyle session works; set form supports **Zbiorczo** and **Per seria**.
 
 ## 2. Build artifacts
 

@@ -23,11 +23,12 @@ JJ Workout Tool to tracker treningowy na Android, iOS i Web (fork open-source; p
 
 ## Vision
 
-**Current product model (2026-09-21):** freestyle-first (**D009**) + optional catalog plans (**D018**)
+**Current product model (2026-09-21):** freestyle-first (**D009**) + optional catalog plans (**D018**) + set logging **batch or per-set** (**D016**)
 
 - Start **Freestyle** with one tap — pick exercises from the catalog during the session
 - Or **choose a plan** (`/plans`) — named sheets built from the catalog; start with exercises already on screen
 - Plans are a **stack route**, not a bottom-tab item
+- Log sets **collectively** (same kg/reps × N) or **per set** (ramp) — toggle on the form / Settings
 - Every account is stored as athlete (`allievo`); no role UI
 - Data syncs to Supabase; Jarvis pipeline exports to Google Sheets (`Silownia_import`)
 - Daily coach: **Hermes**; Gem instructions = backup (`docs/jarvis/GEM_INSTRUKCJA.md`) — **D017**
@@ -36,7 +37,7 @@ JJ Workout Tool to tracker treningowy na Android, iOS i Web (fork open-source; p
 
 - **Freestyle workouts** — One-tap start; add exercises from the PPL catalog on the fly
 - **Catalog plans** — Create/edit named plans, start a session from a plan
-- **Batch set logging** — Sets count, weight, reps, and notes in one form per exercise (D011)
+- **Set logging modes** — **Batch** (identical sets) or **Per set** (ramp); preference remembered (D016)
 - **Live session stats** — Volume, time, best est. 1RM, set count in the workout header
 - **Exercise catalog** — Push / Pull / Legs / Core filters + custom exercise names
 - **Session History** — Calendar with workout days, session detail review
@@ -48,7 +49,7 @@ JJ Workout Tool to tracker treningowy na Android, iOS i Web (fork open-source; p
 - **Cross-Platform** — Android (APK) and Web (Vercel — kappa)
 - **Per-User Data Isolation** — Supabase RLS
 
-*Backlog:* per-set edit (D016), rest timer overlay, PowerSync — see `docs/jj-workout-tool/TODO.md`
+*Backlog:* rest timer overlay, muscle-group weekly volume, JSON backup, PowerSync — see `docs/jj-workout-tool/TODO.md` (D019)
 
 ---
 
