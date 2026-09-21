@@ -34,6 +34,8 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 | [**jj-workout-tool/UI_REDESIGN_PROPOSAL.md**](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) | Audyt UI + plan faz UI-A…E |
 | [jj-workout-tool/UI_PROPOSAL GEMINI.md](./jj-workout-tool/UI_PROPOSAL%20GEMINI.md) | Filozofia UX (dark, one-thumb) |
 
+E2E dla Cloud Agents: [../AGENTS.md](../AGENTS.md) (konto testowe przez sekrety `JJ_TEST_*`).
+
 Główny README projektu: [../README.md](../README.md)
 
 **Stan JJ Workout Tool na 2026-09-21:** Freestyle + plany + D016 na **kappa** (`main` / PR #17). Kolejny sprint = rest timer (D019) albo QA Toast/Badge.
