@@ -27,13 +27,17 @@ import { APP_NAME, APP_TAGLINE, APP_VERSION } from "../../../src/constants/brand
 import { useAuth } from "../../../src/contexts/AuthContext";
 import {
   DEFAULT_REST_OPTIONS,
+  EXERCISE_LOG_FILL_MODE_OPTIONS,
   getAutofillPrevious,
   getDefaultRestSec,
+  getExerciseLogFillMode,
   getHapticsEnabled,
   setAutofillPrevious,
   setDefaultRestSec,
+  setExerciseLogFillMode,
   setHapticsEnabled,
   type DefaultRestSec,
+  type ExerciseLogFillMode,
 } from "../../../src/lib/appPreferences";
 import * as notifications from "../../../src/lib/notifications";
 import { syncWorkoutsToGoogleSheets } from "../../../src/lib/sheetSync";
@@ -113,6 +117,7 @@ export default function SettingsScreen() {
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [autofillEnabled, setAutofillEnabled] = useState(true);
+  const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
   const [defaultRestSec, setDefaultRestSecState] = useState<DefaultRestSec>(60);
   const [signingOut, setSigningOut] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -131,12 +136,14 @@ export default function SettingsScreen() {
       getHapticsEnabled(),
       getAutofillPrevious(),
       getDefaultRestSec(),
+      getExerciseLogFillMode(),
       refreshSyncStatus(),
-    ]).then(([notif, haptics, autofill, restSec]) => {
+    ]).then(([notif, haptics, autofill, restSec, exerciseFillMode]) => {
       setNotifEnabled(notif);
       setHapticsEnabledState(haptics);
       setAutofillEnabled(autofill);
       setDefaultRestSecState(restSec);
+      setFillMode(exerciseFillMode);
       setLoadingPrefs(false);
     });
   }, []);
@@ -167,6 +174,17 @@ export default function SettingsScreen() {
       await setAutofillPrevious(value);
     } catch {
       setAutofillEnabled(!value);
+    }
+  };
+
+  const handleFillModeChange = async (value: string) => {
+    const mode = value as ExerciseLogFillMode;
+    const prev = fillMode;
+    setFillMode(mode);
+    try {
+      await setExerciseLogFillMode(mode);
+    } catch {
+      setFillMode(prev);
     }
   };
 
@@ -295,19 +313,34 @@ export default function SettingsScreen() {
 
         <SettingsSection title="Trening" icon={Dumbbell} iconColor="#22c55e">
           <Text className="text-text-secondary text-sm font-semibold mb-2">
-            Domyślny czas odpoczynku
+            Wypełnianie serii
           </Text>
           <Text className="text-text-muted text-xs mb-3 leading-5">
-            Używany, gdy timer odpoczynku wróci do aplikacji.
+            Domyślny tryb formularza: jedna wartość dla wszystkich serii albo osobno na każdą (rampa).
+            Możesz też przełączyć w trakcie treningu.
           </Text>
           <Pills
-            options={DEFAULT_REST_OPTIONS.map((sec) => ({
-              value: String(sec),
-              label: `${sec}s`,
-            }))}
-            value={String(defaultRestSec)}
-            onChange={handleRestChange}
+            options={EXERCISE_LOG_FILL_MODE_OPTIONS}
+            value={fillMode}
+            onChange={handleFillModeChange}
           />
+
+          <View className="mt-5 border-t border-border pt-4">
+            <Text className="text-text-secondary text-sm font-semibold mb-2">
+              Domyślny czas odpoczynku
+            </Text>
+            <Text className="text-text-muted text-xs mb-3 leading-5">
+              Używany, gdy timer odpoczynku wróci do aplikacji.
+            </Text>
+            <Pills
+              options={DEFAULT_REST_OPTIONS.map((sec) => ({
+                value: String(sec),
+                label: `${sec}s`,
+              }))}
+              value={String(defaultRestSec)}
+              onChange={handleRestChange}
+            />
+          </View>
 
           <View className="mt-5 border-t border-border pt-4">
             <SettingSwitchRow

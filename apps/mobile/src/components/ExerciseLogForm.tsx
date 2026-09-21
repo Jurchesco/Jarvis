@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import type { SessionSetLog } from "@bhmt3wp/shared";
 import {
@@ -9,7 +9,12 @@ import {
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
 import { ChevronRight, Minus, NotebookPen, Plus, Trash2 } from "lucide-react-native";
-import { BottomSheet, Button, ICON_STROKE, Input, cx } from "./ui";
+import {
+  getExerciseLogFillMode,
+  setExerciseLogFillMode,
+  type ExerciseLogFillMode,
+} from "../lib/appPreferences";
+import { BottomSheet, Button, ICON_STROKE, Input, Pills, cx } from "./ui";
 
 export type ExerciseLogSetDraft = {
   weightKg: string;
@@ -41,12 +46,28 @@ const DEFAULT_DRAFT: ExerciseLogDraft = {
   notes: "",
 };
 
+const FILL_MODE_OPTIONS: { value: ExerciseLogFillMode; label: string }[] = [
+  { value: "batch", label: "Zbiorczo" },
+  { value: "per-set", label: "Per seria" },
+];
+
 function sanitizeWeight(value: string): string {
   return value.replace(/[^\d.,]/g, "").replace(",", ".");
 }
 
 function sanitizeInt(value: string): string {
   return value.replace(/[^\d]/g, "");
+}
+
+function draftSetsAreUniform(sets: ExerciseLogSetDraft[]): boolean {
+  if (sets.length <= 1) return true;
+  const first = sets[0];
+  return sets.every((set) => set.weightKg === first.weightKg && set.reps === first.reps);
+}
+
+function expandUniformSets(count: number, template: ExerciseLogSetDraft): ExerciseLogSetDraft[] {
+  const n = Math.max(1, count);
+  return Array.from({ length: n }, () => ({ ...template }));
 }
 
 export function createDraftFromLogs(
@@ -93,8 +114,26 @@ export function ExerciseLogForm({
   saveLabel = "Zapisz ćwiczenie",
 }: ExerciseLogFormProps) {
   const timeBased = timeBasedProp ?? isTimeBasedExercise(exerciseName);
-  const [draft, setDraft] = useState<ExerciseLogDraft>(() => initialDraft ?? DEFAULT_DRAFT);
+  const seed = initialDraft ?? DEFAULT_DRAFT;
+  const [draft, setDraft] = useState<ExerciseLogDraft>(() => seed);
+  const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
+  const [modeReady, setModeReady] = useState(false);
   const [notesSheetOpen, setNotesSheetOpen] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    getExerciseLogFillMode().then((pref) => {
+      if (cancelled) return;
+      // Ramp already in draft → force per-set so values aren't collapsed.
+      setFillMode(draftSetsAreUniform(seed.sets) ? pref : "per-set");
+      setModeReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Only on mount for this form instance (keyed by parent).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const parsedSets = useMemo(
     () =>
@@ -106,6 +145,7 @@ export function ExerciseLogForm({
   );
 
   const setCount = draft.sets.length;
+  const batchTemplate = draft.sets[0] ?? DEFAULT_SET;
   const est1rm = useMemo(
     () => (!timeBased ? bestEpley1rmFromSets(parsedSets) : 0),
     [timeBased, parsedSets],
@@ -122,6 +162,37 @@ export function ExerciseLogForm({
   const canSave =
     setCount > 0 &&
     parsedSets.every((set) => (timeBased ? set.reps > 0 : set.weightKg > 0 && set.reps > 0));
+
+  const handleFillModeChange = (mode: ExerciseLogFillMode) => {
+    setFillMode(mode);
+    void setExerciseLogFillMode(mode);
+    if (mode === "batch") {
+      const template = draft.sets[0] ?? DEFAULT_SET;
+      setDraft((prev) => ({
+        ...prev,
+        sets: expandUniformSets(prev.sets.length, template),
+      }));
+    }
+  };
+
+  const updateBatchSetCount = (raw: string) => {
+    const cleaned = sanitizeInt(raw);
+    const count = Math.max(1, parseInt(cleaned, 10) || 1);
+    setDraft((prev) => ({
+      ...prev,
+      sets: expandUniformSets(count, prev.sets[0] ?? DEFAULT_SET),
+    }));
+  };
+
+  const updateBatchField = (field: keyof ExerciseLogSetDraft, value: string) => {
+    setDraft((prev) => {
+      const template = { ...(prev.sets[0] ?? DEFAULT_SET), [field]: value };
+      return {
+        ...prev,
+        sets: expandUniformSets(prev.sets.length, template),
+      };
+    });
+  };
 
   const updateSetField = (index: number, field: keyof ExerciseLogSetDraft, value: string) => {
     setDraft((prev) => ({
@@ -158,90 +229,176 @@ export function ExerciseLogForm({
         </Text>
       ) : null}
 
-      <View className="mb-2 flex-row items-center px-1">
-        <Text className="w-10 text-center text-text-muted text-[10px] font-semibold uppercase">
-          #
+      <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">
+        Wypełnianie
+      </Text>
+      <Pills
+        options={FILL_MODE_OPTIONS}
+        value={fillMode}
+        onChange={handleFillModeChange}
+        className="mb-3"
+      />
+      {!modeReady ? null : fillMode === "batch" ? (
+        <Text className="text-text-muted text-xs mb-3 leading-5">
+          Jedna wartość kg/powt. dla wszystkich serii — szybki wpis.
         </Text>
-        {timeBased ? (
-          <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
-            Czas (s)
-          </Text>
-        ) : (
-          <>
-            <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
-              Ciężar (kg)
-            </Text>
-            <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
-              Powt.
-            </Text>
-          </>
-        )}
-        <View className="w-10" />
-      </View>
+      ) : (
+        <Text className="text-text-muted text-xs mb-3 leading-5">
+          Osobny ciężar i powtórzenia na każdą serię — rampa.
+        </Text>
+      )}
 
-      {draft.sets.map((set, index) => (
-        <View key={`set-row-${index}`} className="mb-2 flex-row items-center gap-2 min-w-0">
-          <Text className="w-10 text-center text-text-secondary text-base font-bold">{index + 1}</Text>
+      {fillMode === "batch" ? (
+        <View className="flex-row gap-3 min-w-0">
+          <View className="flex-1 min-w-0">
+            <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+              Serie
+            </Text>
+            <Input
+              value={String(setCount)}
+              onChangeText={updateBatchSetCount}
+              keyboardType="number-pad"
+              placeholder="3"
+              inputClassName="text-center font-bold"
+              fontSize={20}
+            />
+          </View>
+
           {timeBased ? (
-            <View className="flex-1 min-w-0">
+            <View className="flex-[2] min-w-0">
+              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                Czas (sekundy)
+              </Text>
               <Input
-                value={set.reps}
-                onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
+                value={batchTemplate.reps}
+                onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
                 keyboardType="number-pad"
                 placeholder="60"
                 inputClassName="text-center font-bold"
-                fontSize={18}
+                fontSize={20}
               />
             </View>
           ) : (
             <>
               <View className="flex-1 min-w-0">
+                <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                  Ciężar (kg)
+                </Text>
                 <Input
-                  value={set.weightKg}
-                  onChangeText={(value) => updateSetField(index, "weightKg", sanitizeWeight(value))}
+                  value={batchTemplate.weightKg}
+                  onChangeText={(value) => updateBatchField("weightKg", sanitizeWeight(value))}
                   keyboardType="decimal-pad"
                   placeholder="0"
                   inputClassName="text-center font-bold"
-                  fontSize={18}
+                  fontSize={20}
                 />
               </View>
               <View className="flex-1 min-w-0">
+                <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                  Powtórzenia
+                </Text>
                 <Input
-                  value={set.reps}
-                  onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
+                  value={batchTemplate.reps}
+                  onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
                   keyboardType="number-pad"
                   placeholder="10"
                   inputClassName="text-center font-bold"
-                  fontSize={18}
+                  fontSize={20}
                 />
               </View>
             </>
           )}
-          <TouchableOpacity
-            onPress={() => removeSet(index)}
-            disabled={draft.sets.length <= 1}
-            className={cx(
-              "h-10 w-10 items-center justify-center rounded-xl border",
-              draft.sets.length <= 1
-                ? "border-border bg-surface-muted opacity-40"
-                : "border-border bg-action-secondary",
-            )}
-            accessibilityLabel={`Usuń serię ${index + 1}`}
-          >
-            <Minus size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
-          </TouchableOpacity>
         </View>
-      ))}
+      ) : (
+        <>
+          <View className="mb-2 flex-row items-center px-1">
+            <Text className="w-10 text-center text-text-muted text-[10px] font-semibold uppercase">
+              #
+            </Text>
+            {timeBased ? (
+              <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
+                Czas (s)
+              </Text>
+            ) : (
+              <>
+                <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
+                  Ciężar (kg)
+                </Text>
+                <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
+                  Powt.
+                </Text>
+              </>
+            )}
+            <View className="w-10" />
+          </View>
 
-      <TouchableOpacity
-        onPress={addSet}
-        activeOpacity={0.7}
-        className="mb-1 flex-row items-center justify-center rounded-xl border border-dashed border-border bg-surface-muted px-3 py-2.5"
-        accessibilityLabel="Dodaj serię"
-      >
-        <Plus size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
-        <Text className="ml-1.5 text-text-secondary text-sm font-semibold">Dodaj serię</Text>
-      </TouchableOpacity>
+          {draft.sets.map((set, index) => (
+            <View key={`set-row-${index}`} className="mb-2 flex-row items-center gap-2 min-w-0">
+              <Text className="w-10 text-center text-text-secondary text-base font-bold">{index + 1}</Text>
+              {timeBased ? (
+                <View className="flex-1 min-w-0">
+                  <Input
+                    value={set.reps}
+                    onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
+                    keyboardType="number-pad"
+                    placeholder="60"
+                    inputClassName="text-center font-bold"
+                    fontSize={18}
+                  />
+                </View>
+              ) : (
+                <>
+                  <View className="flex-1 min-w-0">
+                    <Input
+                      value={set.weightKg}
+                      onChangeText={(value) =>
+                        updateSetField(index, "weightKg", sanitizeWeight(value))
+                      }
+                      keyboardType="decimal-pad"
+                      placeholder="0"
+                      inputClassName="text-center font-bold"
+                      fontSize={18}
+                    />
+                  </View>
+                  <View className="flex-1 min-w-0">
+                    <Input
+                      value={set.reps}
+                      onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
+                      keyboardType="number-pad"
+                      placeholder="10"
+                      inputClassName="text-center font-bold"
+                      fontSize={18}
+                    />
+                  </View>
+                </>
+              )}
+              <TouchableOpacity
+                onPress={() => removeSet(index)}
+                disabled={draft.sets.length <= 1}
+                className={cx(
+                  "h-10 w-10 items-center justify-center rounded-xl border",
+                  draft.sets.length <= 1
+                    ? "border-border bg-surface-muted opacity-40"
+                    : "border-border bg-action-secondary",
+                )}
+                accessibilityLabel={`Usuń serię ${index + 1}`}
+              >
+                <Minus size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
+              </TouchableOpacity>
+            </View>
+          ))}
+
+          <TouchableOpacity
+            onPress={addSet}
+            activeOpacity={0.7}
+            className="mb-1 flex-row items-center justify-center rounded-xl border border-dashed border-border bg-surface-muted px-3 py-2.5"
+            accessibilityLabel="Dodaj serię"
+          >
+            <Plus size={16} strokeWidth={ICON_STROKE} color="#7c8aa5" />
+            <Text className="ml-1.5 text-text-secondary text-sm font-semibold">Dodaj serię</Text>
+          </TouchableOpacity>
+        </>
+      )}
 
       <TouchableOpacity
         onPress={() => setNotesSheetOpen(true)}
@@ -292,7 +449,9 @@ export function ExerciseLogForm({
       ) : (
         <View className="mt-3 flex-row gap-3">
           <View className="flex-1 rounded-xl bg-surface-muted border border-border px-3 py-3">
-            <Text className="text-text-muted text-xs font-semibold uppercase">Est. 1RM (best)</Text>
+            <Text className="text-text-muted text-xs font-semibold uppercase">
+              {fillMode === "per-set" ? "Est. 1RM (best)" : "Est. 1RM"}
+            </Text>
             <Text className="text-text-primary text-2xl font-bold mt-1">
               {est1rm > 0 ? formatWeightKg(est1rm) : "—"}
             </Text>

@@ -243,10 +243,11 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 **Context**: Logowanie zbiorcze (D011) zapisywało N identycznych serii. Przy rampie Sheets pokazywało pierwszą serię, a Volume = ciężar₁ × powt.₁ × N — mylące dla Hermesa.
 
 **Decision**:
-- UI: formularz z **wierszem na serię** (kg/powt. albo czas); „Dodaj serię” kopiuje ostatnią.
+- UI: formularz z trybem **Zbiorczo** (jedna wartość × N serii) albo **Per seria** (wiersz na serię); przełącznik na karcie + domyślne w Ustawieniach (zapamiętywane).
+- Przy edycji istniejącej rampy (różne serie) tryb wymuszany na **Per seria**, żeby nie zwinąć wartości.
 - Zapis: każda seria osobno w `session_set_logs` / szablonach `exercise_sets`.
 - Import `Silownia_import`: **Volume** = suma ciężar×powt. po seriach; kolumny Ciezar/Powtorzenia/Est. 1RM = seria z najlepszym Brzycki 1RM; PR = max ciężar w sesji vs historia.
-- D011 pozostaje historycznym modelem „szybki wpis jednakowych serii” — D016 go rozszerza, nie revertuje.
+- D011 pozostaje historycznym modelem „szybki wpis jednakowych serii” — D016 go rozszerza o wybór trybu, nie revertuje.
 
 ---
 
