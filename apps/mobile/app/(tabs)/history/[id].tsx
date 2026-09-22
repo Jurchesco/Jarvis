@@ -29,7 +29,7 @@ import {
   ExerciseLogSummary,
   type ExerciseLogDraft,
 } from "../../../src/components/ExerciseLogForm";
-import { Button, Card, ICON_STROKE, StateBlock, cx } from "../../../src/components/ui";
+import { Button, Card, ICON_STROKE, StateBlock, cx, useToast } from "../../../src/components/ui";
 import { addCatalogExerciseToSheet } from "../../../src/lib/addCatalogExercise";
 import { discardSessionExercise } from "../../../src/lib/discardSessionExercise";
 import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../../src/lib/saveExerciseLogBatch";
@@ -56,6 +56,7 @@ export default function SessionDetailScreen() {
   const { data: exerciseNotes } = useSessionExerciseNotes(sessionId);
   const updateSession = useUpdateSession();
   const deleteSession = useDeleteSession();
+  const { showToast } = useToast();
 
   const [showEditStart, setShowEditStart] = useState(false);
   const [showExercisePicker, setShowExercisePicker] = useState(false);
@@ -116,11 +117,11 @@ export default function SessionDetailScreen() {
       const parsed = parseExerciseLogDraft(exercise.name, draft);
       await saveExerciseLogBatch(sessionId, exercise, parsed);
       setEditingExerciseId(null);
+      showToast({ tone: "success", message: "Zapisano ćwiczenie" });
       await refreshData();
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
-      if (Platform.OS === "web") window.alert(msg);
-      else Alert.alert("Błąd", msg);
+      showToast({ tone: "error", message: msg.trim() || "Nie udało się zapisać" });
     } finally {
       setSavingExerciseId(null);
     }

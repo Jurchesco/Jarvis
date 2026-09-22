@@ -119,11 +119,14 @@ export const api = {
     list: async (): Promise<WorkoutSheet[]> => {
       const { data, error } = await supabase
         .from("workout_sheets")
-        .select("*")
+        .select("*, exercises(count)")
         .order("order_index", { ascending: true })
         .order("created_at", { ascending: false });
       if (error) throw new Error(error.message);
-      return (data ?? []).map(mapSheet);
+      return (data ?? []).map((row: any) => ({
+        ...mapSheet(row),
+        exerciseCount: Number(row.exercises?.[0]?.count ?? 0),
+      }));
     },
 
     get: async (id: string): Promise<WorkoutSheetFull> => {

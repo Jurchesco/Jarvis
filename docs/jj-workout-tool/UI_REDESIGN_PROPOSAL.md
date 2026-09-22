@@ -2,7 +2,7 @@
 
 > Ten dokument jest **komplementarny** do `UI_PROPOSAL GEMINI.md`. Tamten opisuje ogólną filozofię UX. Ten plik — **konkretne, wdrażalne zmiany** z odniesieniem do plików w repo.
 >
-> **Stan na 2026-09-21:** Freestyle + plany (**D018**) i logowanie **Zbiorczo | Per seria** (**D016**, produkcja kappa) są w kodzie. Duża część UI-A…D zrobiona; Toast/Badge = QA. Następny produkt: rest timer (D019). §0 historyczne wiersze = **archiwum** — patrz `ARCHITECTURE.md`.
+> **Stan na 2026-09-22:** Freestyle + plany (**D018**) i logowanie **Zbiorczo | Per seria** (**D016**, produkcja kappa) są w kodzie. UI-D Toast/Badge = **QA zamknięte**. Następny produkt: rest timer (D019). §0 historyczne wiersze = **archiwum** — patrz `ARCHITECTURE.md`.
 
 ---
 
@@ -20,7 +20,7 @@
 | Menu ⋮ w Historii | ✅ `OverflowMenu` |
 | Tab bar kolor | ✅ `#0b1220` |
 | Nagłówki lineHeight | ✅ `ScreenHeader` |
-| Toast / Badge | ✅ komponenty (PR #4) — QA w apce |
+| Toast / Badge | ✅ komponenty (PR #4) + QA 2026-09-22 |
 | Rest timer | ⏸ **wyłączony** (decyzja produktowa; overlay w backlogu) |
 | Seed PPL / auto-splity | ❌ usunięte (nie wracają) |
 

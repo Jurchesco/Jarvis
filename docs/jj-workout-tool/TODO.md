@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-21 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**, PR #17). **Następny krok:** rest timer overlay albo QA Toast/Badge. Inspiracja FORGE = **D019**.
+> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge **QA zamknięte**. **Następny krok:** rest timer overlay (**D019**).
 
 ---
 
@@ -12,12 +12,12 @@
 - [x] Logowanie zbiorcze (D011) — nadal dostępne jako tryb **Zbiorczo**
 - [x] **D016** — tryb **Per seria** + przełącznik; Volume w Sheets = suma serii (PR #17 → `main`)
 - [x] Sync Sheets / Edge Function `sync-sheets` (e2e 2026-09-03)
-- [x] UI-A…UI-C polish; UI-D Toast/Badge w kodzie (QA w apce `[do weryfikacji]`)
+- [x] UI-A…UI-C polish; UI-D Toast/Badge (**QA zamknięte** 2026-09-22)
 
 ### Otwórz teraz (wybór sprintu)
 
 **A — UI polish / QA**
-- [ ] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
+- [x] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
 - [ ] Drobne polish wg dokumentów UI
 
 **B — Sesja (FORGE / D019)**
@@ -92,7 +92,7 @@
 
 ## Done (UI polish A–D — kod)
 
-- [x] UI-A…C; UI-D Toast/Badge (PR #4) — QA otwarte
+- [x] UI-A…C; UI-D Toast/Badge (PR #4) — QA zamknięte 2026-09-22 (toast web+historia, badge plany/historia)
 - [x] UI-E Edge Function + Ustawienia Integracje
 
 ---

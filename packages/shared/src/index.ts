@@ -23,6 +23,8 @@ export interface WorkoutSheet {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
+  /** Present on list responses (`sheets.list`) for plan-card badges. */
+  exerciseCount?: number;
 }
 
 export interface CreateWorkoutSheetInput {

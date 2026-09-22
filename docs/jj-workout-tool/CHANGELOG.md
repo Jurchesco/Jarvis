@@ -30,6 +30,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 - `vercel.json`, `docs/`, `.gitignore` entries, `LICENSE` (wcześniejsze)
 
 ### Changed
+- **UI-D QA (2026-09-22)** — toast błędów zapisu też na web (nie tylko Alert); toast sukcesu/błędu przy edycji w Historii; Badge liczby ćwiczeń na `/plans`; Badge ćwiczeń/serii na liście Historii (zgodne z Home)
 - **Model produktu** — freestyle-first (**D009**) + plany obok freestyle (**D018**); bez seed PPL / auto-splitów; plany **nie** są zakładką tab bara
 - **D016 / import Silownia** — Volume = suma serii; Ciezar/Powt./1RM = seria z najlepszym Brzycki; PR = max ciężar w sesji
 - **Home** — dwa CTA: Freestyle | Wybierz plan
