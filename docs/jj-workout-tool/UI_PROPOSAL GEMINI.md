@@ -12,7 +12,7 @@
 | §5 Rest Timer | **Wyłączony** | Overlay + pref (D019) |
 | §5 Tabela serii | **Per seria** dostępna; zbiorczo = skrót | — |
 | §6 Historia | Kalendarz + tabela serii + objętość | Drobny polish |
-| §7 Stats | Pills + trendy | Objętość partii / PR (D019) |
+| §7 Stats | Pills + trendy + **objętość per partia** (D019 §3) | PR / rest timer (D019) |
 | §8 Settings | + tryb wypełniania serii | Opcjonalne linki sync |
 
 ---
