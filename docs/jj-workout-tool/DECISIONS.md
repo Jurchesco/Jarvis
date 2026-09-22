@@ -292,7 +292,7 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 **Bierzemy (kolejka):**
 1. Logowanie **per seria** + tryb zbiorczy → **D016** ✅ (PR #17 / produkcja)
 2. **Rest timer** jako pływający overlay (−15 / +30 / zamknij; opcjonalny dźwięk)
-3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats
+3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats → ✅ (katalog + karta Stats)
 4. **Export / import JSON** (backup lokalny; nie zamiast Sheets)
 5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu
 
@@ -301,13 +301,19 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Pomiary obwodów w apce (waga: openScale → Sheets)
 - Firebase / drugi backend (zostaje Supabase)
 
+**Objętość per partia (implementacja):**
+- Tagi w `packages/shared/src/muscleGroups.ts` dla całego katalogu (43 ćwiczenia).
+- Każda zalogowana seria: **+1,0** na partię główną, **+0,5** na pomocniczą.
+- Stats: karta „Objętość per partia” — zakres **Ten tydzień** (pon–ndz lokalnie) albo **W zakresie** (pills 1M/3M/…).
+- Ćwiczenia spoza katalogu (własne nazwy) **nie** wchodzą do sumy (żeby nie zgadywać partii).
+
 **Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
 
 ---
 
 ## Future Decisions (TODO)
 
-- **Objętość per partia**: tagi mięśniowe w katalogu / exercises (D019)
+- **Objętość per partia**: tagi mięśniowe w katalogu / exercises (D019) ✅ — patrz sekcja D019 powyżej
 - **PowerSync**: Offline-first sync between local SQLite and Supabase
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications

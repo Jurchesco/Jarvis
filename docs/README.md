@@ -28,7 +28,7 @@ Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)
 |------|------|
 | [jj-workout-tool/ARCHITECTURE.md](./jj-workout-tool/ARCHITECTURE.md) | System design: Freestyle + plany + D016 |
 | [jj-workout-tool/DECISIONS.md](./jj-workout-tool/DECISIONS.md) | Decyzje D001–D019 (D016 Active, D019 FORGE) |
-| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — rest timer / partie / JSON (po D016) |
+| [jj-workout-tool/TODO.md](./jj-workout-tool/TODO.md) | Roadmapa — rest timer / JSON (po D016 + objętość partii) |
 | [jj-workout-tool/CHANGELOG.md](./jj-workout-tool/CHANGELOG.md) | Historia wersji |
 | [jj-workout-tool/RELEASE.md](./jj-workout-tool/RELEASE.md) | Build i publikacja |
 | [**jj-workout-tool/UI_REDESIGN_PROPOSAL.md**](./jj-workout-tool/UI_REDESIGN_PROPOSAL.md) | Audyt UI + plan faz UI-A…E |
@@ -38,7 +38,7 @@ E2E dla Cloud Agents: [../AGENTS.md](../AGENTS.md) (konto testowe przez sekrety 
 
 Główny README projektu: [../README.md](../README.md)
 
-**Stan JJ Workout Tool na 2026-09-22:** Freestyle + plany + D016 na **kappa**; UI-D Toast/Badge QA zamknięte. Kolejny sprint = rest timer (D019).
+**Stan JJ Workout Tool na 2026-09-22:** Freestyle + plany + D016 + objętość per partia (Stats) na **kappa**. Kolejny sprint = rest timer (D019).
 
 ---
 

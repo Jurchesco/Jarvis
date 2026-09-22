@@ -197,6 +197,24 @@ export {
   normalizeExerciseName,
   searchCatalogExercises,
 } from "./exerciseCatalog";
+export type { MuscleGroup, MuscleTags } from "./muscleGroups";
+export {
+  MUSCLE_GROUPS,
+  MUSCLE_LABELS,
+  PRIMARY_SET_WEIGHT,
+  SECONDARY_SET_WEIGHT,
+  assertCatalogMuscleCoverage,
+  getMuscleTagsForExercise,
+} from "./muscleGroups";
+export type { MuscleVolumeRow, MuscleVolumeSessionLike } from "./muscleVolume";
+export {
+  computeMuscleSetVolume,
+  computeMuscleSetVolumeForWeek,
+  endOfWeekExclusive,
+  formatWeightedSets,
+  isTimestampInWeek,
+  startOfWeekMonday,
+} from "./muscleVolume";
 export {
   bestEpley1rmFromSets,
   computeSessionLiveStats,
