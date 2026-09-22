@@ -62,9 +62,8 @@ export function RestTimerOverlay({
             onPress={() => onAdjust(-15)}
             accessibilityRole="button"
             accessibilityLabel="Skróć odpoczynek o 15 sekund"
-            hitSlop={12}
             style={({ pressed }) => ({
-              height: 44,
+              height: 48,
               flex: 1,
               flexDirection: "row",
               alignItems: "center",
@@ -79,16 +78,15 @@ export function RestTimerOverlay({
             testID="rest-timer-minus-15"
           >
             <Minus size={14} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-            <Text className="text-text-secondary text-sm font-semibold">15s</Text>
+            <Text className="text-text-secondary text-sm font-semibold">−15s</Text>
           </Pressable>
 
           <Pressable
             onPress={() => onAdjust(30)}
             accessibilityRole="button"
             accessibilityLabel="Wydłuż odpoczynek o 30 sekund"
-            hitSlop={12}
             style={({ pressed }) => ({
-              height: 44,
+              height: 48,
               flex: 1,
               flexDirection: "row",
               alignItems: "center",
@@ -103,16 +101,15 @@ export function RestTimerOverlay({
             testID="rest-timer-plus-30"
           >
             <Plus size={14} strokeWidth={ICON_STROKE} color="#c0c9d8" />
-            <Text className="text-text-secondary text-sm font-semibold">30s</Text>
+            <Text className="text-text-secondary text-sm font-semibold">+30s</Text>
           </Pressable>
 
           <Pressable
             onPress={onDismiss}
             accessibilityRole="button"
             accessibilityLabel="Pomiń odpoczynek"
-            hitSlop={12}
             style={({ pressed }) => ({
-              height: 44,
+              height: 48,
               paddingHorizontal: 16,
               flexDirection: "row",
               alignItems: "center",

@@ -16,6 +16,7 @@ function clampRest(sec: number): number {
 export function useRestTimer() {
   const [timer, setTimer] = useState<RestTimerState | null>(null);
   const finishedRef = useRef(false);
+  const active = timer !== null;
 
   const dismiss = useCallback(() => {
     finishedRef.current = false;
@@ -43,7 +44,7 @@ export function useRestTimer() {
   }, []);
 
   useEffect(() => {
-    if (!timer) return;
+    if (!active) return;
     const id = setInterval(() => {
       setTimer((prev) => {
         if (!prev) return prev;
@@ -56,12 +57,11 @@ export function useRestTimer() {
       });
     }, 1000);
     return () => clearInterval(id);
-    // Only (re)arm when timer appears/disappears — not on every adjust of totalSec.
-  }, [!!timer]);
+  }, [active]);
 
   return {
     timer,
-    active: timer !== null,
+    active,
     start,
     adjust,
     dismiss,
