@@ -13,10 +13,13 @@ import { useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { APP_NAME } from "../../src/constants/branding";
 import { useAuth } from "../../src/contexts/AuthContext";
+import { RestTimerOverlay } from "../../src/components/RestTimerOverlay";
+import { useRestTimer } from "../../src/lib/useRestTimer";
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
   const router = useRouter();
+  const restDemo = useRestTimer();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -106,8 +109,31 @@ export default function LoginScreen() {
               <Text className="text-primary font-bold">Zarejestruj się</Text>
             </TouchableOpacity>
           </View>
+
+          {__DEV__ ? (
+            <TouchableOpacity
+              className="mt-8 items-center py-3 rounded-xl border border-border bg-surface"
+              onPress={() => {
+                if (restDemo.active) restDemo.dismiss();
+                else restDemo.start(45);
+              }}
+              accessibilityLabel="Podgląd timera odpoczynku"
+            >
+              <Text className="text-text-muted text-xs font-semibold">
+                {restDemo.active ? "Zatrzymaj podgląd rest timera (dev)" : "Podgląd rest timera (dev)"}
+              </Text>
+            </TouchableOpacity>
+          ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {restDemo.timer ? (
+        <RestTimerOverlay
+          timer={restDemo.timer}
+          onAdjust={restDemo.adjust}
+          onDismiss={restDemo.dismiss}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

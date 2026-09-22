@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA zamknięte. **Objętość per partia** (D019 §3) w Stats. **Następny krok:** rest timer overlay (**D019**).
+> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Następny krok:** JSON backup / UX sesji.
 
 ---
 
@@ -21,7 +21,7 @@
 - [ ] Drobne polish wg dokumentów UI
 
 **B — Sesja (FORGE / D019)**
-- [ ] **Rest timer overlay** — pasek −15s / +30s / ✕; pref w Ustawieniach; nie w scrollu
+- [x] **Rest timer overlay** — pasek −15s / +30s / Pomiń; pref w Ustawieniach; nie w scrollu
 
 **C — Integracje**
 - [ ] **Deploy + sekrety** (jeśli nowe środowisko)
@@ -35,7 +35,7 @@
 Źródło: [FORGE/PRO](https://forgeproapp.github.io/Aplikacja-treningowa-FORGE/). Nie kopiujemy plan-cycle-first / Firebase. Szczegóły: **D019**.
 
 1. [x] **D016 per-set** (+ tryb zbiorczy) — na produkcji
-2. [ ] **Rest timer overlay**
+2. [x] **Rest timer overlay**
 3. [x] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
 4. [ ] **Export / import JSON**
 5. [ ] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu
@@ -47,7 +47,7 @@
 ## BACKLOG (funkcje)
 
 ### Wysoki priorytet
-- [ ] **Rest timer overlay** — CURRENT §B
+- [x] **Rest timer overlay** — CURRENT §B
 - [x] **Objętość per partia** — D019 §3 (Stats + tagi katalogu)
 - [ ] **PowerSync** — offline-first
 

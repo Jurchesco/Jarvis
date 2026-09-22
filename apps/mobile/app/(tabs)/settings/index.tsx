@@ -32,13 +32,17 @@ import {
   getDefaultRestSec,
   getExerciseLogFillMode,
   getHapticsEnabled,
+  getRestTimerEnabled,
   setAutofillPrevious,
   setDefaultRestSec,
   setExerciseLogFillMode,
   setHapticsEnabled,
+  setRestTimerEnabled,
   type DefaultRestSec,
   type ExerciseLogFillMode,
 } from "../../../src/lib/appPreferences";
+import { useRestTimer } from "../../../src/lib/useRestTimer";
+import { RestTimerOverlay } from "../../../src/components/RestTimerOverlay";
 import * as notifications from "../../../src/lib/notifications";
 import { syncWorkoutsToGoogleSheets } from "../../../src/lib/sheetSync";
 import {
@@ -119,10 +123,12 @@ export default function SettingsScreen() {
   const [autofillEnabled, setAutofillEnabled] = useState(true);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
   const [defaultRestSec, setDefaultRestSecState] = useState<DefaultRestSec>(60);
+  const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [lastSyncResult, setLastSyncResult] = useState<SheetSyncResult | null>(null);
+  const restPreview = useRestTimer();
 
   const refreshSyncStatus = async () => {
     const [at, result] = await Promise.all([getLastSheetSyncAt(), getLastSheetSyncResult()]);
@@ -136,13 +142,15 @@ export default function SettingsScreen() {
       getHapticsEnabled(),
       getAutofillPrevious(),
       getDefaultRestSec(),
+      getRestTimerEnabled(),
       getExerciseLogFillMode(),
       refreshSyncStatus(),
-    ]).then(([notif, haptics, autofill, restSec, exerciseFillMode]) => {
+    ]).then(([notif, haptics, autofill, restSec, restEnabled, exerciseFillMode]) => {
       setNotifEnabled(notif);
       setHapticsEnabledState(haptics);
       setAutofillEnabled(autofill);
       setDefaultRestSecState(restSec);
+      setRestTimerEnabledState(restEnabled);
       setFillMode(exerciseFillMode);
       setLoadingPrefs(false);
     });
@@ -192,6 +200,16 @@ export default function SettingsScreen() {
     const sec = parseInt(value, 10) as DefaultRestSec;
     setDefaultRestSecState(sec);
     await setDefaultRestSec(sec);
+  };
+
+  const handleRestTimerToggle = async (value: boolean) => {
+    setRestTimerEnabledState(value);
+    try {
+      await setRestTimerEnabled(value);
+      if (!value) restPreview.dismiss();
+    } catch {
+      setRestTimerEnabledState(!value);
+    }
   };
 
   const handleResetPassword = async () => {
@@ -326,11 +344,18 @@ export default function SettingsScreen() {
           />
 
           <View className="mt-5 border-t border-border pt-4">
-            <Text className="text-text-secondary text-sm font-semibold mb-2">
+            <SettingSwitchRow
+              title="Timer odpoczynku"
+              description="Po zapisie ćwiczenia pokaż pasek odliczania (−15s / +30s / Pomiń)."
+              value={restTimerEnabled}
+              onValueChange={handleRestTimerToggle}
+              disabled={loadingPrefs}
+            />
+            <Text className="text-text-secondary text-sm font-semibold mb-2 mt-4">
               Domyślny czas odpoczynku
             </Text>
             <Text className="text-text-muted text-xs mb-3 leading-5">
-              Używany, gdy timer odpoczynku wróci do aplikacji.
+              Start timera po zapisie ćwiczenia w trakcie treningu.
             </Text>
             <Pills
               options={DEFAULT_REST_OPTIONS.map((sec) => ({
@@ -339,6 +364,17 @@ export default function SettingsScreen() {
               }))}
               value={String(defaultRestSec)}
               onChange={handleRestChange}
+            />
+            <Button
+              label={restPreview.active ? "Zatrzymaj podgląd" : "Podgląd timera"}
+              variant="secondary"
+              size="sm"
+              className="mt-3"
+              disabled={loadingPrefs || !restTimerEnabled}
+              onPress={() => {
+                if (restPreview.active) restPreview.dismiss();
+                else restPreview.start(defaultRestSec);
+              }}
             />
           </View>
 
@@ -468,6 +504,15 @@ export default function SettingsScreen() {
           </Text>
         </SettingsSection>
       </ScrollView>
+
+      {restPreview.timer ? (
+        <RestTimerOverlay
+          timer={restPreview.timer}
+          onAdjust={restPreview.adjust}
+          onDismiss={restPreview.dismiss}
+          bottomOffset={64}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }
