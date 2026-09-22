@@ -38,7 +38,7 @@ E2E dla Cloud Agents: [../AGENTS.md](../AGENTS.md) (konto testowe przez sekrety 
 
 Główny README projektu: [../README.md](../README.md)
 
-**Stan JJ Workout Tool na 2026-09-21:** Freestyle + plany + D016 na **kappa** (`main` / PR #17). Kolejny sprint = rest timer (D019) albo QA Toast/Badge.
+**Stan JJ Workout Tool na 2026-09-22:** Freestyle + plany + D016 na **kappa**; UI-D Toast/Badge QA zamknięte. Kolejny sprint = rest timer (D019).
 
 ---
 

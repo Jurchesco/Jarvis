@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { ChevronRight, Plus, Trash2 } from "lucide-react-native";
 import { useCreateSheet, useDeleteSheet, useSheets } from "../../src/api/hooks";
 import {
+  Badge,
   Button,
   Card,
   ICON_SIZE,
@@ -12,6 +13,7 @@ import {
   StateBlock,
 } from "../../src/components/ui";
 import { isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
+import { formatExerciseCount } from "../../src/lib/polishCount";
 
 export default function PlansScreen() {
   const router = useRouter();
@@ -107,9 +109,21 @@ export default function PlansScreen() {
                     <Text className="text-text-primary text-lg font-bold" numberOfLines={1}>
                       {plan.name}
                     </Text>
-                    <Text className="text-text-muted text-xs mt-1">
-                      Dotknij, żeby dodać ćwiczenia albo zacząć trening
-                    </Text>
+                    <View className="mt-2 flex-row flex-wrap items-center gap-2">
+                      <Badge
+                        label={formatExerciseCount(plan.exerciseCount ?? 0)}
+                        tone="neutral"
+                      />
+                      {(plan.exerciseCount ?? 0) === 0 ? (
+                        <Text className="text-text-muted text-xs">
+                          Dodaj ćwiczenia z katalogu
+                        </Text>
+                      ) : (
+                        <Text className="text-text-muted text-xs">
+                          Dotknij, żeby edytować albo zacząć
+                        </Text>
+                      )}
+                    </View>
                   </View>
                   <TouchableOpacity
                     onPress={(event) => {

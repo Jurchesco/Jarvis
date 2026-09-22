@@ -26,6 +26,7 @@ import {
   useSessionsByIds,
 } from "../../../src/api/hooks";
 import { formatSessionWhenShort, sessionDateKey } from "../../../src/lib/sessionDate";
+import { formatExerciseCount, formatSetCount } from "../../../src/lib/polishCount";
 import {
   Badge,
   Card,
@@ -263,16 +264,15 @@ export default function HistoryScreen() {
             </View>
 
             {stats && stats.setCount > 0 ? (
-              <View className="mt-2 flex-row flex-wrap gap-x-3 gap-y-1">
+              <View className="mt-2 flex-row flex-wrap items-center gap-2">
                 {durationSec > 0 ? (
                   <Text className="text-text-secondary text-xs">{formatDuration(durationSec)}</Text>
                 ) : null}
                 {stats.totalVolume > 0 ? (
                   <Text className="text-text-secondary text-xs">{formatVolumeKg(stats.totalVolume)}</Text>
                 ) : null}
-                <Text className="text-text-secondary text-xs">
-                  {stats.exerciseCount} ćw. · {stats.setCount} serii
-                </Text>
+                <Badge label={formatExerciseCount(stats.exerciseCount)} tone="neutral" />
+                <Badge label={formatSetCount(stats.setCount)} tone="outline" />
               </View>
             ) : null}
           </TouchableOpacity>
