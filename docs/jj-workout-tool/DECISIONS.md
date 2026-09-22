@@ -291,7 +291,7 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 **Bierzemy (kolejka):**
 1. Logowanie **per seria** + tryb zbiorczy → **D016** ✅ (PR #17 / produkcja)
-2. **Rest timer** jako pływający overlay (−15 / +30 / zamknij; opcjonalny dźwięk)
+2. **Rest timer** jako pływający overlay (−15 / +30 / Pomiń; pref w Ustawieniach) → ✅
 3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats → ✅ (katalog + karta Stats)
 4. **Export / import JSON** (backup lokalny; nie zamiast Sheets)
 5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu
@@ -307,6 +307,12 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Stats: karta „Objętość per partia” — zakres **Ten tydzień** (pon–ndz lokalnie) albo **W zakresie** (pills 1M/3M/…).
 - Ćwiczenia spoza katalogu (własne nazwy) **nie** wchodzą do sumy (żeby nie zgadywać partii).
 
+**Rest timer (implementacja):**
+- Floating overlay po zapisie ćwiczenia w sesji (`RestTimerOverlay` + `useRestTimer`) — **nie** w ScrollView.
+- Sterowanie: **−15s** / **+30s** / **Pomiń**; czas startowy z Ustawień (30/60/90/120s).
+- Pref **Timer odpoczynku** (domyślnie włączony) + podgląd w Ustawieniach.
+- UX inspirowany OpenGym; własna implementacja (AGPL — bez kopiowania kodu).
+
 **Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
 
 ---
@@ -318,5 +324,5 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - **Multi-role model**: Re-introduce role-specific flows only when assignment and permissions are fully designed
 - **Push notifications**: Workout reminders via Expo notifications
 - **Data export**: JSON backup first (D019), potem CSV/PDF
-- **Rest timer overlay**: FORGE-like; pref w Ustawieniach; nie w scrollu sesji
+- **Rest timer overlay**: FORGE/OpenGym-like; pref w Ustawieniach; nie w scrollu sesji ✅
 - **Mezocykl / RIR**: tylko po świadomej decyzji produktowej (nie domyślny model Home)

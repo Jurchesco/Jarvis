@@ -4,6 +4,7 @@ const KEYS = {
   hapticsEnabled: "pref_haptics_enabled",
   autofillPrevious: "pref_autofill_previous",
   defaultRestSec: "pref_default_rest_sec",
+  restTimerEnabled: "pref_rest_timer_enabled",
   exerciseLogFillMode: "pref_exercise_log_fill_mode",
 } as const;
 
@@ -45,6 +46,15 @@ export async function getDefaultRestSec(): Promise<DefaultRestSec> {
 
 export async function setDefaultRestSec(sec: DefaultRestSec): Promise<void> {
   await setPref(KEYS.defaultRestSec, String(sec));
+}
+
+/** Floating rest timer after saving an exercise (D019). Default on. */
+export async function getRestTimerEnabled(): Promise<boolean> {
+  return getPrefBool(KEYS.restTimerEnabled, true);
+}
+
+export async function setRestTimerEnabled(enabled: boolean): Promise<void> {
+  await setPrefBool(KEYS.restTimerEnabled, enabled);
 }
 
 export async function getExerciseLogFillMode(): Promise<ExerciseLogFillMode> {

@@ -48,10 +48,12 @@ import {
 } from "../../src/components/ExerciseLogForm";
 import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
 import { isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
-import { getAutofillPrevious } from "../../src/lib/appPreferences";
+import { getAutofillPrevious, getDefaultRestSec, getRestTimerEnabled } from "../../src/lib/appPreferences";
 import { discardSessionExercise } from "../../src/lib/discardSessionExercise";
-import { hapticSuccess } from "../../src/lib/haptics";
+import { hapticLight, hapticSuccess } from "../../src/lib/haptics";
 import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../src/lib/saveExerciseLogBatch";
+import { useRestTimer } from "../../src/lib/useRestTimer";
+import { RestTimerOverlay } from "../../src/components/RestTimerOverlay";
 import {
   Button,
   Card,
@@ -194,11 +196,30 @@ export default function WorkoutScreen() {
   const [savingExerciseId, setSavingExerciseId] = useState<string | null>(null);
   const [discardingExerciseId, setDiscardingExerciseId] = useState<string | null>(null);
   const [autofillPrevious, setAutofillPrevious] = useState(true);
+  const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
+  const [defaultRestSec, setDefaultRestSecState] = useState(60);
   const planSeededRef = useRef(false);
+  const rest = useRestTimer();
+  const prevRestActiveRef = useRef(false);
 
   useEffect(() => {
-    getAutofillPrevious().then(setAutofillPrevious);
+    Promise.all([getAutofillPrevious(), getRestTimerEnabled(), getDefaultRestSec()]).then(
+      ([autofill, restEnabled, restSec]) => {
+        setAutofillPrevious(autofill);
+        setRestTimerEnabledState(restEnabled);
+        setDefaultRestSecState(restSec);
+      },
+    );
   }, []);
+
+  useEffect(() => {
+    const wasActive = prevRestActiveRef.current;
+    prevRestActiveRef.current = rest.active;
+    if (wasActive && !rest.active && rest.didFinishNaturally.current) {
+      rest.didFinishNaturally.current = false;
+      void hapticLight();
+    }
+  }, [rest.active, rest.didFinishNaturally]);
 
   useEffect(() => {
     if (!sheet || isFreestyleSheetName(sheet.name) || planSeededRef.current) return;
@@ -332,6 +353,9 @@ export default function WorkoutScreen() {
       setEditingExerciseId(null);
       await hapticSuccess();
       showToast({ tone: "success", message: "Zapisano ćwiczenie" });
+      if (restTimerEnabled) {
+        rest.start(defaultRestSec);
+      }
       await refreshData();
     } catch (err) {
       const raw = err instanceof Error ? err.message : "Nie można zapisać ćwiczenia";
@@ -499,7 +523,7 @@ export default function WorkoutScreen() {
           className="flex-1"
           contentContainerStyle={{
             paddingHorizontal: 20,
-            paddingBottom: 48 + keyboardInset,
+            paddingBottom: 48 + keyboardInset + (rest.active ? 120 : 0),
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -640,6 +664,14 @@ export default function WorkoutScreen() {
               { onSuccess: () => setShowEditStart(false) },
             );
           }}
+        />
+      ) : null}
+
+      {rest.timer ? (
+        <RestTimerOverlay
+          timer={rest.timer}
+          onAdjust={rest.adjust}
+          onDismiss={rest.dismiss}
         />
       ) : null}
     </SafeAreaView>
