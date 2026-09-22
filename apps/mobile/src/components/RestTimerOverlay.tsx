@@ -1,9 +1,8 @@
-import { Text, TouchableOpacity, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Minus, Plus, X } from "lucide-react-native";
 import { formatRestClock, type RestTimerState } from "../lib/useRestTimer";
 import { ICON_STROKE } from "./ui/icons";
-import { cx } from "./ui/utils";
 
 type RestTimerOverlayProps = {
   timer: RestTimerState;
@@ -25,16 +24,27 @@ export function RestTimerOverlay({
 }: RestTimerOverlayProps) {
   const insets = useSafeAreaInsets();
   const pct = timer.totalSec > 0 ? Math.min(100, (timer.leftSec / timer.totalSec) * 100) : 0;
+  const bottom = Math.max(insets.bottom, 12) + bottomOffset;
 
   return (
     <View
       pointerEvents="box-none"
-      className="absolute left-0 right-0 z-40 px-4"
-      style={{ bottom: Math.max(insets.bottom, 12) + bottomOffset }}
+      style={{
+        position: "absolute",
+        left: 0,
+        right: 0,
+        bottom,
+        zIndex: 1000,
+        elevation: 1000,
+        paddingHorizontal: 16,
+      }}
       accessibilityRole="summary"
       accessibilityLabel={`Odpoczynek ${formatRestClock(timer.leftSec)}`}
     >
-      <View className="rounded-2xl border border-border bg-surface px-3 py-3 shadow-lg">
+      <View
+        pointerEvents="auto"
+        className="rounded-2xl border border-border bg-surface px-3 py-3 shadow-lg"
+      >
         <View className="flex-row items-center gap-3 mb-3">
           <Text className="text-text-primary text-2xl font-bold tabular-nums leading-none min-w-[64px]">
             {formatRestClock(timer.leftSec)}
@@ -48,38 +58,75 @@ export function RestTimerOverlay({
         </View>
 
         <View className="flex-row items-center gap-2">
-          <TouchableOpacity
+          <Pressable
             onPress={() => onAdjust(-15)}
             accessibilityRole="button"
             accessibilityLabel="Skróć odpoczynek o 15 sekund"
-            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-action-secondary border border-border"
+            hitSlop={12}
+            style={({ pressed }) => ({
+              height: 44,
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#24324a",
+              backgroundColor: "#152033",
+              opacity: pressed ? 0.75 : 1,
+            })}
+            testID="rest-timer-minus-15"
           >
             <Minus size={14} strokeWidth={ICON_STROKE} color="#c0c9d8" />
             <Text className="text-text-secondary text-sm font-semibold">15s</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => onAdjust(30)}
             accessibilityRole="button"
             accessibilityLabel="Wydłuż odpoczynek o 30 sekund"
-            className="h-10 flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-action-secondary border border-border"
+            hitSlop={12}
+            style={({ pressed }) => ({
+              height: 44,
+              flex: 1,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              borderRadius: 12,
+              borderWidth: 1,
+              borderColor: "#24324a",
+              backgroundColor: "#152033",
+              opacity: pressed ? 0.75 : 1,
+            })}
+            testID="rest-timer-plus-30"
           >
             <Plus size={14} strokeWidth={ICON_STROKE} color="#c0c9d8" />
             <Text className="text-text-secondary text-sm font-semibold">30s</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             onPress={onDismiss}
             accessibilityRole="button"
             accessibilityLabel="Pomiń odpoczynek"
-            className={cx(
-              "h-10 px-4 flex-row items-center justify-center gap-1 rounded-xl",
-              "bg-action-primary",
-            )}
+            hitSlop={12}
+            style={({ pressed }) => ({
+              height: 44,
+              paddingHorizontal: 16,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 4,
+              borderRadius: 12,
+              backgroundColor: "#3b82f6",
+              opacity: pressed ? 0.75 : 1,
+            })}
+            testID="rest-timer-skip"
           >
             <X size={16} strokeWidth={ICON_STROKE} color="#ffffff" />
             <Text className="text-white text-sm font-semibold">Pomiń</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </View>

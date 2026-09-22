@@ -56,7 +56,8 @@ export function useRestTimer() {
       });
     }, 1000);
     return () => clearInterval(id);
-  }, [timer?.totalSec, !!timer]);
+    // Only (re)arm when timer appears/disappears — not on every adjust of totalSec.
+  }, [!!timer]);
 
   return {
     timer,
