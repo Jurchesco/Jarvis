@@ -2,9 +2,15 @@ import { useMemo, useState } from "react";
 import { ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
-import { BarChart3, LineChart, Target, Trophy } from "lucide-react-native";
+import { BarChart3, Layers, LineChart, Target, Trophy } from "lucide-react-native";
 import { useStatsData, type StatsRange } from "../../../src/api/hooks";
 import type { SessionDetailFull } from "@bhmt3wp/shared";
+import {
+  computeMuscleSetVolume,
+  computeMuscleSetVolumeForWeek,
+  formatWeightedSets,
+  type MuscleVolumeRow,
+} from "@bhmt3wp/shared";
 import {
   Card,
   ICON_STROKE,
@@ -24,6 +30,13 @@ const RANGE_OPTIONS: { value: StatsRange; label: string }[] = [
   { value: "3m", label: "3M" },
   { value: "6m", label: "6M" },
   { value: "all", label: "Wszystko" },
+];
+
+type MuscleScope = "week" | "range";
+
+const MUSCLE_SCOPE_OPTIONS: { value: MuscleScope; label: string }[] = [
+  { value: "week", label: "Ten tydzień" },
+  { value: "range", label: "W zakresie" },
 ];
 
 function sessionVolume(session: SessionDetailFull): number {
@@ -217,8 +230,51 @@ function MaxWeightChart({ sessions, width }: { sessions: SessionDetailFull[]; wi
   );
 }
 
+function MuscleVolumeChart({ rows, width }: { rows: MuscleVolumeRow[]; width: number }) {
+  if (rows.length === 0) return null;
+
+  const LABEL_WIDTH = 88;
+  const VALUE_WIDTH = 40;
+  const BAR_AREA = Math.max(width - LABEL_WIDTH - VALUE_WIDTH - 8, 40);
+  const ROW_HEIGHT = 28;
+  const BAR_HEIGHT = 16;
+  const PADDING_TOP = 8;
+  const height = rows.length * ROW_HEIGHT + PADDING_TOP * 2;
+  const maxVal = Math.max(...rows.map((row) => row.sets), 1);
+
+  return (
+    <Svg width={width} height={height}>
+      {rows.map((row, i) => {
+        const barW = (row.sets / maxVal) * BAR_AREA;
+        const y = PADDING_TOP + i * ROW_HEIGHT;
+        const barY = y + (ROW_HEIGHT - BAR_HEIGHT) / 2;
+
+        return (
+          <G key={row.muscle}>
+            <SvgText x={0} y={y + ROW_HEIGHT / 2 + 4} fill={TEXT_SECONDARY} fontSize={11} textAnchor="start">
+              {row.label}
+            </SvgText>
+            <Rect x={LABEL_WIDTH} y={barY} width={BAR_AREA} height={BAR_HEIGHT} rx={4} fill={BAR_BG} />
+            <Rect x={LABEL_WIDTH} y={barY} width={barW} height={BAR_HEIGHT} rx={4} fill={PRIMARY} />
+            <SvgText
+              x={LABEL_WIDTH + BAR_AREA + 6}
+              y={y + ROW_HEIGHT / 2 + 4}
+              fill={TEXT_SECONDARY}
+              fontSize={11}
+              textAnchor="start"
+            >
+              {formatWeightedSets(row.sets)}
+            </SvgText>
+          </G>
+        );
+      })}
+    </Svg>
+  );
+}
+
 export default function StatsScreen() {
   const [range, setRange] = useState<StatsRange>("3m");
+  const [muscleScope, setMuscleScope] = useState<MuscleScope>("week");
   const { sessions, isLoading, totalInRange } = useStatsData(range);
   const { width } = useWindowDimensions();
 
@@ -235,6 +291,11 @@ export default function StatsScreen() {
     if (!activeExercise) return [];
     return sessions.map((session) => exerciseMaxWeightInSession(session, activeExercise));
   }, [sessions, activeExercise]);
+
+  const muscleRows = useMemo(() => {
+    if (muscleScope === "week") return computeMuscleSetVolumeForWeek(sessions);
+    return computeMuscleSetVolume(sessions);
+  }, [sessions, muscleScope]);
 
   const contentHorizontalPadding = 20;
   const cardHorizontalPadding = 16;
@@ -254,7 +315,7 @@ export default function StatsScreen() {
           title="Statystyki"
           subtitle={
             totalInRange > 0
-              ? `${totalInRange} sesji w zakresie ${rangeLabel} — trendy i rekordy.`
+              ? `${totalInRange} sesji w zakresie ${rangeLabel} — trendy, partie i rekordy.`
               : "Zakończ trening, aby zobaczyć tutaj swoje trendy."
           }
           icon={BarChart3}
@@ -278,6 +339,34 @@ export default function StatsScreen() {
         ) : (
           <>
             <Card className="mt-6" padding="md">
+              <View className="mb-3 flex-row items-center">
+                <Layers size={16} strokeWidth={ICON_STROKE} color="#a78bfa" />
+                <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
+                  Objętość per partia
+                </Text>
+              </View>
+              <Text className="mb-3 text-text-muted text-xs leading-4">
+                Serie ważone: główna partia 1,0 · pomocnicza 0,5 (katalog ćwiczeń). Ćwiczenia spoza
+                katalogu nie wchodzą do sumy.
+              </Text>
+              <Pills
+                options={MUSCLE_SCOPE_OPTIONS}
+                value={muscleScope}
+                onChange={setMuscleScope}
+                className="mb-4"
+              />
+              {muscleRows.length === 0 ? (
+                <Text className="text-text-secondary text-sm leading-5">
+                  {muscleScope === "week"
+                    ? "Brak zalogowanych serii z katalogu w tym tygodniu (pon–ndz)."
+                    : "Brak serii z katalogu w wybranym zakresie."}
+                </Text>
+              ) : (
+                <MuscleVolumeChart rows={muscleRows} width={chartWidth} />
+              )}
+            </Card>
+
+            <Card className="mt-5" padding="md">
               <View className="mb-3 flex-row items-center">
                 <LineChart size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
                 <Text className="ml-2 text-text-primary text-base font-bold leading-tight">

@@ -35,7 +35,7 @@ Use `./docs/*` as the canonical source for product/project documentation. Keep t
 
 **Live web (only):** https://stravio-kappa.vercel.app/ — ignore other Vercel aliases.
 
-Product snapshot (2026-09-21): Home = Freestyle **or** catalog plan (`/plans`, D018). Set logging = **batch or per-set** (D016, on kappa). Coach = Hermes; Gem = backup (D017). Next backlog: rest timer / muscle volume (D019).
+Product snapshot (2026-09-22): Home = Freestyle **or** catalog plan (`/plans`, D018). Set logging = **batch or per-set** (D016, on kappa). Stats = muscle set-volume (D019 §3). Coach = Hermes; Gem = backup (D017). Next backlog: rest timer overlay (D019).
 
 **Cloud Agents / E2E:** see `AGENTS.md` — test account via env secrets `JJ_TEST_EMAIL` + `JJ_TEST_PASSWORD` (never commit passwords).
 

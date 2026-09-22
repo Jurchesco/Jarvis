@@ -24,6 +24,8 @@ apps/mobile/          ← Expo universal app (Android APK + Vercel web SPA)
     contexts/         ← AuthContext
 packages/shared/
   exerciseCatalog.ts  ← Katalog PPL (43 ćwiczenia)
+  muscleGroups.ts     ← Tagi partii (D019): primary 1.0 / secondary 0.5
+  muscleVolume.ts     ← Sumy ważonych serii per partia (tydzień / zakres)
   workoutCalculations.ts ← Epley 1RM, volumeFromSets, stats sesji
 supabase/             ← Postgres schema + RLS + Edge Function sync-sheets
 Scripts/import/       ← Jarvis → Google Sheets (Split = nazwa arkusza)

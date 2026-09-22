@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge **QA zamknięte**. **Następny krok:** rest timer overlay (**D019**).
+> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA zamknięte. **Objętość per partia** (D019 §3) w Stats. **Następny krok:** rest timer overlay (**D019**).
 
 ---
 
@@ -36,7 +36,7 @@
 
 1. [x] **D016 per-set** (+ tryb zbiorczy) — na produkcji
 2. [ ] **Rest timer overlay**
-3. [ ] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
+3. [x] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
 4. [ ] **Export / import JSON**
 5. [ ] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu
 
@@ -48,7 +48,7 @@
 
 ### Wysoki priorytet
 - [ ] **Rest timer overlay** — CURRENT §B
-- [ ] **Objętość per partia** — D019 §3
+- [x] **Objętość per partia** — D019 §3 (Stats + tagi katalogu)
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
