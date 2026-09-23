@@ -14,7 +14,7 @@ import {
   setExerciseLogFillMode,
   type ExerciseLogFillMode,
 } from "../lib/appPreferences";
-import { BottomSheet, Button, ICON_STROKE, Input, Pills, cx } from "./ui";
+import { BottomSheet, Badge, Button, ICON_STROKE, Input, Pills, cx } from "./ui";
 
 export type ExerciseLogSetDraft = {
   weightKg: string;
@@ -29,6 +29,9 @@ export type ExerciseLogDraft = {
 type ExerciseLogFormProps = {
   exerciseName: string;
   timeBased?: boolean;
+  /** Last session sets for this exercise (sorted by setNumber). */
+  previousLogs?: SessionSetLog[] | null;
+  /** @deprecated prefer previousLogs — kept for single-set callers */
   previousLog?: SessionSetLog | null;
   initialDraft?: ExerciseLogDraft;
   onSave: (draft: ExerciseLogDraft) => void;
@@ -88,22 +91,41 @@ export function createDraftFromLogs(
 export function createDraftFromPrevious(
   previousLog: SessionSetLog | null | undefined,
   notes = "",
+  previousLogs?: SessionSetLog[] | null,
 ): ExerciseLogDraft {
-  if (!previousLog) return { ...DEFAULT_DRAFT, notes, sets: [{ ...DEFAULT_SET }] };
+  const logs =
+    previousLogs && previousLogs.length > 0
+      ? previousLogs
+      : previousLog
+        ? [previousLog]
+        : [];
+  if (logs.length === 0) return { ...DEFAULT_DRAFT, notes, sets: [{ ...DEFAULT_SET }] };
   return {
-    sets: [
-      {
-        weightKg: String(previousLog.weightKg),
-        reps: String(previousLog.reps),
-      },
-    ],
+    sets: logs.map((log) => ({
+      weightKg: String(log.weightKg),
+      reps: String(log.reps),
+    })),
     notes,
   };
+}
+
+function formatPreviousChip(
+  logs: SessionSetLog[],
+  timeBased: boolean,
+): string {
+  if (logs.length === 0) return "";
+  const parts = logs.map((log) =>
+    timeBased ? `${log.reps}s` : `${log.weightKg}×${log.reps}`,
+  );
+  const shown = parts.slice(0, 4);
+  const extra = parts.length > 4 ? ` +${parts.length - 4}` : "";
+  return `Ostatnio · ${shown.join(" · ")}${extra}`;
 }
 
 export function ExerciseLogForm({
   exerciseName,
   timeBased: timeBasedProp,
+  previousLogs,
   previousLog,
   initialDraft,
   onSave,
@@ -114,6 +136,15 @@ export function ExerciseLogForm({
   saveLabel = "Zapisz ćwiczenie",
 }: ExerciseLogFormProps) {
   const timeBased = timeBasedProp ?? isTimeBasedExercise(exerciseName);
+  const resolvedPrevious = useMemo(() => {
+    if (previousLogs && previousLogs.length > 0) return previousLogs;
+    if (previousLog) return [previousLog];
+    return [] as SessionSetLog[];
+  }, [previousLogs, previousLog]);
+  const previousChip = useMemo(
+    () => formatPreviousChip(resolvedPrevious, timeBased),
+    [resolvedPrevious, timeBased],
+  );
   const seed = initialDraft ?? DEFAULT_DRAFT;
   const [draft, setDraft] = useState<ExerciseLogDraft>(() => seed);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
@@ -220,13 +251,8 @@ export function ExerciseLogForm({
 
   return (
     <View className="min-w-0">
-      {previousLog ? (
-        <Text className="text-text-muted text-xs mb-3">
-          Poprzednio:{" "}
-          {timeBased
-            ? `${previousLog.reps}s`
-            : `${previousLog.weightKg} kg × ${previousLog.reps} pow.`}
-        </Text>
+      {previousChip ? (
+        <Badge label={previousChip} tone="accent" size="sm" className="mb-3 max-w-full" />
       ) : null}
 
       <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">

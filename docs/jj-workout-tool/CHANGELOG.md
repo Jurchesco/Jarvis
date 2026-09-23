@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **D019 §5 — UX sesji** — pasek postępu % serii; chip „Ostatnio…”; toast z tonażem; wake lock (pref)
 - **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises`, picker z thumbs; dane MIT (`exercises-dataset`); media © Gym visual via jsDelivr (NOTICE); **nazwy PL** (`nPl`) w UI i przy zapisie
 - **D019 — rest timer overlay** — pasek po zapisie ćwiczenia (−15s / +30s / Pomiń); pref + podgląd w Ustawieniach
 - **D019 §3 — objętość per partia** — tagi mięśniowe w katalogu; Stats: serie ważone (główna 1,0 / pomocnicza 0,5); zakres „Ten tydzień” lub „W zakresie”

@@ -24,6 +24,7 @@ import {
 import type { CatalogExercise, ExerciseFull, SessionSetLog } from "@bhmt3wp/shared";
 import {
   computeSessionLiveStats,
+  exerciseVolumeFromSets,
   formatDuration,
   formatVolumeKg,
   formatWeightKg,
@@ -48,11 +49,12 @@ import {
 } from "../../src/components/ExerciseLogForm";
 import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
 import { isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
-import { getAutofillPrevious, getDefaultRestSec, getRestTimerEnabled } from "../../src/lib/appPreferences";
+import { getAutofillPrevious, getDefaultRestSec, getKeepAwakeEnabled, getRestTimerEnabled } from "../../src/lib/appPreferences";
 import { discardSessionExercise } from "../../src/lib/discardSessionExercise";
 import { hapticLight, hapticSuccess } from "../../src/lib/haptics";
 import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../src/lib/saveExerciseLogBatch";
 import { useRestTimer } from "../../src/lib/useRestTimer";
+import { useWorkoutKeepAwake } from "../../src/lib/useWorkoutKeepAwake";
 import { RestTimerOverlay } from "../../src/components/RestTimerOverlay";
 import {
   Button,
@@ -167,6 +169,40 @@ function SessionStatsGrid({
   );
 }
 
+/** Session progress toward planned sets (D019 §5). */
+function SessionProgressBar({
+  doneSets,
+  plannedSets,
+  doneExercises,
+  totalExercises,
+}: {
+  doneSets: number;
+  plannedSets: number;
+  doneExercises: number;
+  totalExercises: number;
+}) {
+  const pct =
+    plannedSets > 0 ? Math.min(100, Math.round((doneSets / plannedSets) * 100)) : 0;
+  return (
+    <View className="mb-3" accessibilityRole="progressbar" accessibilityValue={{ now: pct, min: 0, max: 100 }}>
+      <View className="mb-1.5 flex-row items-center justify-between">
+        <Text className="text-text-secondary text-xs font-semibold">
+          Postęp sesji · {pct}%
+        </Text>
+        <Text className="text-text-muted text-xs">
+          {doneSets}/{plannedSets} serii · {doneExercises}/{totalExercises} ćw.
+        </Text>
+      </View>
+      <View className="h-2 rounded-full bg-surface-muted overflow-hidden border border-border">
+        <View
+          className="h-full rounded-full bg-action-primary"
+          style={{ width: `${pct}%` }}
+        />
+      </View>
+    </View>
+  );
+}
+
 export default function WorkoutScreen() {
   const { id, sheetId } = useLocalSearchParams<{ id: string; sheetId: string }>();
   const sessionId = id!;
@@ -197,19 +233,26 @@ export default function WorkoutScreen() {
   const [discardingExerciseId, setDiscardingExerciseId] = useState<string | null>(null);
   const [autofillPrevious, setAutofillPrevious] = useState(true);
   const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
+  const [keepAwakeEnabled, setKeepAwakeEnabledState] = useState(true);
   const [defaultRestSec, setDefaultRestSecState] = useState(60);
   const planSeededRef = useRef(false);
   const rest = useRestTimer();
   const prevRestActiveRef = useRef(false);
 
+  useWorkoutKeepAwake(keepAwakeEnabled && !!session && !session.completedAt);
+
   useEffect(() => {
-    Promise.all([getAutofillPrevious(), getRestTimerEnabled(), getDefaultRestSec()]).then(
-      ([autofill, restEnabled, restSec]) => {
-        setAutofillPrevious(autofill);
-        setRestTimerEnabledState(restEnabled);
-        setDefaultRestSecState(restSec);
-      },
-    );
+    Promise.all([
+      getAutofillPrevious(),
+      getRestTimerEnabled(),
+      getDefaultRestSec(),
+      getKeepAwakeEnabled(),
+    ]).then(([autofill, restEnabled, restSec, keepAwake]) => {
+      setAutofillPrevious(autofill);
+      setRestTimerEnabledState(restEnabled);
+      setDefaultRestSecState(restSec);
+      setKeepAwakeEnabledState(keepAwake);
+    });
   }, []);
 
   useEffect(() => {
@@ -228,11 +271,15 @@ export default function WorkoutScreen() {
     setSessionExerciseIds(new Set(sheet.exercises.map((exercise) => exercise.id)));
   }, [sheet]);
 
-  const previousByExercise = useMemo(() => {
-    const map: Record<string, SessionSetLog> = {};
+  const previousSetsByExercise = useMemo(() => {
+    const map: Record<string, SessionSetLog[]> = {};
     if (lastSessionData?.logs) {
       for (const log of lastSessionData.logs) {
-        map[log.exerciseId] = log;
+        if (!map[log.exerciseId]) map[log.exerciseId] = [];
+        map[log.exerciseId].push(log);
+      }
+      for (const id of Object.keys(map)) {
+        map[id].sort((a, b) => a.setNumber - b.setNumber);
       }
     }
     return map;
@@ -258,6 +305,31 @@ export default function WorkoutScreen() {
       (exercise) => sessionExerciseIds.has(exercise.id) || logExerciseIds.has(exercise.id),
     );
   }, [sheet, sessionExerciseIds, session?.logs]);
+
+  const sessionProgress = useMemo(() => {
+    const totalExercises = activeExercises.length;
+    let doneExercises = 0;
+    let plannedSets = 0;
+    const doneSets = liveStats.setCount;
+    for (const exercise of activeExercises) {
+      const logs = (session?.logs ?? []).filter((l) => l.exerciseId === exercise.id);
+      const isDone = savedExerciseIds.has(exercise.id) && logs.length > 0;
+      if (isDone) doneExercises += 1;
+      if (logs.length > 0) {
+        plannedSets += logs.length;
+      } else {
+        const templateSets = exercise.sets?.length ?? 0;
+        const prevSets = previousSetsByExercise[exercise.id]?.length ?? 0;
+        plannedSets += Math.max(templateSets, prevSets, 3);
+      }
+    }
+    return {
+      doneSets,
+      plannedSets: Math.max(plannedSets, doneSets),
+      doneExercises,
+      totalExercises,
+    };
+  }, [activeExercises, liveStats.setCount, savedExerciseIds, session?.logs, previousSetsByExercise]);
 
   const existingExerciseNames = useMemo(
     () => activeExercises.map((exercise) => exercise.name),
@@ -352,7 +424,14 @@ export default function WorkoutScreen() {
       setSavedExerciseIds((prev) => new Set(prev).add(exercise.id));
       setEditingExerciseId(null);
       await hapticSuccess();
-      showToast({ tone: "success", message: "Zapisano ćwiczenie" });
+      const vol = exerciseVolumeFromSets(parsed.sets);
+      showToast({
+        tone: "success",
+        message:
+          vol > 0
+            ? `Zapisano · ${formatVolumeKg(vol)}`
+            : `Zapisano · ${parsed.sets.length} ${parsed.sets.length === 1 ? "seria" : "serii"}`,
+      });
       if (restTimerEnabled) {
         rest.start(defaultRestSec);
       }
@@ -529,6 +608,14 @@ export default function WorkoutScreen() {
           keyboardDismissMode="on-drag"
         >
           <Card padding="md" className="mb-3">
+            {activeExercises.length > 0 ? (
+              <SessionProgressBar
+                doneSets={sessionProgress.doneSets}
+                plannedSets={sessionProgress.plannedSets}
+                doneExercises={sessionProgress.doneExercises}
+                totalExercises={sessionProgress.totalExercises}
+              />
+            ) : null}
             <SessionStatsGrid
               exerciseCount={liveStats.exerciseCount}
               setCount={liveStats.setCount}
@@ -560,11 +647,11 @@ export default function WorkoutScreen() {
               const logs = getExerciseLogs(exercise.id);
               const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
               const isEditing = editingExerciseId === exercise.id || !isSaved;
-              const rawPreviousLog = previousByExercise[exercise.id] ?? null;
-              const previousLog = autofillPrevious ? rawPreviousLog : null;
+              const rawPreviousLogs = previousSetsByExercise[exercise.id] ?? [];
+              const previousLogs = autofillPrevious ? rawPreviousLogs : [];
               const initialDraft = isSaved
                 ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-                : createDraftFromPrevious(previousLog, notesByExercise[exercise.id] ?? "");
+                : createDraftFromPrevious(previousLogs[0] ?? null, notesByExercise[exercise.id] ?? "", previousLogs);
 
               return (
                 <Card key={exercise.id} className="mb-3" padding="md">
@@ -603,7 +690,7 @@ export default function WorkoutScreen() {
                       key={`${exercise.id}-${isSaved ? "edit" : "new"}`}
                       exerciseName={exercise.name}
                       timeBased={isTimeBasedExercise(exercise.name)}
-                      previousLog={previousLog}
+                      previousLogs={previousLogs}
                       initialDraft={initialDraft}
                       onSave={(draft) => handleSaveExercise(exercise, draft)}
                       onCancel={
