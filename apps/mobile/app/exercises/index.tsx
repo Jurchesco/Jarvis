@@ -10,6 +10,7 @@ import {
   LIBRARY_BODY_PART_LABELS,
   LIBRARY_BODY_PARTS,
   equipmentOf,
+  libraryDisplayName,
   libraryExerciseCount,
   searchLibraryExercises,
   type LibraryBodyPart,
@@ -171,11 +172,12 @@ export default function ExerciseLibraryScreen() {
           >
             <ExerciseMedia exercise={item} size={56} />
             <View className="flex-1">
-              <Text className="text-text-primary text-base font-semibold capitalize">
-                {item.name}
+              <Text className="text-text-primary text-base font-semibold">
+                {libraryDisplayName(item)}
               </Text>
               <Text className="text-text-muted text-xs mt-0.5 capitalize">
                 {LIBRARY_BODY_PART_LABELS[item.bodyPart]} · {item.target} · {item.equipment}
+                {item.namePl !== item.name ? ` · ${item.name}` : ""}
               </Text>
             </View>
           </TouchableOpacity>

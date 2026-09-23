@@ -211,6 +211,7 @@ export {
   getLibraryExerciseById,
   getLibraryExerciseByName,
   isLibraryTimeBased,
+  libraryDisplayName,
   libraryExerciseCount,
   libraryGifUrl,
   libraryThumbUrl,

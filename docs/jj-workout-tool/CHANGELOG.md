@@ -16,7 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
-- **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises`, picker z thumbs; dane MIT (`exercises-dataset`); media © Gym visual via jsDelivr (NOTICE)
+- **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises`, picker z thumbs; dane MIT (`exercises-dataset`); media © Gym visual via jsDelivr (NOTICE); **nazwy PL** (`nPl`) w UI i przy zapisie
 - **D019 — rest timer overlay** — pasek po zapisie ćwiczenia (−15s / +30s / Pomiń); pref + podgląd w Ustawieniach
 - **D019 §3 — objętość per partia** — tagi mięśniowe w katalogu; Stats: serie ważone (główna 1,0 / pomocnicza 0,5); zakres „Ten tydzień” lub „W zakresie”
 - **D016 — logowanie per seria** — wiersze kg/powt. (lub czas); tryb **Zbiorczo | Per seria** (pref + Ustawienia); Volume w Sheets = suma serii (PR #17)

@@ -2,6 +2,7 @@ import { Modal, ScrollView, Text, View } from "react-native";
 import {
   LIBRARY_BODY_PART_LABELS,
   type LibraryExercise,
+  libraryDisplayName,
 } from "@bhmt3wp/shared";
 import { X } from "lucide-react-native";
 import { Button, ICON_SIZE, ICON_STROKE } from "./ui";
@@ -34,9 +35,12 @@ export function ExerciseDetailModal({
         <View className="max-h-[92%] rounded-t-3xl border border-border bg-background px-5 pt-4 pb-8">
           <View className="mb-3 flex-row items-start justify-between">
             <View className="flex-1 pr-3">
-              <Text className="text-text-primary text-xl font-bold capitalize">
-                {exercise.name}
+              <Text className="text-text-primary text-xl font-bold">
+                {libraryDisplayName(exercise)}
               </Text>
+              {exercise.namePl !== exercise.name ? (
+                <Text className="text-text-muted text-xs mt-0.5 capitalize">{exercise.name}</Text>
+              ) : null}
               <Text className="text-text-muted text-sm mt-1 capitalize">
                 {LIBRARY_BODY_PART_LABELS[exercise.bodyPart]} · {exercise.target} ·{" "}
                 {exercise.equipment}
