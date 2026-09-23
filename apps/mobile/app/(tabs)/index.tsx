@@ -231,6 +231,14 @@ export default function HomeScreen() {
               onPress={() => router.push("/plans")}
               className="mt-3"
             />
+            <Button
+              label="Baza ćwiczeń"
+              icon={Dumbbell}
+              variant="ghost"
+              size="sm"
+              onPress={() => router.push("/exercises")}
+              className="mt-2"
+            />
           </Card>
         )}
 

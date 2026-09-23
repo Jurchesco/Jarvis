@@ -8,9 +8,11 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import {
   AlertCircle,
   BellRing,
+  BookOpen,
   CheckCircle2,
   Dumbbell,
   Globe,
@@ -116,6 +118,7 @@ function SettingSwitchRow({
 }
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { user, signOut } = useAuth();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -330,6 +333,13 @@ export default function SettingsScreen() {
         </SettingsSection>
 
         <SettingsSection title="Trening" icon={Dumbbell} iconColor="#22c55e">
+          <Button
+            label="Baza ćwiczeń (1324 + GIF)"
+            icon={BookOpen}
+            variant="secondary"
+            onPress={() => router.push("/exercises")}
+            className="mb-4"
+          />
           <Text className="text-text-secondary text-sm font-semibold mb-2">
             Wypełnianie serii
           </Text>

@@ -4,6 +4,10 @@
  */
 
 import { EXERCISE_CATALOG, normalizeExerciseName } from "./exerciseCatalog";
+import {
+  getLibraryExerciseByName,
+  muscleTagsFromLibraryExercise,
+} from "./exerciseLibrary";
 
 export type MuscleGroup =
   | "chest"
@@ -110,7 +114,10 @@ const TAGS_BY_NORMALIZED = new Map<string, MuscleTags>(
 );
 
 export function getMuscleTagsForExercise(name: string): MuscleTags | null {
-  return TAGS_BY_NORMALIZED.get(normalizeExerciseName(name)) ?? null;
+  const legacy = TAGS_BY_NORMALIZED.get(normalizeExerciseName(name));
+  if (legacy) return legacy;
+  const fromLibrary = getLibraryExerciseByName(name);
+  return fromLibrary ? muscleTagsFromLibraryExercise(fromLibrary) : null;
 }
 
 /** Dev / QA: every catalog exercise must have tags. */

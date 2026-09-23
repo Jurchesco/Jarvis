@@ -197,6 +197,28 @@ export {
   normalizeExerciseName,
   searchCatalogExercises,
 } from "./exerciseCatalog";
+// --- Full exercise library (dataset + CDN media) ---
+export type { LibraryBodyPart, LibraryExercise, LibrarySearchOpts } from "./exerciseLibrary";
+export {
+  EXERCISE_GIF_BASE,
+  EXERCISE_IMG_BASE,
+  EXERCISE_LIBRARY,
+  EXERCISE_MEDIA_COMMIT,
+  GYM_VISUAL_ATTRIBUTION,
+  LIBRARY_BODY_PARTS,
+  LIBRARY_BODY_PART_LABELS,
+  equipmentOf,
+  getLibraryExerciseById,
+  getLibraryExerciseByName,
+  isLibraryTimeBased,
+  libraryExerciseCount,
+  libraryGifUrl,
+  libraryThumbUrl,
+  mapTargetToMuscle,
+  muscleTagsFromLibraryExercise,
+  normalizeLibraryName,
+  searchLibraryExercises,
+} from "./exerciseLibrary";
 export type { MuscleGroup, MuscleTags } from "./muscleGroups";
 export {
   MUSCLE_GROUPS,
