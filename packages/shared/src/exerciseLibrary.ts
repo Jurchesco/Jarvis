@@ -31,7 +31,10 @@ export type LibraryBodyPart =
 
 export type LibraryExercise = {
   id: string;
+  /** Canonical English name from the dataset (stable id companion). */
   name: string;
+  /** Polish display / log name. */
+  namePl: string;
   bodyPart: LibraryBodyPart;
   equipment: string;
   target: string;
@@ -45,6 +48,7 @@ export type LibraryExercise = {
 type RawRow = {
   id: string;
   n: string;
+  nPl?: string;
   bp: string;
   eq: string;
   tg: string;
@@ -59,6 +63,7 @@ const ROWS = raw as RawRow[];
 export const EXERCISE_LIBRARY: LibraryExercise[] = ROWS.map((r) => ({
   id: r.id,
   name: r.n,
+  namePl: (r.nPl && r.nPl.trim()) || r.n,
   bodyPart: r.bp as LibraryBodyPart,
   equipment: r.eq,
   target: r.tg,
@@ -69,9 +74,11 @@ export const EXERCISE_LIBRARY: LibraryExercise[] = ROWS.map((r) => ({
 }));
 
 const BY_ID = new Map(EXERCISE_LIBRARY.map((e) => [e.id, e]));
-const BY_NAME = new Map(
-  EXERCISE_LIBRARY.map((e) => [normalizeLibraryName(e.name), e]),
-);
+const BY_NAME = new Map<string, LibraryExercise>();
+for (const e of EXERCISE_LIBRARY) {
+  BY_NAME.set(normalizeLibraryName(e.name), e);
+  BY_NAME.set(normalizeLibraryName(e.namePl), e);
+}
 
 export const LIBRARY_BODY_PARTS: LibraryBodyPart[] = [
   ...new Set(EXERCISE_LIBRARY.map((e) => e.bodyPart)),
@@ -91,7 +98,12 @@ export const LIBRARY_BODY_PART_LABELS: Record<LibraryBodyPart, string> = {
 };
 
 export function normalizeLibraryName(name: string): string {
-  return name.trim().toLocaleLowerCase("en-US");
+  return name.trim().toLocaleLowerCase("pl-PL");
+}
+
+/** Preferred label in the PL UI. */
+export function libraryDisplayName(ex: LibraryExercise): string {
+  return ex.namePl || ex.name;
 }
 
 export function libraryExerciseCount(): number {
@@ -192,11 +204,12 @@ export function searchLibraryExercises(opts: LibrarySearchOpts = {}): LibraryExe
   if (q) {
     items = items.filter(
       (e) =>
+        e.namePl.toLocaleLowerCase("pl-PL").includes(q) ||
         e.name.toLowerCase().includes(q) ||
         e.target.toLowerCase().includes(q) ||
         e.equipment.toLowerCase().includes(q) ||
         e.bodyPart.toLowerCase().includes(q) ||
-        e.instructionsPl.toLowerCase().includes(q),
+        e.instructionsPl.toLocaleLowerCase("pl-PL").includes(q),
     );
   }
   if (opts.limit != null && opts.limit > 0) {

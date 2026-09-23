@@ -11,6 +11,7 @@ import {
   LIBRARY_BODY_PARTS,
   equipmentOf,
   isLibraryTimeBased,
+  libraryDisplayName,
   searchLibraryExercises,
   type LibraryBodyPart,
   type LibraryExercise,
@@ -63,7 +64,7 @@ export function ExercisePicker({
       searchLibraryExercises({
         query,
         bodyPart: query.trim() ? null : bodyPart,
-      }).filter((item) => !existing.has(item.name.trim().toLocaleLowerCase("pl-PL"))),
+      }).filter((item) => !existing.has(item.namePl.trim().toLocaleLowerCase("pl-PL")) && !existing.has(item.name.trim().toLocaleLowerCase("pl-PL"))),
     [query, bodyPart, existing],
   );
 
@@ -77,7 +78,7 @@ export function ExercisePicker({
 
   const handleSelect = (exercise: LibraryExercise) => {
     onSelectCatalog({
-      name: exercise.name,
+      name: libraryDisplayName(exercise),
       timeBased: isLibraryTimeBased(exercise),
     });
     setQuery("");
@@ -233,11 +234,12 @@ export function ExercisePicker({
                 >
                   <ExerciseMedia exercise={item} size={48} />
                   <View className="flex-1 pr-1">
-                    <Text className="text-text-primary text-base font-semibold capitalize">
-                      {item.name}
+                    <Text className="text-text-primary text-base font-semibold">
+                      {libraryDisplayName(item)}
                     </Text>
                     <Text className="text-text-muted text-xs mt-0.5 capitalize">
                       {LIBRARY_BODY_PART_LABELS[item.bodyPart]} · {item.equipment}
+                      {item.namePl !== item.name ? ` · ${item.name}` : ""}
                       {isLibraryTimeBased(item) ? " · na czas" : ""}
                     </Text>
                   </View>

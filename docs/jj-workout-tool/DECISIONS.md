@@ -330,8 +330,9 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Atrybucja UI + `NOTICE.md`: **© Gym visual**. Personal/kappa OK; produkcja sklepowa wymaga własnej zgody Gym visual.
 - Ekran `/exercises` + `ExercisePicker` na pełnej bazie; legacy PPL (43) zostaje dla szablonów planów.
 - Tagi objętości: mapowanie `target` → `MuscleGroup` (+ legacy PL nazwy).
+- **Nazwy PL:** wygenerowane `nPl` (słownik fitness + reguły); UI i zapis sesji używają `namePl`, EN w podtytule; szukaj PL/EN.
 
-**Konsekwencje**: nazwy z library są EN (dataset); Stats działają po mapowaniu target. Własne nazwy nadal bez tagów.
+**Konsekwencje**: Stats działają po mapowaniu target (lookup EN lub PL). Własne nazwy nadal bez tagów.
 
 ---
 
