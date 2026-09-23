@@ -6,7 +6,7 @@ Exercise names, categories, body parts, equipment, targets, secondary muscles, a
 multilingual instructions come from
 [**hasaneyldrm/exercises-dataset**](https://github.com/hasaneyldrm/exercises-dataset)
 (MIT License). A slim JSON snapshot is vendored in
-`packages/shared/src/data/exercisesLibrary.json` (Polish instructions preferred).
+`packages/shared/src/exercisesLibrary.data.json` (Polish instructions preferred).
 
 ```
 MIT License — Copyright (c) 2026 Hasan Emir Yıldırım

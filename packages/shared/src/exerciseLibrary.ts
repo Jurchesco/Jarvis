@@ -3,7 +3,7 @@
  * Media (thumb/GIF) is © Gym visual — loaded from CDN, not bundled (see NOTICE).
  */
 
-import raw from "./data/exercisesLibrary.json";
+import raw from "./exercisesLibrary.data.json";
 import type { MuscleGroup, MuscleTags } from "./muscleGroups";
 
 /** Pinned dataset commit used by OpenGym mobile CDN builds. */
