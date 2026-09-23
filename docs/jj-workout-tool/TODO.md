@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-23 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises` + picker. **Następny krok:** JSON backup / UX sesji.
+> **Stan na 2026-09-23 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Następny krok:** JSON backup.
 
 ---
 
@@ -23,6 +23,7 @@
 **B — Sesja (FORGE / D019)**
 - [x] **Rest timer overlay** — pasek −15s / +30s / Pomiń; pref w Ustawieniach; nie w scrollu
 - [x] **Baza ćwiczeń (dataset + GIF CDN)** — `/exercises`, picker z mediów; atrybucja Gym visual (NOTICE)
+- [x] **UX sesji** — postęp %, chip Ostatnio, toast tonażu, wake lock
 
 **C — Integracje**
 - [ ] **Deploy + sekrety** (jeśli nowe środowisko)
@@ -39,8 +40,8 @@
 2. [x] **Rest timer overlay**
 3. [x] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
 4. [x] **Baza ćwiczeń + media (CDN)** — OpenGym-style Library; dane MIT, GIF © Gym visual
-5. [ ] **Export / import JSON**
-6. [ ] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu
+5. [x] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu; wake lock
+6. [ ] **Export / import JSON**
 
 **Pomijamy / później:** mezocykl+RIR jako rdzeń Home; obwody w apce (waga = openScale→Sheets); Firebase.
 
@@ -51,11 +52,12 @@
 ### Wysoki priorytet
 - [x] **Rest timer overlay** — CURRENT §B
 - [x] **Objętość per partia** — D019 §3 (Stats + tagi katalogu)
+- [x] **UX sesji (D019 §5)** — postęp / Ostatnio / toast tonażu / wake lock
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
 - [ ] **Export / import JSON** — D019 §4
-- [ ] **Pasek postępu sesji + ghost polish** — D019 §5
+- [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + toast; ghost później)
 - [ ] **Sheet templates** — duplikowanie planów
 - [ ] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
 - [ ] **Scroll horizontally** — opcjonalnie

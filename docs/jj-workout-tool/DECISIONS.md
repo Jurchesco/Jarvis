@@ -313,6 +313,12 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Pref **Timer odpoczynku** (domyślnie włączony) + podgląd w Ustawieniach.
 - UX inspirowany OpenGym; własna implementacja (AGPL — bez kopiowania kodu).
 
+**UX sesji (D019 §5 — implementacja):**
+- Pasek **Postęp sesji · %** (serie zrobione / planowane + ćw. zapisane).
+- Chip **Ostatnio · kg×pow** (wszystkie serie z poprzedniej sesji na arkuszu).
+- Toast po zapisie z **tonażem** ćwiczenia (`Zapisano · X kg`).
+- **Wake lock** w aktywnej sesji (`useWorkoutKeepAwake` / expo-keep-awake); pref w Ustawieniach.
+
 **Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
 
 ---

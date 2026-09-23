@@ -5,6 +5,7 @@ const KEYS = {
   autofillPrevious: "pref_autofill_previous",
   defaultRestSec: "pref_default_rest_sec",
   restTimerEnabled: "pref_rest_timer_enabled",
+  keepAwakeEnabled: "pref_keep_awake_enabled",
   exerciseLogFillMode: "pref_exercise_log_fill_mode",
 } as const;
 
@@ -55,6 +56,15 @@ export async function getRestTimerEnabled(): Promise<boolean> {
 
 export async function setRestTimerEnabled(enabled: boolean): Promise<void> {
   await setPrefBool(KEYS.restTimerEnabled, enabled);
+}
+
+/** Keep screen awake during an active workout (D019 §5). Default on. */
+export async function getKeepAwakeEnabled(): Promise<boolean> {
+  return getPrefBool(KEYS.keepAwakeEnabled, true);
+}
+
+export async function setKeepAwakeEnabled(enabled: boolean): Promise<void> {
+  await setPrefBool(KEYS.keepAwakeEnabled, enabled);
 }
 
 export async function getExerciseLogFillMode(): Promise<ExerciseLogFillMode> {

@@ -34,11 +34,13 @@ import {
   getDefaultRestSec,
   getExerciseLogFillMode,
   getHapticsEnabled,
+  getKeepAwakeEnabled,
   getRestTimerEnabled,
   setAutofillPrevious,
   setDefaultRestSec,
   setExerciseLogFillMode,
   setHapticsEnabled,
+  setKeepAwakeEnabled,
   setRestTimerEnabled,
   type DefaultRestSec,
   type ExerciseLogFillMode,
@@ -127,6 +129,7 @@ export default function SettingsScreen() {
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
   const [defaultRestSec, setDefaultRestSecState] = useState<DefaultRestSec>(60);
   const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
+  const [keepAwakeEnabled, setKeepAwakeEnabledState] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
@@ -146,14 +149,16 @@ export default function SettingsScreen() {
       getAutofillPrevious(),
       getDefaultRestSec(),
       getRestTimerEnabled(),
+      getKeepAwakeEnabled(),
       getExerciseLogFillMode(),
       refreshSyncStatus(),
-    ]).then(([notif, haptics, autofill, restSec, restEnabled, exerciseFillMode]) => {
+    ]).then(([notif, haptics, autofill, restSec, restEnabled, keepAwake, exerciseFillMode]) => {
       setNotifEnabled(notif);
       setHapticsEnabledState(haptics);
       setAutofillEnabled(autofill);
       setDefaultRestSecState(restSec);
       setRestTimerEnabledState(restEnabled);
+      setKeepAwakeEnabledState(keepAwake);
       setFillMode(exerciseFillMode);
       setLoadingPrefs(false);
     });
@@ -212,6 +217,15 @@ export default function SettingsScreen() {
       if (!value) restPreview.dismiss();
     } catch {
       setRestTimerEnabledState(!value);
+    }
+  };
+
+  const handleKeepAwakeToggle = async (value: boolean) => {
+    setKeepAwakeEnabledState(value);
+    try {
+      await setKeepAwakeEnabled(value);
+    } catch {
+      setKeepAwakeEnabledState(!value);
     }
   };
 
@@ -386,6 +400,15 @@ export default function SettingsScreen() {
                 else restPreview.start(defaultRestSec);
               }}
             />
+            <View className="mt-4">
+              <SettingSwitchRow
+                title="Ekran włączony w treningu"
+                description="Nie pozwalaj telefonowi zasnąć podczas aktywnej sesji (wake lock)."
+                value={keepAwakeEnabled}
+                onValueChange={handleKeepAwakeToggle}
+                disabled={loadingPrefs}
+              />
+            </View>
           </View>
 
           <View className="mt-5 border-t border-border pt-4">
