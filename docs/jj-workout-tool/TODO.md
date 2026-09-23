@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-22 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Następny krok:** JSON backup / UX sesji.
+> **Stan na 2026-09-23 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises` + picker. **Następny krok:** JSON backup / UX sesji.
 
 ---
 
@@ -22,6 +22,7 @@
 
 **B — Sesja (FORGE / D019)**
 - [x] **Rest timer overlay** — pasek −15s / +30s / Pomiń; pref w Ustawieniach; nie w scrollu
+- [x] **Baza ćwiczeń (dataset + GIF CDN)** — `/exercises`, picker z mediów; atrybucja Gym visual (NOTICE)
 
 **C — Integracje**
 - [ ] **Deploy + sekrety** (jeśli nowe środowisko)
@@ -37,8 +38,9 @@
 1. [x] **D016 per-set** (+ tryb zbiorczy) — na produkcji
 2. [x] **Rest timer overlay**
 3. [x] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
-4. [ ] **Export / import JSON**
-5. [ ] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu
+4. [x] **Baza ćwiczeń + media (CDN)** — OpenGym-style Library; dane MIT, GIF © Gym visual
+5. [ ] **Export / import JSON**
+6. [ ] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu
 
 **Pomijamy / później:** mezocykl+RIR jako rdzeń Home; obwody w apce (waga = openScale→Sheets); Firebase.
 

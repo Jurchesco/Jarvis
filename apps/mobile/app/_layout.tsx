@@ -90,6 +90,7 @@ export default function RootLayout() {
                   <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                   <Stack.Screen name="auth" options={{ headerShown: false }} />
                   <Stack.Screen name="plans" options={{ headerShown: false }} />
+                  <Stack.Screen name="exercises" options={{ headerShown: false }} />
                   <Stack.Screen name="sheet" options={{ headerShown: false }} />
                   <Stack.Screen name="workout" options={{ headerShown: false }} />
                 </Stack>

@@ -317,6 +317,24 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D020: Pełna baza ćwiczeń + media CDN (Gym visual)
+
+**Date**: 2026-09-23  
+**Status**: Active
+
+**Context**: OpenGym Library (~1324 ćwiczeń + GIF). Chcemy ten sam zakres w Jarvis bez AGPL-kopiowania UI OpenGym i bez bundlowania ~140 MB mediów.
+
+**Decision**:
+- Dane (nazwy, partie, sprzęt, instrukcje PL) z [hasaneyldrm/exercises-dataset](https://github.com/hasaneyldrm/exercises-dataset) — **MIT**; slim JSON w `packages/shared/src/data/exercisesLibrary.json`.
+- Media (thumb 180×180 + GIF) **nie** w repo — runtime CDN jsDelivr, commit pin `EXERCISE_MEDIA_COMMIT`.
+- Atrybucja UI + `NOTICE.md`: **© Gym visual**. Personal/kappa OK; produkcja sklepowa wymaga własnej zgody Gym visual.
+- Ekran `/exercises` + `ExercisePicker` na pełnej bazie; legacy PPL (43) zostaje dla szablonów planów.
+- Tagi objętości: mapowanie `target` → `MuscleGroup` (+ legacy PL nazwy).
+
+**Konsekwencje**: nazwy z library są EN (dataset); Stats działają po mapowaniu target. Własne nazwy nadal bez tagów.
+
+---
+
 ## Future Decisions (TODO)
 
 - **Objętość per partia**: tagi mięśniowe w katalogu / exercises (D019) ✅ — patrz sekcja D019 powyżej
