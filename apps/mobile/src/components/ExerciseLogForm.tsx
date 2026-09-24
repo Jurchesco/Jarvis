@@ -171,6 +171,15 @@ function formatPreviousChip(
   return `Ostatnio · ${shown.join(" · ")}${extra}`;
 }
 
+/** Ghost hint for one previous set (D019 §5 — kolumna „Poprzednio”). */
+function formatGhostSet(
+  log: SessionSetLog | null | undefined,
+  timeBased: boolean,
+): string {
+  if (!log) return "—";
+  return timeBased ? `${log.reps}s` : `${log.weightKg}×${log.reps}`;
+}
+
 export function ExerciseLogForm({
   exerciseName,
   timeBased: timeBasedProp,
@@ -194,6 +203,7 @@ export function ExerciseLogForm({
     () => formatPreviousChip(resolvedPrevious, timeBased),
     [resolvedPrevious, timeBased],
   );
+  const showGhostColumn = resolvedPrevious.length > 0;
   const seed = initialDraft ?? DEFAULT_DRAFT;
   const [draft, setDraft] = useState<ExerciseLogDraft>(() => seed);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
@@ -338,7 +348,7 @@ export function ExerciseLogForm({
 
   return (
     <View className="min-w-0">
-      {previousChip ? (
+      {previousChip && !(showGhostColumn && fillMode === "per-set") ? (
         <Badge label={previousChip} tone="accent" size="sm" className="mb-3 max-w-full" />
       ) : null}
 
@@ -461,9 +471,14 @@ export function ExerciseLogForm({
       ) : (
         <>
           <View className="mb-2 flex-row items-center px-1">
-            <Text className="w-10 text-center text-text-muted text-[10px] font-semibold uppercase">
+            <Text className="w-8 text-center text-text-muted text-[10px] font-semibold uppercase">
               #
             </Text>
+            {showGhostColumn ? (
+              <Text className="w-[4.5rem] text-center text-text-muted text-[10px] font-semibold uppercase">
+                Poprzednio
+              </Text>
+            ) : null}
             {timeBased ? (
               <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
                 Czas (s)
@@ -486,16 +501,33 @@ export function ExerciseLogForm({
             <View className="w-10" />
           </View>
 
-          {draft.sets.map((set, index) => (
+          {draft.sets.map((set, index) => {
+            const ghost = formatGhostSet(resolvedPrevious[index], timeBased);
+            return (
             <View key={`set-row-${index}`} className="mb-2 flex-row items-center gap-2 min-w-0">
-              <Text className="w-10 text-center text-text-secondary text-base font-bold">{index + 1}</Text>
+              <View className="h-8 w-8 items-center justify-center rounded-full bg-surface-muted border border-border">
+                <Text className="text-text-secondary text-sm font-bold">{index + 1}</Text>
+              </View>
+              {showGhostColumn ? (
+                <Text
+                  className="w-[4.5rem] text-center text-text-muted text-xs font-medium"
+                  numberOfLines={1}
+                  accessibilityLabel={`Poprzednio seria ${index + 1}: ${ghost}`}
+                >
+                  {ghost}
+                </Text>
+              ) : null}
               {timeBased ? (
                 <View className="flex-1 min-w-0">
                   <Input
                     value={set.reps}
                     onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
                     keyboardType="number-pad"
-                    placeholder="60"
+                    placeholder={
+                      resolvedPrevious[index]
+                        ? String(resolvedPrevious[index].reps)
+                        : "60"
+                    }
                     inputClassName="text-center font-bold"
                     fontSize={18}
                   />
@@ -509,7 +541,11 @@ export function ExerciseLogForm({
                         updateSetField(index, "weightKg", sanitizeWeight(value))
                       }
                       keyboardType="decimal-pad"
-                      placeholder="0"
+                      placeholder={
+                        resolvedPrevious[index]
+                          ? String(resolvedPrevious[index].weightKg)
+                          : "0"
+                      }
                       inputClassName="text-center font-bold"
                       fontSize={18}
                     />
@@ -519,7 +555,11 @@ export function ExerciseLogForm({
                       value={set.reps}
                       onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
                       keyboardType="number-pad"
-                      placeholder="10"
+                      placeholder={
+                        resolvedPrevious[index]
+                          ? String(resolvedPrevious[index].reps)
+                          : "10"
+                      }
                       inputClassName="text-center font-bold"
                       fontSize={18}
                     />
@@ -554,7 +594,8 @@ export function ExerciseLogForm({
                 <Minus size={16} strokeWidth={ICON_STROKE} color="#ef4444" />
               </TouchableOpacity>
             </View>
-          ))}
+            );
+          })}
 
           <TouchableOpacity
             onPress={addSet}

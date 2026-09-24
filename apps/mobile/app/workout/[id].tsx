@@ -649,14 +649,14 @@ export default function WorkoutScreen() {
               const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
               const isEditing = editingExerciseId === exercise.id || !isSaved;
               const rawPreviousLogs = previousSetsByExercise[exercise.id] ?? [];
-              const previousLogs = autofillPrevious ? rawPreviousLogs : [];
+              // Ghost / chip always; autofill only seeds the draft when pref is on.
               const initialDraft = isSaved
                 ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-                : previousLogs.length > 0
+                : autofillPrevious && rawPreviousLogs.length > 0
                   ? createDraftFromPrevious(
-                      previousLogs[0] ?? null,
+                      rawPreviousLogs[0] ?? null,
                       notesByExercise[exercise.id] ?? "",
-                      previousLogs,
+                      rawPreviousLogs,
                     )
                   : createDraftFromTemplate(
                       exercise.sets,
@@ -700,7 +700,7 @@ export default function WorkoutScreen() {
                       key={`${exercise.id}-${isSaved ? "edit" : "new"}`}
                       exerciseName={exercise.name}
                       timeBased={isTimeBasedExercise(exercise.name)}
-                      previousLogs={previousLogs}
+                      previousLogs={rawPreviousLogs}
                       initialDraft={initialDraft}
                       onSave={(draft) => handleSaveExercise(exercise, draft)}
                       onCancel={
