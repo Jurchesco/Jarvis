@@ -21,6 +21,7 @@ import {
   useSheet,
 } from "../../src/api/hooks";
 import { WeekPlanStrip } from "../../src/components/WeekPlanStrip";
+import { ReadinessTodayStrip } from "../../src/components/ReadinessTodayStrip";
 import { ensureFreestyleSheet, isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
 import {
   todayWeekIndex,
@@ -185,6 +186,8 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView className="flex-1 px-5 pt-4" contentContainerStyle={{ paddingBottom: 32 }}>
+        <ReadinessTodayStrip />
+
         {incompleteSession ? (
           <Card padding="lg" className="border-action-primary/30 bg-surface">
             <View className="flex-row items-center mb-2">
