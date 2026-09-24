@@ -112,7 +112,20 @@ export const PPL_SHEET_TEMPLATES: {
 ];
 
 export function isTimeBasedExercise(name: string): boolean {
-  return TIME_BASED_NAMES.has(name.trim());
+  const trimmed = name.trim();
+  if (TIME_BASED_NAMES.has(trimmed)) return true;
+  const n = trimmed.toLocaleLowerCase("pl-PL");
+  // Heurystyka nazw (OpenGym-inspired timed mode) — bez kopiowania ich kodu.
+  return (
+    /\bplank\b/.test(n) ||
+    /\bdeska\b/.test(n) ||
+    /\bwall[\s-]?sit\b/.test(n) ||
+    /\bfarmer/.test(n) ||
+    /\bdead hang\b/.test(n) ||
+    /\bmartwy zwis\b/.test(n) ||
+    /\bisometric\b/.test(n) ||
+    /\bhold\b/.test(n)
+  );
 }
 
 export function normalizeExerciseName(name: string): string {

@@ -18,7 +18,7 @@
 
 **A — UI polish / QA**
 - [x] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
-- [ ] Drobne polish wg dokumentów UI (część: ghost „Poprzednio” ✅)
+- [ ] Drobne polish wg dokumentów UI (część: ghost „Poprzednio” ✅, work timer timed ✅)
 
 **B — Sesja (FORGE / D019)**
 - [x] **Rest timer overlay** — pasek −15s / +30s / Pomiń; pref w Ustawieniach; nie w scrollu
