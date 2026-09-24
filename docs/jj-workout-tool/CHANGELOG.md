@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **Ghost „Poprzednio” (D019 §5)** — kolumna z poprzednimi kg×powt. przy logowaniu per seria; podpowiedzi widoczne nawet gdy autofill jest wyłączony
 - **Backup JSON (D019 §4)** — eksport/import planów + historii w Ustawieniach (web download / native Share; import pliku na web)
 - **RIR / RPE per seria** — opcjonalne pole wysiłku (pref w Ustawieniach, domyślnie off); skala RIR 0–10 lub RPE 1–10; kolumna `Wysilek` w Silownia_import (reprezentatywna seria)
 - **Edytor planów (D018)** — cele serii×powt. (`exercise_sets`), reorder ↑↓, duplikat planu; seed formularza sesji z template gdy brak „Ostatnio”

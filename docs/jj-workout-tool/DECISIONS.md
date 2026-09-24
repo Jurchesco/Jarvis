@@ -321,9 +321,11 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 **UX sesji (D019 §5 — implementacja):**
 - Pasek **Postęp sesji · %** (serie zrobione / planowane + ćw. zapisane).
-- Chip **Ostatnio · kg×pow** (wszystkie serie z poprzedniej sesji na arkuszu).
+- Chip **Ostatnio · kg×pow** (wszystkie serie z poprzedniej sesji — tryb zbiorczy).
+- Kolumna **Poprzednio** przy trybie per seria (ghost wartości z ostatniej sesji; placeholdery w polach).
 - Toast po zapisie z **tonażem** ćwiczenia (`Zapisano · X kg`).
 - **Wake lock** w aktywnej sesji (`useWorkoutKeepAwake` / expo-keep-awake); pref w Ustawieniach.
+- Autofill (pref) seeduje draft; ghost/chip działa niezależnie od autofill.
 
 **Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
 

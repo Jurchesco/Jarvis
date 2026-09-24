@@ -18,7 +18,7 @@
 
 **A — UI polish / QA**
 - [x] **QA Toast / Badge** — potwierdzenia zapisu i badges wg `UI_REDESIGN_PROPOSAL.md` §3
-- [ ] Drobne polish wg dokumentów UI
+- [ ] Drobne polish wg dokumentów UI (część: ghost „Poprzednio” ✅)
 
 **B — Sesja (FORGE / D019)**
 - [x] **Rest timer overlay** — pasek −15s / +30s / Pomiń; pref w Ustawieniach; nie w scrollu
@@ -58,7 +58,7 @@
 
 ### Średni priorytet
 - [x] **Export / import JSON** — D019 §4
-- [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + toast; ghost później)
+- [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + kolumna Poprzednio / ghost)
 - [x] **Sheet templates** — duplikowanie planów
 - [x] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
 - [x] **RIR / RPE opcjonalnie** — pref + per seria; kolumna Wysilek w Sheets
