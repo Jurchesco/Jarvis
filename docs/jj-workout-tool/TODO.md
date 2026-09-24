@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **RIR/RPE** (opcjonalnie, PR). **Następny krok:** JSON backup.
+> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **RIR/RPE** (opcjonalnie). **Następny krok:** — (kolejka FORGE domknięta po JSON backup).
 
 ---
 
@@ -41,7 +41,7 @@
 3. [x] **Tagi partii + objętość tygodniowa** (główna 1.0 / pomocnicza 0.5)
 4. [x] **Baza ćwiczeń + media (CDN)** — OpenGym-style Library; dane MIT, GIF © Gym visual
 5. [x] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu; wake lock
-6. [ ] **Export / import JSON**
+6. [x] **Export / import JSON**
 
 **Pomijamy / później:** mezocykl+RIR jako rdzeń Home; obwody w apce (waga = openScale→Sheets); Firebase.
 
@@ -57,7 +57,7 @@
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
-- [ ] **Export / import JSON** — D019 §4
+- [x] **Export / import JSON** — D019 §4
 - [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + toast; ghost później)
 - [x] **Sheet templates** — duplikowanie planów
 - [x] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)

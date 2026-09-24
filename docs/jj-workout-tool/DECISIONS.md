@@ -299,8 +299,8 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 1. Logowanie **per seria** + tryb zbiorczy → **D016** ✅ (PR #17 / produkcja)
 2. **Rest timer** jako pływający overlay (−15 / +30 / Pomiń; pref w Ustawieniach) → ✅
 3. **Tagi partii** (główna + opcjonalnie pomocnicza 0.5) i **objętość tygodniowa** w Stats → ✅ (katalog + karta Stats)
-4. **Export / import JSON** (backup lokalny; nie zamiast Sheets)
-5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu
+4. **Export / import JSON** (backup lokalny; nie zamiast Sheets) → ✅ (Ustawienia → Backup JSON)
+5. UX sesji: pasek postępu %, czytelniejszy „Ostatnio…”, toast tonażu → ✅
 
 **Nie bierzemy teraz:**
 - Pełny mezocykl z auto-awansem tygodnia / RIR per tydzień jako rdzeń produktu
