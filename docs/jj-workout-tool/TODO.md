@@ -32,6 +32,8 @@
 - [ ] **Deploy + sekrety** — uruchom `body_and_health.sql` + `JJ_WORKOUT_USER_ID` w importerze
 - [ ] *(Opcjonalnie)* sync na podsumowaniu / re-import w Historii
 - [x] **Eksport CSV / kontekst AI** — Ustawienia
+- [x] **Gotowość dziś** — Home strip
+- [x] **Stats OpenGym-style** — tiles / heatmap / waga / missed
 - [ ] Hermes czyta Supabase/JSON zamiast tylko Sheets (`docs/jarvis/HERMES_SUPABASE.md`)
 
 ---

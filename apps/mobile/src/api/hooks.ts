@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient, useQueries } from "@tanstack/rea
 import type { SessionDetailFull } from "@bhmt3wp/shared";
 import { api } from "./client";
 import { duplicateSheet } from "../lib/duplicateSheet";
+import { buildStatsOverview } from "../lib/statsOverview";
 import type {
   CreateWorkoutSheetInput,
   UpdateWorkoutSheetInput,
@@ -259,7 +260,7 @@ function filterSessionsByRange<T extends { completedAt: string | null }>(
 export function useStatsData(range: StatsRange = "all") {
   const { data: completed = [] } = useCompletedSessions();
   const filtered = useMemo(
-    () => filterSessionsByRange(completed, range).slice(0, 20),
+    () => filterSessionsByRange(completed, range).slice(0, 40),
     [completed, range],
   );
   const sessionQueries = useQueries({
@@ -274,6 +275,22 @@ export function useStatsData(range: StatsRange = "all") {
     .reverse();
   const isLoading = sessionQueries.some((q) => q.isLoading);
   return { sessions, isLoading, totalInRange: filtered.length };
+}
+
+/** Lightweight Stats hero: all completed sessions + body weight + streak. */
+export function useStatsOverview() {
+  const { data: completed = [], isLoading: sessionsLoading } = useCompletedSessions();
+  return useQuery({
+    queryKey: [
+      "stats-overview",
+      completed.length,
+      completed[0]?.id ?? "",
+      completed[completed.length - 1]?.id ?? "",
+    ],
+    queryFn: () => buildStatsOverview(completed),
+    enabled: !sessionsLoading,
+    staleTime: 60_000,
+  });
 }
 
 /** Pobiera szczegóły wielu sesji (np. lista w Historii). */
