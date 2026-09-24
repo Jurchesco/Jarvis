@@ -137,6 +137,37 @@ export async function listBodyMeasurements(limit = 30): Promise<BodyMeasurement[
   return (data as MeasurementRow[] | null)?.map(mapMeasurement) ?? [];
 }
 
+/** All weigh-ins for charts (paginated). Soft-empty when table missing. */
+export async function listAllBodyMeasurements(): Promise<BodyMeasurement[]> {
+  const userId = await requireUserId();
+  const PAGE = 1000;
+  const rows: BodyMeasurement[] = [];
+  let offset = 0;
+  try {
+    while (true) {
+      const { data, error } = await supabase
+        .from("body_measurements")
+        .select("*")
+        .eq("user_id", userId)
+        .order("measured_at", { ascending: true })
+        .range(offset, offset + PAGE - 1);
+      if (error) {
+        if (/relation|does not exist|column/i.test(error.message)) return [];
+        throw new Error(error.message);
+      }
+      const batch = (data as MeasurementRow[] | null)?.map(mapMeasurement) ?? [];
+      rows.push(...batch);
+      if (batch.length < PAGE) break;
+      offset += PAGE;
+    }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "";
+    if (/relation|does not exist|column/i.test(msg)) return [];
+    throw error;
+  }
+  return rows;
+}
+
 export async function createBodyMeasurement(
   input: CreateBodyMeasurementInput,
   heightCm?: number | null,

@@ -1,11 +1,22 @@
 import { useMemo, useState } from "react";
-import { ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import Svg, { Circle, G, Line, Polyline, Rect, Text as SvgText } from "react-native-svg";
-import { BarChart3, Layers, LineChart, Target, Trophy } from "lucide-react-native";
-import { useStatsData, type StatsRange } from "../../../src/api/hooks";
+import {
+  Activity,
+  BarChart3,
+  Layers,
+  LineChart,
+  Scale,
+  Target,
+  Trophy,
+} from "lucide-react-native";
+import { useStatsData, useStatsOverview, type StatsRange } from "../../../src/api/hooks";
 import type { SessionDetailFull } from "@bhmt3wp/shared";
 import {
+  MUSCLE_GROUPS,
+  MUSCLE_LABELS,
   computeExerciseRecords,
   computeMuscleSetVolume,
   computeMuscleSetVolumeForWeek,
@@ -15,6 +26,7 @@ import {
   sessionBestEst1rm,
   sessionMaxWeightKg,
   type ExerciseRecord,
+  type MuscleGroup,
   type MuscleVolumeRow,
 } from "@bhmt3wp/shared";
 import {
@@ -25,9 +37,15 @@ import {
   ScreenHeader,
   StateBlock,
 } from "../../../src/components/ui";
+import { SummaryTiles } from "../../../src/components/stats/SummaryTiles";
+import { ActivityHeatmap } from "../../../src/components/stats/ActivityHeatmap";
+import {
+  BodyWeightChart,
+  type WeightChartRange,
+} from "../../../src/components/stats/BodyWeightChart";
+import { computeEffortSummary } from "../../../src/lib/effortStats";
 
 const PRIMARY = "#3b82f6";
-const ACCENT = "#22c55e";
 const TEXT_SECONDARY = "#c0c9d8";
 const GRID = "#24324a";
 const BAR_BG = "#1f2b44";
@@ -40,7 +58,7 @@ const RANGE_OPTIONS: { value: StatsRange; label: string }[] = [
 ];
 
 type MuscleScope = "week" | "range";
-type TrendMetric = "weight" | "e1rm";
+type TrendMetric = "weight" | "e1rm" | "top";
 
 const MUSCLE_SCOPE_OPTIONS: { value: MuscleScope; label: string }[] = [
   { value: "week", label: "Ten tydzień" },
@@ -50,12 +68,25 @@ const MUSCLE_SCOPE_OPTIONS: { value: MuscleScope; label: string }[] = [
 const TREND_METRIC_OPTIONS: { value: TrendMetric; label: string }[] = [
   { value: "e1rm", label: "Est. 1RM" },
   { value: "weight", label: "Ciężar max" },
+  { value: "top", label: "Top set" },
 ];
 
 function sessionVolume(session: SessionDetailFull): number {
   return session.exercises.reduce((total, group) => {
     return total + group.sets.reduce((setTotal, set) => setTotal + set.weightKg * set.reps, 0);
   }, 0);
+}
+
+function sessionTopSetKg(session: SessionDetailFull, exerciseName: string): number {
+  const group = session.exercises.find((g) => g.exerciseName === exerciseName);
+  if (!group) return 0;
+  let best = 0;
+  for (const set of group.sets) {
+    const score = set.weightKg * set.reps;
+    const candidate = set.weightKg;
+    if (score > 0 && candidate > best) best = candidate;
+  }
+  return best;
 }
 
 function collectExerciseNames(sessions: SessionDetailFull[]): string[] {
@@ -296,11 +327,20 @@ function trendDeltaLabel(values: number[]): string | null {
   return `${sign}${Math.abs(delta)} kg vs pierwsza sesja w zakresie`;
 }
 
+function missedMuscles(rows: MuscleVolumeRow[]): MuscleGroup[] {
+  const hit = new Set(rows.map((r) => r.muscle));
+  return MUSCLE_GROUPS.filter((m) => !hit.has(m));
+}
+
 export default function StatsScreen() {
+  const router = useRouter();
   const [range, setRange] = useState<StatsRange>("3m");
   const [muscleScope, setMuscleScope] = useState<MuscleScope>("week");
   const [trendMetric, setTrendMetric] = useState<TrendMetric>("e1rm");
+  const [weightRange, setWeightRange] = useState<WeightChartRange>("3m");
+  const [prsExpanded, setPrsExpanded] = useState(false);
   const { sessions, isLoading, totalInRange } = useStatsData(range);
+  const { data: overview, isLoading: overviewLoading } = useStatsOverview();
   const { width } = useWindowDimensions();
 
   const exerciseNames = useMemo(() => collectExerciseNames(sessions), [sessions]);
@@ -314,11 +354,11 @@ export default function StatsScreen() {
   const volumeValues = useMemo(() => sessions.map(sessionVolume), [sessions]);
   const exerciseTrendValues = useMemo(() => {
     if (!activeExercise) return [];
-    return sessions.map((session) =>
-      trendMetric === "e1rm"
-        ? sessionBestEst1rm(session, activeExercise)
-        : sessionMaxWeightKg(session, activeExercise),
-    );
+    return sessions.map((session) => {
+      if (trendMetric === "e1rm") return sessionBestEst1rm(session, activeExercise);
+      if (trendMetric === "top") return sessionTopSetKg(session, activeExercise);
+      return sessionMaxWeightKg(session, activeExercise);
+    });
   }, [sessions, activeExercise, trendMetric]);
 
   const exerciseTrendDelta = useMemo(
@@ -326,20 +366,37 @@ export default function StatsScreen() {
     [exerciseTrendValues],
   );
 
-  const records = useMemo(() => computeExerciseRecords(sessions).slice(0, 10), [sessions]);
+  const allRecords = useMemo(() => computeExerciseRecords(sessions), [sessions]);
+  const records = prsExpanded ? allRecords.slice(0, 10) : allRecords.slice(0, 5);
 
   const muscleRows = useMemo(() => {
     if (muscleScope === "week") return computeMuscleSetVolumeForWeek(sessions);
     return computeMuscleSetVolume(sessions);
   }, [sessions, muscleScope]);
 
+  const missed = useMemo(() => missedMuscles(muscleRows), [muscleRows]);
+  const effort = useMemo(() => computeEffortSummary(sessions), [sessions]);
+
+  const recent = overview?.sessions.slice(0, 6) ?? [];
+
   const contentHorizontalPadding = 20;
   const cardHorizontalPadding = 16;
   const availableChartWidth = width - contentHorizontalPadding * 2 - cardHorizontalPadding * 2;
   const chartWidth = Math.min(Math.max(availableChartWidth, 0), 360);
 
-  const rangeLabel =
-    RANGE_OPTIONS.find((option) => option.value === range)?.label ?? range;
+  const rangeLabel = RANGE_OPTIONS.find((option) => option.value === range)?.label ?? range;
+
+  const onHeatmapDay = (day: string, agg: { sessions: number; minutes: number }) => {
+    const msg = `${day}\n${agg.sessions} trening(i)${agg.minutes ? ` · ${agg.minutes} min` : ""}`;
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      window.alert(msg);
+    } else {
+      Alert.alert("Aktywność", msg, [
+        { text: "OK", style: "cancel" },
+        { text: "Historia", onPress: () => router.push("/history") },
+      ]);
+    }
+  };
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
@@ -349,23 +406,44 @@ export default function StatsScreen() {
       >
         <ScreenHeader
           title="Statystyki"
-          subtitle={
-            totalInRange > 0
-              ? `${totalInRange} sesji w zakresie ${rangeLabel} — partie, trendy i rekordy.`
-              : "Zakończ trening, aby zobaczyć tutaj swoje trendy."
-          }
+          subtitle="Postęp, aktywność i waga — w stylu hubu, nie klonu Garmina."
           icon={BarChart3}
         />
 
-        <Pills
-          options={RANGE_OPTIONS}
-          value={range}
-          onChange={setRange}
-          className="mt-5"
-        />
+        {overviewLoading && !overview ? (
+          <StateBlock title="Ładowanie" description="Podsumowanie…" className="mt-6" />
+        ) : overview ? (
+          <>
+            <SummaryTiles
+              totalWorkouts={overview.totalWorkouts}
+              thisMonth={overview.thisMonth}
+              weekStreak={overview.weekStreak}
+              weightDelta30={overview.weightDelta30}
+              weightTone={overview.weightTone}
+            />
+
+            <Card className="mt-5" padding="md">
+              <Text className="text-text-primary text-base font-bold leading-tight mb-1">
+                Aktywność — 12 miesięcy
+              </Text>
+              <Text className="text-text-muted text-xs mb-3">Wg czasu treningu na dzień</Text>
+              <ActivityHeatmap dayAgg={overview.dayAgg} onDayPress={onHeatmapDay} />
+            </Card>
+          </>
+        ) : null}
+
+        <Pills options={RANGE_OPTIONS} value={range} onChange={setRange} className="mt-5" />
+        <Text className="text-text-muted text-xs mt-2">
+          Zakres kart poniżej: {rangeLabel}
+          {totalInRange > 0 ? ` · ${totalInRange} sesji` : ""}
+        </Text>
 
         {isLoading ? (
-          <StateBlock title="Ładowanie statystyk" description="Przetwarzanie danych treningowych." className="mt-6" />
+          <StateBlock
+            title="Ładowanie szczegółów"
+            description="Trendy, partie i rekordy…"
+            className="mt-6"
+          />
         ) : sessions.length === 0 ? (
           <StateBlock
             title="Brak danych w tym zakresie"
@@ -374,20 +452,6 @@ export default function StatsScreen() {
           />
         ) : (
           <>
-            <Card className="mt-6" padding="md">
-              <View className="mb-3 flex-row items-center">
-                <Trophy size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
-                <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
-                  Rekordy (PR)
-                </Text>
-              </View>
-              <Text className="mb-3 text-text-muted text-xs leading-4">
-                Najcięższa seria i najlepszy Est. 1RM (Epley, serie ≤12 powt.) w wybranym zakresie —
-                top 10 ćwiczeń.
-              </Text>
-              <RecordsList records={records} />
-            </Card>
-
             <Card className="mt-5" padding="md">
               <View className="mb-3 flex-row items-center">
                 <Layers size={16} strokeWidth={ICON_STROKE} color="#a78bfa" />
@@ -396,8 +460,7 @@ export default function StatsScreen() {
                 </Text>
               </View>
               <Text className="mb-3 text-text-muted text-xs leading-4">
-                Serie ważone: główna partia 1,0 · pomocnicza 0,5 (katalog ćwiczeń). Ćwiczenia spoza
-                katalogu nie wchodzą do sumy.
+                Serie ważone: główna 1,0 · pomocnicza 0,5.
               </Text>
               <Pills
                 options={MUSCLE_SCOPE_OPTIONS}
@@ -408,23 +471,96 @@ export default function StatsScreen() {
               {muscleRows.length === 0 ? (
                 <Text className="text-text-secondary text-sm leading-5">
                   {muscleScope === "week"
-                    ? "Brak zalogowanych serii z katalogu w tym tygodniu (pon–ndz)."
-                    : "Brak serii z katalogu w wybranym zakresie."}
+                    ? "Brak serii z katalogu w tym tygodniu."
+                    : "Brak serii z katalogu w zakresie."}
                 </Text>
               ) : (
-                <MuscleVolumeChart rows={muscleRows} width={chartWidth} />
+                <>
+                  <MuscleVolumeChart rows={muscleRows} width={chartWidth} />
+                  {missed.length > 0 ? (
+                    <View className="mt-4">
+                      <Text className="text-text-muted text-xs font-semibold uppercase mb-2">
+                        Nie trenowane w okresie
+                      </Text>
+                      <View className="flex-row flex-wrap gap-2">
+                        {missed.map((m) => (
+                          <View
+                            key={m}
+                            className="rounded-lg border border-border bg-surface-muted px-2.5 py-1"
+                          >
+                            <Text className="text-text-secondary text-xs">{MUSCLE_LABELS[m]}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ) : (
+                    <Text className="text-text-muted text-xs mt-3">
+                      Wszystkie partie dostały jakąś pracę w tym okresie.
+                    </Text>
+                  )}
+                </>
               )}
             </Card>
 
+            {effort ? (
+              <Card className="mt-5" padding="md">
+                <View className="mb-3 flex-row items-center">
+                  <Activity size={16} strokeWidth={ICON_STROKE} color="#fbbf24" />
+                  <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
+                    Wysiłek
+                  </Text>
+                </View>
+                <View className="flex-row justify-between mb-3">
+                  <View>
+                    <Text className="text-text-primary text-2xl font-bold">
+                      {effort.avgRir != null ? effort.avgRir : "—"} RIR
+                    </Text>
+                    <Text className="text-text-muted text-xs">średni wysiłek</Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-2xl font-bold" style={{ color: "#fbbf24" }}>
+                      {effort.hardPct != null ? `${Math.round(effort.hardPct * 100)}%` : "—"}
+                    </Text>
+                    <Text className="text-text-muted text-xs">RIR ≤ 2</Text>
+                  </View>
+                </View>
+                <Text className="text-text-muted text-xs mb-3">
+                  {effort.rated} z {effort.done} serii z oceną w zakresie
+                </Text>
+                {effort.histogram
+                  .filter((b) => b.n > 0)
+                  .map((b) => (
+                    <View key={b.rir} className="flex-row items-center mb-1.5">
+                      <Text className="text-text-secondary text-xs w-16">{b.label}</Text>
+                      <View className="flex-1 h-2 rounded-full bg-surface-muted mx-2 overflow-hidden">
+                        <View
+                          className="h-2 rounded-full"
+                          style={{
+                            width: `${Math.round(b.pct * 100)}%`,
+                            backgroundColor: "#fbbf24",
+                          }}
+                        />
+                      </View>
+                      <Text className="text-text-muted text-xs w-10 text-right">{b.n}</Text>
+                    </View>
+                  ))}
+              </Card>
+            ) : null}
+
             <Card className="mt-5" padding="md">
               <View className="mb-3 flex-row items-center">
-                <LineChart size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
+                <Scale size={16} strokeWidth={ICON_STROKE} color="#34d399" />
                 <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
-                  Objętość w czasie
+                  Masa ciała
                 </Text>
               </View>
-              <Text className="mb-3 text-text-muted text-xs">Suma kg × powtórzenia na sesję</Text>
-              <TrendChart sessions={sessions} width={chartWidth} values={volumeValues} yLabel="kg" />
+              <BodyWeightChart
+                measurements={overview?.measurements ?? []}
+                goalKg={overview?.goalWeightKg ?? null}
+                range={weightRange}
+                onRangeChange={setWeightRange}
+                onWeighIn={() => router.push("/settings")}
+              />
             </Card>
 
             {activeExercise ? (
@@ -437,8 +573,10 @@ export default function StatsScreen() {
                 </View>
                 <Text className="mb-3 text-text-muted text-xs leading-4">
                   {trendMetric === "e1rm"
-                    ? "Najlepszy Est. 1RM (Epley) w sesji — serie powyżej 12 powt. pomijane"
-                    : "Maksymalny ciężar (kg) w sesji"}
+                    ? "Najlepszy Est. 1RM (Epley) w sesji"
+                    : trendMetric === "top"
+                      ? "Najwyższy ciężar top setu w sesji"
+                      : "Maksymalny ciężar w sesji"}
                   {exerciseTrendDelta ? ` · ${exerciseTrendDelta}` : ""}
                 </Text>
                 <Pills
@@ -461,12 +599,76 @@ export default function StatsScreen() {
                   sessions={sessions}
                   width={chartWidth}
                   values={exerciseTrendValues}
-                  yLabel={trendMetric === "e1rm" ? "1RM" : "kg max"}
+                  yLabel={trendMetric === "e1rm" ? "1RM" : "kg"}
                 />
               </Card>
             ) : null}
+
+            <Card className="mt-5" padding="md">
+              <View className="mb-3 flex-row items-center">
+                <LineChart size={16} strokeWidth={ICON_STROKE} color="#60a5fa" />
+                <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
+                  Objętość w czasie
+                </Text>
+              </View>
+              <Text className="mb-3 text-text-muted text-xs">Suma kg × powtórzenia na sesję</Text>
+              <TrendChart sessions={sessions} width={chartWidth} values={volumeValues} yLabel="kg" />
+            </Card>
+
+            <Card className="mt-5" padding="md">
+              <View className="mb-3 flex-row items-center justify-between">
+                <View className="flex-row items-center flex-1">
+                  <Trophy size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
+                  <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
+                    Rekordy (PR)
+                  </Text>
+                </View>
+                {allRecords.length > 5 ? (
+                  <Pressable onPress={() => setPrsExpanded((v) => !v)}>
+                    <Text className="text-action-primary text-xs font-semibold">
+                      {prsExpanded ? "Zwiń" : `Więcej (${Math.min(10, allRecords.length)})`}
+                    </Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              <RecordsList records={records} />
+            </Card>
           </>
         )}
+
+        {recent.length > 0 ? (
+          <View className="mt-5">
+            <View className="mb-3 flex-row items-center justify-between">
+              <Text className="text-text-secondary text-sm font-semibold">Ostatnie treningi</Text>
+              <Pressable onPress={() => router.push("/history")}>
+                <Text className="text-action-primary text-xs font-semibold">
+                  Wszystkie {overview?.totalWorkouts ?? ""}
+                </Text>
+              </Pressable>
+            </View>
+            <View className="gap-2">
+              {recent.map((s) => (
+                <Pressable key={s.id} onPress={() => router.push(`/history/${s.id}`)}>
+                  <Card padding="md">
+                    <Text className="text-text-primary text-sm font-semibold" numberOfLines={1}>
+                      {s.sheetName}
+                    </Text>
+                    <Text className="text-text-muted text-xs mt-1">
+                      {s.completedAt
+                        ? new Date(s.completedAt).toLocaleString("pl-PL", {
+                            day: "numeric",
+                            month: "short",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })
+                        : "—"}
+                    </Text>
+                  </Card>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
