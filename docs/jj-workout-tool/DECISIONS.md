@@ -326,6 +326,7 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Toast po zapisie z **tonażem** ćwiczenia (`Zapisano · X kg`).
 - **Wake lock** w aktywnej sesji (`useWorkoutKeepAwake` / expo-keep-awake); pref w Ustawieniach.
 - Autofill (pref) seeduje draft; ghost/chip działa niezależnie od autofill.
+- **Timed sets / work timer:** ćwiczenia na czas (heurystyka nazw: deska/plank/…); countdown utrzymania osobny od rest; wczesny „Koniec” zapisuje rzeczywiste sekundy; opcjonalny kg (np. deska z obciążeniem). Inspiracja OpenGym (AGPL — bez kopiowania kodu).
 
 **Źródło prawdy kolejki:** sekcja *Inspiracja FORGE* w `TODO.md`.
 
