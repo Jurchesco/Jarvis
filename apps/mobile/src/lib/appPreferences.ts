@@ -1,3 +1,4 @@
+import type { EffortScale } from "@bhmt3wp/shared";
 import { getPref, getPrefBool, setPref, setPrefBool } from "./prefStorage";
 
 const KEYS = {
@@ -7,6 +8,8 @@ const KEYS = {
   restTimerEnabled: "pref_rest_timer_enabled",
   keepAwakeEnabled: "pref_keep_awake_enabled",
   exerciseLogFillMode: "pref_exercise_log_fill_mode",
+  effortLoggingEnabled: "pref_effort_logging_enabled",
+  effortScale: "pref_effort_scale",
 } as const;
 
 export type DefaultRestSec = 30 | 60 | 90 | 120;
@@ -19,6 +22,10 @@ export const EXERCISE_LOG_FILL_MODE_OPTIONS: {
 }[] = [
   { value: "batch", label: "Zbiorczo" },
   { value: "per-set", label: "Per seria" },
+];
+export const EFFORT_SCALE_PREF_OPTIONS: { value: EffortScale; label: string }[] = [
+  { value: "rir", label: "RIR" },
+  { value: "rpe", label: "RPE" },
 ];
 
 export async function getHapticsEnabled(): Promise<boolean> {
@@ -74,4 +81,22 @@ export async function getExerciseLogFillMode(): Promise<ExerciseLogFillMode> {
 
 export async function setExerciseLogFillMode(mode: ExerciseLogFillMode): Promise<void> {
   await setPref(KEYS.exerciseLogFillMode, mode);
+}
+
+/** Optional RIR/RPE fields on the exercise log form. Default off. */
+export async function getEffortLoggingEnabled(): Promise<boolean> {
+  return getPrefBool(KEYS.effortLoggingEnabled, false);
+}
+
+export async function setEffortLoggingEnabled(enabled: boolean): Promise<void> {
+  await setPrefBool(KEYS.effortLoggingEnabled, enabled);
+}
+
+export async function getEffortScale(): Promise<EffortScale> {
+  const val = await getPref(KEYS.effortScale);
+  return val === "rpe" ? "rpe" : "rir";
+}
+
+export async function setEffortScale(scale: EffortScale): Promise<void> {
+  await setPref(KEYS.effortScale, scale);
 }

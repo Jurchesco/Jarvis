@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **Następny krok:** JSON backup.
+> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **RIR/RPE** (opcjonalnie, PR). **Następny krok:** JSON backup.
 
 ---
 

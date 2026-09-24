@@ -30,6 +30,7 @@ export const HEADERS = [
   "Czas serii",
   "Session ID",
   "Exercise ID",
+  "Wysilek",
 ];
 
 const COL_SESSION_ID = 12;
@@ -43,6 +44,8 @@ type SetLog = {
   reps: number;
   weight_kg: number;
   completed_at: string;
+  effort_scale?: string | null;
+  effort_value?: number | null;
 };
 
 type SessionRow = {
@@ -66,6 +69,17 @@ export type ImportStats = {
 function brzycki1rm(weight: number, reps: number): number {
   if (reps <= 0 || weight <= 0) return 0;
   return Math.round((weight / (1.0278 - 0.0278 * reps)) * 10) / 10;
+}
+
+function formatEffortLabel(scale: string | null | undefined, value: number | null | undefined): string {
+  if (scale !== "rir" && scale !== "rpe") return "";
+  if (value == null || !Number.isFinite(value)) return "";
+  const clamped =
+    scale === "rir"
+      ? Math.min(10, Math.max(0, Math.round(value * 2) / 2))
+      : Math.min(10, Math.max(1, Math.round(value * 2) / 2));
+  const text = Number.isInteger(clamped) ? String(clamped) : clamped.toFixed(1);
+  return scale === "rir" ? `RIR ${text}` : `RPE ${text}`;
 }
 
 function normalizeDatetimeForKey(value: string): string {
@@ -181,7 +195,7 @@ async function fetchSetLogsPaginated(
   const rows: SetLog[] = [];
   let offset = 0;
   const select =
-    "session_id, exercise_id, set_number, reps, weight_kg, completed_at";
+    "session_id, exercise_id, set_number, reps, weight_kg, completed_at, effort_scale, effort_value";
 
   while (true) {
     let query = supabase
@@ -360,6 +374,7 @@ export async function runWorkoutImport(options: {
     }
     const weight = bestLog.weight_kg ?? 0;
     const reps = bestLog.reps ?? 0;
+    const wysilek = formatEffortLabel(bestLog.effort_scale, bestLog.effort_value);
     const exerciseId = group.exerciseId;
     const sessionId = group.sessionId;
 
@@ -387,6 +402,7 @@ export async function runWorkoutImport(options: {
       "",
       sessionId,
       exerciseId,
+      wysilek,
     ]);
   }
 

@@ -111,7 +111,7 @@ rows_to_upsert.append([
 | ID | Status | Zadanie | Pliki | Kryterium „done” | Wpływ |
 |----|--------|---------|-------|------------------|-------|
 | **3.1** | `todo` | Osobne pole **ból / niggle** w sesji (nie szablonie) | `schema.sql`, `client.ts`, `workout/[id].tsx`, `workout.py` | Ból trafia do `Bol / Niggle` | **Wysoki** |
-| **3.2** | `todo` | Pole **RPE** (1–10) per seria + export | schema, app, `workout.py` | Kolumna `RPE` w arkuszu | **Wysoki** |
+| **3.2** | `done` | Pole **RIR/RPE** per seria + export (2026-09-24) | `session_set_logs_effort.sql`, form, Settings, `workout.py`, `importWorkout.ts` | Kolumna `Wysilek` w arkuszu; pref off by default | **Wysoki** |
 | **3.3** | `todo` | Notatka **sesji** przy „Zakończ trening" | `workout/[id].tsx`, `client.ts` | `Uwagi` sesji wypełnione (jeden wiersz logiczny) | Średni |
 | **3.4** | `todo` | Odtwarzanie ukończonych serii po restarcie app | `workout/[id].tsx:63,81` | Powrót do sesji pokazuje checkmarki | Średni |
 | **3.5** | `blocked` | Kolumna `Sesja zakończona` (Tak/Nie) lub filtr `completed_at IS NOT NULL` | `workout.py` | Gem wie, czy sesja porzucona | Średni |

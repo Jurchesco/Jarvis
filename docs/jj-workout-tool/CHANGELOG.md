@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **RIR / RPE per seria** — opcjonalne pole wysiłku (pref w Ustawieniach, domyślnie off); skala RIR 0–10 lub RPE 1–10; kolumna `Wysilek` w Silownia_import (reprezentatywna seria)
 - **Edytor planów (D018)** — cele serii×powt. (`exercise_sets`), reorder ↑↓, duplikat planu; seed formularza sesji z template gdy brak „Ostatnio”
 - **D019 §5 — UX sesji** — pasek postępu % serii; chip „Ostatnio…”; toast z tonażem; wake lock (pref)
 - **Baza ćwiczeń 1324 + GIF (CDN)** — ekran `/exercises`, picker z thumbs; dane MIT (`exercises-dataset`); media © Gym visual via jsDelivr (NOTICE); **nazwy PL** (`nPl`) w UI i przy zapisie

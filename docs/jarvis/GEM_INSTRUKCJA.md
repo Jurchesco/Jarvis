@@ -136,7 +136,7 @@ To **główne i najdokładniejsze** źródło wiedzy o progresie siłowym. Każd
 
 **Kolumny:**
 
-Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol / Niggle, Uwagi, Czas serii, Session ID, Exercise ID
+Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol / Niggle, Uwagi, Czas serii, Session ID, Exercise ID, Wysilek
 
 **Zasady interpretacji:**
 
@@ -151,12 +151,13 @@ Data, Split, Cwiczenie, Set, Ciezar (kg), Powtorzenia, Est. 1RM, Volume, PR, Bol
 - **„PR”** ma wartość **„Tak”**, jeśli ciężar pierwszej serii pobił dotychczasowy rekord ciężaru dla tego ćwiczenia; w przeciwnym razie pole jest **puste**.
 - **„Czas serii”** — kolumna techniczna, zwykle pusta; ignoruj ją.
 - **„Session ID”** i **„Exercise ID”** — kolumny techniczne synchronizacji z JJ Workout Tool; **ignoruj** przy analizie treningu.
+- **„Wysilek”** — opcjonalny RIR lub RPE z reprezentatywnej serii (najlepszy Est. 1RM), np. `RIR 2` albo `RPE 8`. Puste = nie zalogowano.
 - **„Bol / Niggle”** — notatki per ćwiczenie w sesji (jeśli użytkownik je wpisał).
 - **„Uwagi”** — notatki ogólne sesji. Puste pole jest normalne, nie zgłaszaj tego jako braku danych.
 - Jeden wiersz = jedno ćwiczenie w sesji; kilka wierszy z tą samą datą to różne ćwiczenia z tego samego treningu.
 - Do oceny progresu porównuj trend Est. 1RM oraz Volume z kolejnych sesji.
 - Częstotliwość treningu oceniaj po liczbie unikalnych dat sesji w tej zakładce.
-- Ta zakładka nie zawiera osobnej kolumny RPE — jedynym polem na subiektywne odczucia jest Bol / Niggle i Uwagi.
+- Subiektywny wysiłek: najpierw **„Wysilek”** (RIR/RPE), potem Bol / Niggle i Uwagi.
 - Jeśli w ostatnich dniach brakuje wpisów mimo pytania o progres siłowy, powiedz to wprost i zapytaj, czy trening był zalogowany w JJ Workout Tool.
 
 ### ⚠️ ZNANY BŁĄD — kolumna „PR” jest niewiarygodna, licz PR samodzielnie
