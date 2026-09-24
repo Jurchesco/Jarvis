@@ -14,7 +14,7 @@ apps/mobile/          ← Expo universal app (Android APK + Vercel web SPA)
     (tabs)/index.tsx  ← Home: Freestyle | Wybierz plan
     (tabs)/settings/  ← m.in. domyślny tryb wypełniania serii
     plans/index.tsx   ← Lista planów (arkusze ≠ „Freestyle”)
-    sheet/[id].tsx    ← Edytor planu: katalog, kolejność, start sesji
+    sheet/[id].tsx    ← Edytor planu: cele serii×powt., reorder, duplikat, start
     workout/[id].tsx  ← Aktywna sesja + logowanie ćwiczeń
     workout/summary/  ← Podsumowanie po „Zakończ”
   src/
@@ -64,7 +64,7 @@ W sesji — ExerciseLogForm:
 |------|------|
 | `lib/ensureFreestyleSheet.ts` | Tworzy/znajduje arkusz `"Freestyle"`; helper `isFreestyleSheetName` |
 | `app/plans/index.tsx` | Lista planów (filtr bez Freestyle), tworzenie/usuwanie |
-| `app/sheet/[id].tsx` | Edytor planu + start/kontynuacja sesji |
+| `app/sheet/[id].tsx` | Edytor planu (cele, reorder, duplikat) + start/kontynuacja sesji |
 | `lib/addCatalogExercise.ts` | Dodaje ćwiczenie do arkusza |
 | `lib/saveExerciseLogBatch.ts` | Zapis serii (mogą mieć różne kg/powt.) + uwagi |
 | `lib/appPreferences.ts` | m.in. `exerciseLogFillMode`: `batch` \| `per-set` |
@@ -79,7 +79,7 @@ W sesji — ExerciseLogForm:
 |-------|------|
 | `workout_sheets` | `"Freestyle"` (ukryty kontener) **oraz** nazwane plany użytkownika |
 | `exercises` | Ćwiczenia na arkuszu (plan albo zbierane we freestyle) |
-| `exercise_sets` | Szablony serii |
+| `exercise_sets` | Szablony serii (cele planu: liczba × powtórzenia) |
 | `workout_sessions` | Sesja; `completed_at` null = w trakcie |
 | `session_set_logs` | Faktyczne wykonanie (źródło prawdy; możliwa rampa) |
 | `session_exercise_notes` | Uwagi per ćwiczenie w sesji |

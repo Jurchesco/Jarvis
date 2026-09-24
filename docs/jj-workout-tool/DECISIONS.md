@@ -280,6 +280,12 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 - Import: kolumna **Split** = nazwa arkusza (plan albo `Freestyle`).
 - To **uzupełnia** D009, nie wraca do seed PPL / auto-splitów.
 
+**Edytor planu (rozszerzenie 2026-09-24):**
+- Cele **serie × powtórzenia** w `exercise_sets` (domyślnie 3×10 przy dodaniu z katalogu).
+- **Reorder** ćwiczeń w UI (`api.exercises.reorder`).
+- **Duplikat** planu (deep copy sheet + exercises + sets; historia zostaje na oryginale).
+- Sesja: gdy brak „Ostatnio”, formularz seeduje z template sets planu.
+
 ---
 
 ## D019: Inspiracja FORGE — co bierzemy, czego nie

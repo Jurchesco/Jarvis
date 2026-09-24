@@ -1,8 +1,13 @@
 import { useMemo, useState } from "react";
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useRouter } from "expo-router";
-import { ChevronRight, Plus, Trash2 } from "lucide-react-native";
-import { useCreateSheet, useDeleteSheet, useSheets } from "../../src/api/hooks";
+import { ChevronRight, Copy, Plus, Trash2 } from "lucide-react-native";
+import {
+  useCreateSheet,
+  useDeleteSheet,
+  useDuplicateSheet,
+  useSheets,
+} from "../../src/api/hooks";
 import {
   Badge,
   Button,
@@ -20,8 +25,10 @@ export default function PlansScreen() {
   const { data: sheets, isLoading, error } = useSheets();
   const createSheet = useCreateSheet();
   const deleteSheet = useDeleteSheet();
+  const duplicateSheetMutation = useDuplicateSheet();
   const [showCreate, setShowCreate] = useState(false);
   const [newName, setNewName] = useState("");
+  const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
 
   const plans = useMemo(
     () => (sheets ?? []).filter((sheet) => !isFreestyleSheetName(sheet.name)),
@@ -67,6 +74,21 @@ export default function PlansScreen() {
         { text: "Usuń", style: "destructive", onPress: run },
       ]);
     }
+  };
+
+  const handleDuplicate = (id: string) => {
+    setDuplicatingId(id);
+    duplicateSheetMutation.mutate(id, {
+      onSuccess: (copy) => {
+        router.push(`/sheet/${copy.id}`);
+      },
+      onError: (err) => {
+        const msg = err instanceof Error ? err.message : "Nie można skopiować planu";
+        if (Platform.OS === "web") window.alert(msg);
+        else Alert.alert("Błąd", msg);
+      },
+      onSettled: () => setDuplicatingId(null),
+    });
   };
 
   return (
@@ -125,6 +147,17 @@ export default function PlansScreen() {
                       )}
                     </View>
                   </View>
+                  <TouchableOpacity
+                    onPress={(event) => {
+                      event.stopPropagation();
+                      handleDuplicate(plan.id);
+                    }}
+                    disabled={duplicatingId === plan.id}
+                    className="mr-2 h-9 w-9 items-center justify-center rounded-xl bg-action-secondary border border-border"
+                    accessibilityLabel={`Duplikuj plan ${plan.name}`}
+                  >
+                    <Copy size={16} strokeWidth={ICON_STROKE} color="#c0c9d8" />
+                  </TouchableOpacity>
                   <TouchableOpacity
                     onPress={(event) => {
                       event.stopPropagation();

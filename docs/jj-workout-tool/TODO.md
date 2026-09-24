@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-23 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Następny krok:** JSON backup.
+> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **Następny krok:** JSON backup.
 
 ---
 
@@ -53,12 +53,13 @@
 - [x] **Rest timer overlay** — CURRENT §B
 - [x] **Objętość per partia** — D019 §3 (Stats + tagi katalogu)
 - [x] **UX sesji (D019 §5)** — postęp / Ostatnio / toast tonażu / wake lock
+- [x] **Edytor planów (D018)** — cele serii×powt., reorder, duplikat
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
 - [ ] **Export / import JSON** — D019 §4
 - [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + toast; ghost później)
-- [ ] **Sheet templates** — duplikowanie planów
+- [x] **Sheet templates** — duplikowanie planów
 - [ ] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
 - [ ] **Scroll horizontally** — opcjonalnie
 
@@ -85,6 +86,7 @@
 - [x] Home: Freestyle | Wybierz plan
 - [x] `app/plans/index.tsx`, `app/sheet/[id].tsx`
 - [x] Import Split = nazwa planu albo `Freestyle`
+- [x] Cele serii/powt. w `exercise_sets`; reorder; duplikat planu
 
 ---
 
