@@ -55,8 +55,10 @@ import { discardSessionExercise } from "../../src/lib/discardSessionExercise";
 import { hapticLight, hapticSuccess } from "../../src/lib/haptics";
 import { parseExerciseLogDraft, saveExerciseLogBatch } from "../../src/lib/saveExerciseLogBatch";
 import { useRestTimer } from "../../src/lib/useRestTimer";
+import { useWorkTimer } from "../../src/lib/useWorkTimer";
 import { useWorkoutKeepAwake } from "../../src/lib/useWorkoutKeepAwake";
 import { RestTimerOverlay } from "../../src/components/RestTimerOverlay";
+import { WorkTimerOverlay } from "../../src/components/WorkTimerOverlay";
 import {
   Button,
   Card,
@@ -238,6 +240,15 @@ export default function WorkoutScreen() {
   const [defaultRestSec, setDefaultRestSecState] = useState(60);
   const planSeededRef = useRef(false);
   const rest = useRestTimer();
+  const holdDoneRef = useRef<((heldSec: number) => void) | null>(null);
+  const work = useWorkTimer({
+    onComplete: (heldSec) => {
+      const cb = holdDoneRef.current;
+      holdDoneRef.current = null;
+      cb?.(heldSec);
+      void hapticLight();
+    },
+  });
   const prevRestActiveRef = useRef(false);
 
   useWorkoutKeepAwake(keepAwakeEnabled && !!session && !session.completedAt);
@@ -434,6 +445,8 @@ export default function WorkoutScreen() {
             : `Zapisano · ${parsed.sets.length} ${parsed.sets.length === 1 ? "seria" : "serii"}`,
       });
       if (restTimerEnabled) {
+        work.dismiss();
+        holdDoneRef.current = null;
         rest.start(defaultRestSec);
       }
       await refreshData();
@@ -603,7 +616,7 @@ export default function WorkoutScreen() {
           className="flex-1"
           contentContainerStyle={{
             paddingHorizontal: 20,
-            paddingBottom: 48 + keyboardInset + (rest.active ? 120 : 0),
+            paddingBottom: 48 + keyboardInset + (rest.active || work.active ? 140 : 0),
           }}
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="on-drag"
@@ -712,6 +725,12 @@ export default function WorkoutScreen() {
                       discardLabel="Usuń tę kartę"
                       loading={savingExerciseId === exercise.id}
                       saveLabel={isSaved ? "Zaktualizuj" : "Zapisz ćwiczenie"}
+                      holdDisabled={work.active || rest.active}
+                      onStartHold={({ targetSec, label, onDone }) => {
+                        rest.dismiss();
+                        holdDoneRef.current = onDone;
+                        work.start(targetSec, label);
+                      }}
                     />
                   ) : (
                     <ExerciseLogSummary
@@ -764,11 +783,22 @@ export default function WorkoutScreen() {
         />
       ) : null}
 
-      {rest.timer ? (
+      {work.timer ? (
+        <WorkTimerOverlay
+          timer={work.timer}
+          onFinishEarly={work.finishEarly}
+          onCancel={() => {
+            holdDoneRef.current = null;
+            work.dismiss();
+          }}
+          bottomOffset={64}
+        />
+      ) : rest.timer ? (
         <RestTimerOverlay
           timer={rest.timer}
           onAdjust={rest.adjust}
           onDismiss={rest.dismiss}
+          bottomOffset={64}
         />
       ) : null}
     </SafeAreaView>

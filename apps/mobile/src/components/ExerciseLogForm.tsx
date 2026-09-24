@@ -11,7 +11,7 @@ import {
   formatWeightKg,
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
-import { ChevronRight, Minus, NotebookPen, Plus, Trash2 } from "lucide-react-native";
+import { ChevronRight, Minus, NotebookPen, Play, Plus, Trash2 } from "lucide-react-native";
 import {
   getEffortLoggingEnabled,
   getEffortScale,
@@ -48,6 +48,17 @@ type ExerciseLogFormProps = {
   discardLabel?: string;
   loading?: boolean;
   saveLabel?: string;
+  /**
+   * Start a hold countdown for a timed set (OpenGym-style work timer).
+   * Parent owns the overlay; calls onDone(heldSec) when finished/early.
+   */
+  onStartHold?: (opts: {
+    targetSec: number;
+    label: string;
+    onDone: (heldSec: number) => void;
+  }) => void;
+  /** Disable Start hold while another timer is running. */
+  holdDisabled?: boolean;
 };
 
 const DEFAULT_SET: ExerciseLogSetDraft = {
@@ -164,7 +175,11 @@ function formatPreviousChip(
 ): string {
   if (logs.length === 0) return "";
   const parts = logs.map((log) =>
-    timeBased ? `${log.reps}s` : `${log.weightKg}×${log.reps}`,
+    timeBased
+      ? log.weightKg > 0
+        ? `${log.weightKg}kg · ${log.reps}s`
+        : `${log.reps}s`
+      : `${log.weightKg}×${log.reps}`,
   );
   const shown = parts.slice(0, 4);
   const extra = parts.length > 4 ? ` +${parts.length - 4}` : "";
@@ -177,7 +192,10 @@ function formatGhostSet(
   timeBased: boolean,
 ): string {
   if (!log) return "—";
-  return timeBased ? `${log.reps}s` : `${log.weightKg}×${log.reps}`;
+  if (timeBased) {
+    return log.weightKg > 0 ? `${log.weightKg}kg · ${log.reps}s` : `${log.reps}s`;
+  }
+  return `${log.weightKg}×${log.reps}`;
 }
 
 export function ExerciseLogForm({
@@ -192,6 +210,8 @@ export function ExerciseLogForm({
   discardLabel = "Usuń ćwiczenie z treningu",
   loading = false,
   saveLabel = "Zapisz ćwiczenie",
+  onStartHold,
+  holdDisabled = false,
 }: ExerciseLogFormProps) {
   const timeBased = timeBasedProp ?? isTimeBasedExercise(exerciseName);
   const resolvedPrevious = useMemo(() => {
@@ -346,6 +366,30 @@ export function ExerciseLogForm({
     });
   };
 
+  const startHoldForSet = (index: number) => {
+    if (!onStartHold || holdDisabled) return;
+    const target = Math.max(1, parseInt(draft.sets[index]?.reps ?? "0", 10) || 30);
+    onStartHold({
+      targetSec: target,
+      label: exerciseName,
+      onDone: (heldSec) => {
+        updateSetField(index, "reps", String(heldSec));
+      },
+    });
+  };
+
+  const startHoldForBatch = () => {
+    if (!onStartHold || holdDisabled) return;
+    const target = Math.max(1, parseInt(batchTemplate.reps || "0", 10) || 30);
+    onStartHold({
+      targetSec: target,
+      label: exerciseName,
+      onDone: (heldSec) => {
+        updateBatchField("reps", String(heldSec));
+      },
+    });
+  };
+
   return (
     <View className="min-w-0">
       {previousChip && !(showGhostColumn && fillMode === "per-set") ? (
@@ -407,19 +451,51 @@ export function ExerciseLogForm({
             </View>
 
             {timeBased ? (
-              <View className="flex-[2] min-w-0">
-                <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
-                  Czas (sekundy)
-                </Text>
-                <Input
-                  value={batchTemplate.reps}
-                  onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
-                  keyboardType="number-pad"
-                  placeholder="60"
-                  inputClassName="text-center font-bold"
-                  fontSize={20}
-                />
-              </View>
+              <>
+                <View className="flex-1 min-w-0">
+                  <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                    Ciężar (kg)
+                  </Text>
+                  <Input
+                    value={batchTemplate.weightKg}
+                    onChangeText={(value) => updateBatchField("weightKg", sanitizeWeight(value))}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    inputClassName="text-center font-bold"
+                    fontSize={20}
+                  />
+                </View>
+                <View className="flex-1 min-w-0">
+                  <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                    Czas (s)
+                  </Text>
+                  <Input
+                    value={batchTemplate.reps}
+                    onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
+                    keyboardType="number-pad"
+                    placeholder="60"
+                    inputClassName="text-center font-bold"
+                    fontSize={20}
+                  />
+                </View>
+                {onStartHold ? (
+                  <View className="justify-end pb-0.5">
+                    <TouchableOpacity
+                      onPress={startHoldForBatch}
+                      disabled={holdDisabled || loading}
+                      className={cx(
+                        "h-12 w-12 items-center justify-center rounded-xl border",
+                        holdDisabled
+                          ? "border-border bg-surface-muted opacity-40"
+                          : "border-emphasis/40 bg-emphasis/15",
+                      )}
+                      accessibilityLabel="Start utrzymania"
+                    >
+                      <Play size={18} strokeWidth={ICON_STROKE} color="#22c55e" />
+                    </TouchableOpacity>
+                  </View>
+                ) : null}
+              </>
             ) : (
               <>
                 <View className="flex-1 min-w-0">
@@ -480,9 +556,14 @@ export function ExerciseLogForm({
               </Text>
             ) : null}
             {timeBased ? (
-              <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
-                Czas (s)
-              </Text>
+              <>
+                <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
+                  Kg
+                </Text>
+                <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
+                  Czas (s)
+                </Text>
+              </>
             ) : (
               <>
                 <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
@@ -498,6 +579,7 @@ export function ExerciseLogForm({
                 {effortScale === "rir" ? "RIR" : "RPE"}
               </Text>
             ) : null}
+            {timeBased && onStartHold ? <View className="w-10" /> : null}
             <View className="w-10" />
           </View>
 
@@ -518,20 +600,38 @@ export function ExerciseLogForm({
                 </Text>
               ) : null}
               {timeBased ? (
-                <View className="flex-1 min-w-0">
-                  <Input
-                    value={set.reps}
-                    onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
-                    keyboardType="number-pad"
-                    placeholder={
-                      resolvedPrevious[index]
-                        ? String(resolvedPrevious[index].reps)
-                        : "60"
-                    }
-                    inputClassName="text-center font-bold"
-                    fontSize={18}
-                  />
-                </View>
+                <>
+                  <View className="flex-1 min-w-0">
+                    <Input
+                      value={set.weightKg}
+                      onChangeText={(value) =>
+                        updateSetField(index, "weightKg", sanitizeWeight(value))
+                      }
+                      keyboardType="decimal-pad"
+                      placeholder={
+                        resolvedPrevious[index]
+                          ? String(resolvedPrevious[index].weightKg)
+                          : "0"
+                      }
+                      inputClassName="text-center font-bold"
+                      fontSize={18}
+                    />
+                  </View>
+                  <View className="flex-1 min-w-0">
+                    <Input
+                      value={set.reps}
+                      onChangeText={(value) => updateSetField(index, "reps", sanitizeInt(value))}
+                      keyboardType="number-pad"
+                      placeholder={
+                        resolvedPrevious[index]
+                          ? String(resolvedPrevious[index].reps)
+                          : "60"
+                      }
+                      inputClassName="text-center font-bold"
+                      fontSize={18}
+                    />
+                  </View>
+                </>
               ) : (
                 <>
                   <View className="flex-1 min-w-0">
@@ -579,6 +679,21 @@ export function ExerciseLogForm({
                     fontSize={16}
                   />
                 </View>
+              ) : null}
+              {timeBased && onStartHold ? (
+                <TouchableOpacity
+                  onPress={() => startHoldForSet(index)}
+                  disabled={holdDisabled || loading}
+                  className={cx(
+                    "h-10 w-10 items-center justify-center rounded-xl border",
+                    holdDisabled
+                      ? "border-border bg-surface-muted opacity-40"
+                      : "border-emphasis/40 bg-emphasis/15",
+                  )}
+                  accessibilityLabel={`Start utrzymania seria ${index + 1}`}
+                >
+                  <Play size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
+                </TouchableOpacity>
               ) : null}
               <TouchableOpacity
                 onPress={() => removeSet(index)}
@@ -660,6 +775,12 @@ export function ExerciseLogForm({
           </Text>
           <Text className="text-text-muted text-xs mt-1">
             {setCount} {setCount === 1 ? "seria" : setCount < 5 ? "serie" : "serii"}
+            {parseFloat(batchTemplate.weightKg) > 0
+              ? ` · ${batchTemplate.weightKg} kg`
+              : fillMode === "per-set" &&
+                  draft.sets.some((s) => (parseFloat(s.weightKg) || 0) > 0)
+                ? " · z obciążeniem"
+                : ""}
           </Text>
         </View>
       ) : (

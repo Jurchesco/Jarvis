@@ -26,7 +26,7 @@ export function parseExerciseLogDraft(
       const effort = parseEffortInput(set.effortScale ?? null, set.effortValue);
       const base = timeBased
         ? {
-            weightKg: 0,
+            weightKg: Math.max(0, parseFloat(set.weightKg) || 0),
             reps: Math.max(1, parseInt(set.reps, 10) || 1),
           }
         : {
