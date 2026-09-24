@@ -1,18 +1,18 @@
 import { Platform, Share } from "react-native";
-import type { JarvisBackupV1 } from "@bhmt3wp/shared";
+import type { JarvisBackup } from "@bhmt3wp/shared";
 
 function backupFilename(exportedAt: string): string {
   const day = exportedAt.slice(0, 10) || new Date().toISOString().slice(0, 10);
   return `jarvis-backup-${day}.json`;
 }
 
-/** Download (web) or share (native) the backup JSON. */
-export async function deliverBackupFile(backup: JarvisBackupV1): Promise<"downloaded" | "shared"> {
-  const json = JSON.stringify(backup, null, 2);
-  const filename = backupFilename(backup.exportedAt);
-
+async function deliverTextFile(
+  content: string,
+  filename: string,
+  mime: string,
+): Promise<"downloaded" | "shared"> {
   if (Platform.OS === "web" && typeof document !== "undefined") {
-    const blob = new Blob([json], { type: "application/json" });
+    const blob = new Blob([content], { type: mime });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
     anchor.href = url;
@@ -27,9 +27,22 @@ export async function deliverBackupFile(backup: JarvisBackupV1): Promise<"downlo
 
   await Share.share({
     title: filename,
-    message: json,
+    message: content,
   });
   return "shared";
+}
+
+/** Download (web) or share (native) the backup JSON. */
+export async function deliverBackupFile(backup: JarvisBackup): Promise<"downloaded" | "shared"> {
+  return deliverTextFile(JSON.stringify(backup, null, 2), backupFilename(backup.exportedAt), "application/json");
+}
+
+export async function deliverDownloadableText(
+  content: string,
+  filename: string,
+  mime = "text/plain;charset=utf-8",
+): Promise<"downloaded" | "shared"> {
+  return deliverTextFile(content, filename, mime);
 }
 
 /** Opens a file picker (web) and returns file text. Native: throws with guidance. */

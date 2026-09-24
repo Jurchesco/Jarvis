@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **Health hub (Supabase)** — profil ciała + `body_measurements`; Garmin (`garmin_*`); importer openScale/Garmin upsert do bazy (Sheets = mirror); eksport CSV/JSON kontekstu AI (allowlista 30 dni); docs `HERMES_SUPABASE.md`
 - **Work timer (timed sets)** — OpenGym-style: countdown utrzymania osobny od rest; Koniec = rzeczywisty czas; opcjonalny ciężar na deskach; Play przy serii na czas
 - **Ghost „Poprzednio” (D019 §5)** — kolumna z poprzednimi kg×powt. przy logowaniu per seria; podpowiedzi widoczne nawet gdy autofill jest wyłączony
 - **Backup JSON (D019 §4)** — eksport/import planów + historii w Ustawieniach (web download / native Share; import pliku na web)

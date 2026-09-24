@@ -20,6 +20,8 @@
 
 **Postęp:** 2 / 28 zadań ukończonych (ostatnia aktualizacja: 2026-09-07)
 
+> **2026-09-24:** Supabase nabrał roli źródła prawdy także dla wagi/Garmin (`body_and_health.sql` + upsert w importerze). Sheets = mirror. Szczegóły: `docs/jarvis/HERMES_SUPABASE.md`.
+
 ---
 
 ## Executive summary

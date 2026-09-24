@@ -1,6 +1,6 @@
 # Jarvis Import
 
-Jeden folder, wszystkie importery: Garmin, openScale, JJ Workout Tool → Google Sheets.
+Jeden folder, wszystkie importery: Garmin, openScale, JJ Workout Tool → **Supabase (źródło prawdy)** + Google Sheets (mirror).
 
 ## Uruchomienie
 
@@ -45,20 +45,30 @@ Edytuj `.env` — minimum `GOOGLE_SHEET_ID`. Reszta opcjonalna.
 | `.garminconnect/` | Tokeny Garmin (tworzone przy pierwszym logowaniu) |
 | `.env` | Konfiguracja (Supabase, openScale backup / Drive) |
 
+### Supabase (waga + Garmin)
+
+Po migracji `supabase/body_and_health.sql` ustaw:
+
+- `SUPABASE_URL`
+- `SUPABASE_SECRET_KEY` (service_role)
+- `JJ_WORKOUT_USER_ID` — UUID właściciela z `auth.users`
+
+Bez `JJ_WORKOUT_USER_ID` importer nadal pisze do Sheets, a upsert do bazy jest pomijany.
+
 ## Moduły
 
-| Moduł | Źródło | Zakładka |
-|-------|--------|----------|
-| sen | Garmin | Sen |
-| dzien | Garmin | Dzien |
-| forma | Garmin | Forma |
-| aktywnosci | Garmin | Aktywnosci |
-| cialo | openScale backup | Cialo |
-| silownia | JJ Workout Tool | Silownia_import |
+| Moduł | Źródło | Sheets | Supabase |
+|-------|--------|--------|----------|
+| sen | Garmin | Sen | `garmin_sleep_days` |
+| dzien | Garmin | Dzien | `garmin_daily_stats` |
+| forma | Garmin | Forma | `garmin_forma_days` |
+| aktywnosci | Garmin | Aktywnosci | `garmin_activities` |
+| cialo | openScale backup | Cialo | `body_measurements` |
+| silownia | JJ Workout Tool | Silownia_import | (odczyt z bazy) |
 
-`cialo` bierze **najnowszy** zip z folderu: `openScale.db_auto_backup.zip` albo `openscale_backup_<timestamp>.zip` (gdy openScale nie nadpisuje, tylko dokłada nowy plik). Importuje wszystkie pomiary od `IMPORT_START_DATE`.
+`cialo` bierze **najnowszy** zip z folderu: `openScale.db_auto_backup.zip` albo `openscale_backup_<timestamp>.zip`. Importuje pomiary od `IMPORT_START_DATE`.
 
-Na CI udostępnij folder `Jarvis/openScale` na `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`. Zalecane: w openScale **wyłącz nadpisywanie** ostatniego backupu (dzienny nowy plik) — wtedy poranny wyścig z wagą nie kasuje poprzedniego zipu.
+Na CI udostępnij folder `Jarvis/openScale` na `garmin-importer@veo-experiments-463809.iam.gserviceaccount.com`.
 
 ## Flagi
 
@@ -66,40 +76,10 @@ Na CI udostępnij folder `Jarvis/openScale` na `garmin-importer@veo-experiments-
 |-------|------|
 | *(brak)* | Interaktywny prompt — wpisz liczbę dni |
 | `--days N` | Pomiń prompt, importuj N dni |
-| `--all` | Import od `IMPORT_START_DATE` do dziś (ignoruje `--days`) |
+| `--all` | Import od `IMPORT_START_DATE` do dziś |
 | `--no-prompt` | Bez promptu, użyj `DEFAULT_DAYS` z `.env` |
 | `--only a,b` | Tylko wybrane moduły |
 | `--skip a,b` | Pomiń moduły |
 | `--sort-only` | Posortuj zakładki po dacie (bez importu) |
 
-## Kody wyjścia i podsumowanie
-
-Po imporcie skrypt wypisuje status każdego modułu:
-
-| Etykieta | Znaczenie |
-|----------|-----------|
-| `[OK]` | Dane zaimportowane |
-| `[SKIP]` | Moduł pominięty — brak danych lub brak opcjonalnej konfiguracji (exit code nadal `0`) |
-| `[ERROR]` | Twardy błąd — exit code `1` |
-
-Przykłady miękkiego pominięcia: brak serii w JJ Workout Tool, brak `SUPABASE_*`, brak backupu openScale, brak serii w wybranym zakresie `--days`.
-
-## Struktura folderu
-
-```
-import/
-├── run.bat                  ← uruchom to
-├── .env                     ← konfiguracja
-├── google-service-account.json
-├── .garminconnect/
-├── jarvis_import/           ← kod Pythona
-│   └── importers/
-├── requirements.txt
-└── venv/
-```
-
-## Harmonogram zadań Windows
-
-```
-C:\Jarvis\Scripts\import\run.bat --no-prompt --days 7
-```
+Hermes / eksport AI: `docs/jarvis/HERMES_SUPABASE.md`.

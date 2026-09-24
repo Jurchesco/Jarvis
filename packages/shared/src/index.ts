@@ -9,6 +9,10 @@ export interface UserProfile {
   id: string;
   role: UserRole;
   displayName: string | null;
+  heightCm?: number | null;
+  sex?: "male" | "female" | "other" | null;
+  goalWeightKg?: number | null;
+  birthYear?: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -290,15 +294,44 @@ export {
   summarizeBackup,
 } from "./backup";
 export type {
+  BackupBodyMeasurement,
+  BackupBodyProfile,
   BackupExercise,
   BackupExerciseNote,
   BackupExerciseSet,
+  BackupGarminActivity,
+  BackupGarminDaily,
+  BackupGarminForma,
+  BackupGarminSleep,
   BackupSession,
   BackupSetLog,
   BackupSheet,
   JarvisBackup,
   JarvisBackupV1,
+  JarvisBackupV2,
 } from "./backup";
+export {
+  BODY_SEX_OPTIONS,
+  computeBmi,
+  formatBodyWeightKg,
+} from "./body";
+export type {
+  BodyMeasurement,
+  BodyMeasurementSource,
+  BodyProfileFields,
+  BodySex,
+  CreateBodyMeasurementInput,
+} from "./body";
+export {
+  AI_CONTEXT_ALLOWLIST,
+  buildAiContextCsv,
+  buildAiContextJson,
+} from "./aiContextExport";
+export type {
+  AiContextAllowlistKey,
+  AiContextBundle,
+  AiContextOptions,
+} from "./aiContextExport";
 export {
   computeMonthBestStreak,
   computeWorkoutStreak,

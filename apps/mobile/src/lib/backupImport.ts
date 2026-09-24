@@ -1,4 +1,4 @@
-import type { JarvisBackupV1 } from "@bhmt3wp/shared";
+import type { JarvisBackup } from "@bhmt3wp/shared";
 import { summarizeBackup } from "@bhmt3wp/shared";
 import { supabase } from "./supabase";
 
@@ -33,7 +33,7 @@ async function getUserId(): Promise<string> {
  * Imports a backup as **new** rows (IDs remapped).
  * Does not delete existing data — safe merge / restore onto empty or existing account.
  */
-export async function importJarvisBackup(backup: JarvisBackupV1): Promise<BackupImportResult> {
+export async function importJarvisBackup(backup: JarvisBackup): Promise<BackupImportResult> {
   const userId = await getUserId();
   const summary = summarizeBackup(backup);
 

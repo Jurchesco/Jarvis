@@ -24,6 +24,8 @@ class Config:
     openscale_drive_folder_id: str | None
     supabase_url: str | None
     supabase_secret_key: str | None
+    # Owner UUID for body/Garmin upserts into Supabase (service role).
+    jj_workout_user_id: str | None
     default_days: int
     import_start_date: date
     timezone: ZoneInfo
@@ -83,6 +85,11 @@ def load_config(env_file: Path | None = None) -> Config:
         openscale_drive_folder_id=os.getenv("OPENSCALE_DRIVE_FOLDER_ID") or None,
         supabase_url=os.getenv("SUPABASE_URL"),
         supabase_secret_key=os.getenv("SUPABASE_SECRET_KEY"),
+        jj_workout_user_id=(
+            os.getenv("JJ_WORKOUT_USER_ID")
+            or os.getenv("JJ_WORKOUT_ALLOWED_USER_ID")
+            or None
+        ),
         default_days=int(os.getenv("DEFAULT_DAYS", "7")),
         import_start_date=date.fromisoformat(os.getenv("IMPORT_START_DATE", "2026-07-09")),
         timezone=resolve_timezone(os.getenv("TIMEZONE")),

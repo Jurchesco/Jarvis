@@ -11,6 +11,10 @@ export interface Profile {
   id: string;
   role: UserRole;
   display_name: string | null;
+  height_cm?: number | null;
+  sex?: "male" | "female" | "other" | null;
+  goal_weight_kg?: number | null;
+  birth_year?: number | null;
 }
 
 interface AuthState {
@@ -43,12 +47,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchProfile = async (userId: string) => {
     const { data, error } = await supabase
       .from("profiles")
-      .select("id, role, display_name")
+      .select("id, role, display_name, height_cm, sex, goal_weight_kg, birth_year")
       .eq("id", userId)
       .single();
 
     if (!error && data) {
       setProfile(data as Profile);
+    } else if (error && /column|does not exist/i.test(error.message)) {
+      const fallback = await supabase
+        .from("profiles")
+        .select("id, role, display_name")
+        .eq("id", userId)
+        .single();
+      if (!fallback.error && fallback.data) {
+        setProfile(fallback.data as Profile);
+      }
     }
   };
 

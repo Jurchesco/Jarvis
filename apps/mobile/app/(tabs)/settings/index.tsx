@@ -17,6 +17,7 @@ import {
   CheckCircle2,
   Download,
   Dumbbell,
+  FileSpreadsheet,
   Globe,
   HardDrive,
   Info,
@@ -24,13 +25,19 @@ import {
   Moon,
   Palette,
   RefreshCw,
+  Scale,
   Settings2,
   Sheet,
   Upload,
   User,
 } from "lucide-react-native";
-import { parseJarvisBackupJson, summarizeBackup } from "@bhmt3wp/shared";
-import type { EffortScale } from "@bhmt3wp/shared";
+import {
+  BODY_SEX_OPTIONS,
+  formatBodyWeightKg,
+  parseJarvisBackupJson,
+  summarizeBackup,
+} from "@bhmt3wp/shared";
+import type { BodySex, EffortScale } from "@bhmt3wp/shared";
 import { APP_NAME, APP_TAGLINE, APP_VERSION } from "../../../src/constants/branding";
 import { useAuth } from "../../../src/contexts/AuthContext";
 import {
@@ -56,9 +63,18 @@ import {
   type DefaultRestSec,
   type ExerciseLogFillMode,
 } from "../../../src/lib/appPreferences";
+import { exportAiContextFile } from "../../../src/lib/aiContextExport";
 import { buildJarvisBackup } from "../../../src/lib/backupExport";
-import { deliverBackupFile, pickBackupJsonFile } from "../../../src/lib/backupFile";
+import { deliverBackupFile, deliverDownloadableText, pickBackupJsonFile } from "../../../src/lib/backupFile";
 import { importJarvisBackup } from "../../../src/lib/backupImport";
+import {
+  createBodyMeasurement,
+  fetchBodyProfile,
+  listBodyMeasurements,
+  updateBodyProfile,
+  type BodyProfile,
+} from "../../../src/lib/bodyApi";
+import type { BodyMeasurement } from "@bhmt3wp/shared";
 import { useRestTimer } from "../../../src/lib/useRestTimer";
 import { RestTimerOverlay } from "../../../src/components/RestTimerOverlay";
 import * as notifications from "../../../src/lib/notifications";
@@ -74,6 +90,7 @@ import {
   Button,
   Card,
   ICON_STROKE,
+  Input,
   Pills,
   ScreenHeader,
   StateBlock,
@@ -151,10 +168,39 @@ export default function SettingsScreen() {
   const [syncing, setSyncing] = useState(false);
   const [exportingBackup, setExportingBackup] = useState(false);
   const [importingBackup, setImportingBackup] = useState(false);
+  const [exportingAiContext, setExportingAiContext] = useState(false);
+  const [bodyProfile, setBodyProfile] = useState<BodyProfile | null>(null);
+  const [recentWeights, setRecentWeights] = useState<BodyMeasurement[]>([]);
+  const [heightInput, setHeightInput] = useState("");
+  const [goalWeightInput, setGoalWeightInput] = useState("");
+  const [sexValue, setSexValue] = useState<BodySex | "">("");
+  const [weighInInput, setWeighInInput] = useState("");
+  const [savingBody, setSavingBody] = useState(false);
+  const [savingWeighIn, setSavingWeighIn] = useState(false);
+  const [bodySchemaMissing, setBodySchemaMissing] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [lastSyncResult, setLastSyncResult] = useState<SheetSyncResult | null>(null);
   const restPreview = useRestTimer();
 
+  const refreshBodyData = async () => {
+    try {
+      const [profile, measurements] = await Promise.all([
+        fetchBodyProfile(),
+        listBodyMeasurements(8),
+      ]);
+      setBodyProfile(profile);
+      setRecentWeights(measurements);
+      setHeightInput(profile?.heightCm != null ? String(profile.heightCm) : "");
+      setGoalWeightInput(profile?.goalWeightKg != null ? String(profile.goalWeightKg) : "");
+      setSexValue(profile?.sex ?? "");
+      setBodySchemaMissing(false);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : "";
+      if (/relation|does not exist|column/i.test(msg)) {
+        setBodySchemaMissing(true);
+      }
+    }
+  };
   const refreshSyncStatus = async () => {
     const [at, result] = await Promise.all([getLastSheetSyncAt(), getLastSheetSyncResult()]);
     setLastSyncAt(at);
@@ -173,6 +219,7 @@ export default function SettingsScreen() {
       getEffortLoggingEnabled(),
       getEffortScale(),
       refreshSyncStatus(),
+      refreshBodyData(),
     ]).then(
       ([
         notif,
@@ -328,6 +375,85 @@ export default function SettingsScreen() {
     }
   };
 
+  const handleSaveBodyProfile = async () => {
+    setSavingBody(true);
+    try {
+      const heightCm = heightInput.trim() ? parseFloat(heightInput.replace(",", ".")) : null;
+      const goalWeightKg = goalWeightInput.trim()
+        ? parseFloat(goalWeightInput.replace(",", "."))
+        : null;
+      if (heightCm != null && (Number.isNaN(heightCm) || heightCm < 50 || heightCm > 300)) {
+        throw new Error("Wzrost: podaj cm w zakresie 50–300.");
+      }
+      if (
+        goalWeightKg != null &&
+        (Number.isNaN(goalWeightKg) || goalWeightKg < 20 || goalWeightKg > 400)
+      ) {
+        throw new Error("Cel masy: podaj kg w rozsądnym zakresie.");
+      }
+      const updated = await updateBodyProfile({
+        heightCm,
+        goalWeightKg,
+        sex: sexValue || null,
+      });
+      setBodyProfile(updated);
+      Alert.alert("Zapisano", "Profil ciała zaktualizowany.");
+    } catch (error) {
+      Alert.alert(
+        "Błąd zapisu",
+        error instanceof Error ? error.message : "Nie udało się zapisać profilu.",
+      );
+    } finally {
+      setSavingBody(false);
+    }
+  };
+
+  const handleWeighIn = async () => {
+    const weightKg = parseFloat(weighInInput.replace(",", "."));
+    if (!Number.isFinite(weightKg) || weightKg <= 0 || weightKg >= 500) {
+      Alert.alert("Błędna waga", "Podaj masę w kg (np. 82.4).");
+      return;
+    }
+    setSavingWeighIn(true);
+    try {
+      await createBodyMeasurement(
+        { weightKg, source: "manual" },
+        bodyProfile?.heightCm ?? null,
+      );
+      setWeighInInput("");
+      await refreshBodyData();
+      Alert.alert("Zapisano", `Waga ${formatBodyWeightKg(weightKg)} dodana.`);
+    } catch (error) {
+      Alert.alert(
+        "Błąd weigh-inu",
+        error instanceof Error
+          ? error.message
+          : "Uruchom migrację supabase/body_and_health.sql w SQL Editor.",
+      );
+    } finally {
+      setSavingWeighIn(false);
+    }
+  };
+
+  const handleExportAiContext = async (format: "csv" | "json") => {
+    setExportingAiContext(true);
+    try {
+      const file = await exportAiContextFile({ days: 30 }, format);
+      const mode = await deliverDownloadableText(file.content, file.filename, file.mime);
+      Alert.alert(
+        mode === "downloaded" ? "Kontekst AI pobrany" : "Kontekst AI udostępniony",
+        `Ostatnie 30 dni (${format.toUpperCase()}) — wklej do czatu / Hermesa.`,
+      );
+    } catch (error) {
+      Alert.alert(
+        "Błąd eksportu AI",
+        error instanceof Error ? error.message : "Nie udało się zbudować kontekstu.",
+      );
+    } finally {
+      setExportingAiContext(false);
+    }
+  };
+
   const handleExportBackup = async () => {
     setExportingBackup(true);
     try {
@@ -336,7 +462,9 @@ export default function SettingsScreen() {
       const mode = await deliverBackupFile(backup);
       Alert.alert(
         mode === "downloaded" ? "Backup pobrany" : "Backup udostępniony",
-        `${stats.sheets} planów · ${stats.sessions} sesji · ${stats.logs} serii.`,
+        `${stats.sheets} planów · ${stats.sessions} sesji · ${stats.logs} serii` +
+          (stats.bodyMeasurements ? ` · ${stats.bodyMeasurements} ważenia` : "") +
+          ".",
       );
     } catch (error) {
       Alert.alert(
@@ -474,6 +602,95 @@ export default function SettingsScreen() {
             onPress={handleSignOut}
             loading={signingOut}
           />
+        </SettingsSection>
+
+        <SettingsSection title="Profil i waga" icon={Scale} iconColor="#34d399">
+          {bodySchemaMissing ? (
+            <StateBlock
+              title="Migracja SQL wymagana"
+              description="Uruchom supabase/body_and_health.sql w SQL Editor, potem odśwież."
+              icon={AlertCircle}
+            />
+          ) : (
+            <>
+              <Text className="text-text-secondary text-sm mb-3 leading-5">
+                Aktualna waga:{" "}
+                <Text className="text-text-primary font-semibold">
+                  {formatBodyWeightKg(recentWeights[0]?.weightKg)}
+                </Text>
+                {bodyProfile?.goalWeightKg != null
+                  ? ` · cel ${formatBodyWeightKg(bodyProfile.goalWeightKg)}`
+                  : ""}
+              </Text>
+              <Input
+                label="Wzrost (cm)"
+                value={heightInput}
+                onChangeText={setHeightInput}
+                keyboardType="decimal-pad"
+                placeholder="178"
+                containerClassName="mb-3"
+              />
+              <Input
+                label="Cel masy (kg)"
+                value={goalWeightInput}
+                onChangeText={setGoalWeightInput}
+                keyboardType="decimal-pad"
+                placeholder="80"
+                containerClassName="mb-3"
+              />
+              <Text className="text-text-secondary text-sm mb-2">Płeć (opcjonalnie)</Text>
+              <Pills
+                options={[
+                  { value: "unset", label: "—" },
+                  ...BODY_SEX_OPTIONS.map((o) => ({ value: o.value, label: o.label })),
+                ]}
+                value={sexValue || "unset"}
+                onChange={(v) => setSexValue(v === "unset" ? "" : (v as BodySex))}
+              />
+              <Button
+                label="Zapisz profil"
+                variant="secondary"
+                size="sm"
+                onPress={handleSaveBodyProfile}
+                loading={savingBody}
+                className="mt-4 mb-5"
+              />
+              <Input
+                label="Szybki weigh-in (kg)"
+                value={weighInInput}
+                onChangeText={setWeighInInput}
+                keyboardType="decimal-pad"
+                placeholder="82.4"
+                containerClassName="mb-3"
+              />
+              <Button
+                label="Dodaj pomiar"
+                variant="primary"
+                size="sm"
+                onPress={handleWeighIn}
+                loading={savingWeighIn}
+                className="mb-4"
+              />
+              {recentWeights.length > 0 ? (
+                <View>
+                  <Text className="text-text-muted text-xs font-semibold uppercase mb-2">
+                    Ostatnie pomiary
+                  </Text>
+                  {recentWeights.slice(0, 5).map((m) => (
+                    <Text key={m.id} className="text-text-secondary text-xs leading-5 mb-1">
+                      {m.measuredAt.slice(0, 16).replace("T", " ")} — {formatBodyWeightKg(m.weightKg)}
+                      {m.source === "openscale" ? " · openScale" : " · ręcznie"}
+                    </Text>
+                  ))}
+                </View>
+              ) : (
+                <Text className="text-text-muted text-xs leading-5">
+                  Brak pomiarów w bazie. Dodaj ręcznie albo zaimportuj backup openScale (importer →
+                  Supabase).
+                </Text>
+              )}
+            </>
+          )}
         </SettingsSection>
 
         <SettingsSection title="Trening" icon={Dumbbell} iconColor="#22c55e">
@@ -618,6 +835,28 @@ export default function SettingsScreen() {
               Import pliku działa w wersji webowej. Na telefonie użyj eksportu (Udostępnij).
             </Text>
           ) : null}
+          <Text className="text-text-secondary text-sm font-semibold mt-5 mb-2">
+            Kontekst AI (30 dni)
+          </Text>
+          <Text className="text-text-muted text-xs mb-3 leading-5">
+            Allowlista: profil, waga, trening, sen, dzień, forma, aktywności — bez całej bazy.
+          </Text>
+          <Button
+            label="Eksport CSV pod AI"
+            icon={FileSpreadsheet}
+            variant="secondary"
+            onPress={() => handleExportAiContext("csv")}
+            loading={exportingAiContext}
+            className="mb-3"
+          />
+          <Button
+            label="Eksport JSON pod AI"
+            icon={Download}
+            variant="ghost"
+            size="sm"
+            onPress={() => handleExportAiContext("json")}
+            loading={exportingAiContext}
+          />
         </SettingsSection>
 
         <SettingsSection title="Integracje" icon={Sheet} iconColor="#22c55e">

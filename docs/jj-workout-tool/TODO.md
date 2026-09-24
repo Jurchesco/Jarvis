@@ -1,6 +1,6 @@
 # TODO
 
-> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). UI-D Toast/Badge QA. **Objętość per partia** (D019 §3). **Rest timer overlay** (D019). **Baza ćwiczeń 1324 + GIF (CDN)** + nazwy PL. **UX sesji** (pasek %, Ostatnio, toast tonażu, wake lock). **Edytor planów** (cele serii/powt., kolejność, duplikat). **RIR/RPE** (opcjonalnie). **Następny krok:** — (kolejka FORGE domknięta po JSON backup).
+> **Stan na 2026-09-24 (produkcja kappa):** Freestyle + plany (**D018**). Logowanie **Zbiorczo | Per seria** (**D016**). **Profil / waga + Garmin w Supabase** (Sheets = mirror). **RIR/RPE**, JSON backup v2, kontekst AI CSV. **Następny krok:** PowerSync / Hermes na DB.
 
 ---
 
@@ -13,6 +13,9 @@
 - [x] **D016** — tryb **Per seria** + przełącznik; Volume w Sheets = suma serii (PR #17 → `main`)
 - [x] Sync Sheets / Edge Function `sync-sheets` (e2e 2026-09-03)
 - [x] UI-A…UI-C polish; UI-D Toast/Badge (**QA zamknięte** 2026-09-22)
+- [x] **Profil + waga** — `body_and_health.sql`, weigh-in w Ustawieniach, openScale → Supabase
+- [x] **Garmin → Supabase** — sen / dzień / forma / aktywności (mirror Sheets)
+- [x] **Eksport kontekstu AI** — CSV/JSON allowlista 30 dni
 
 ### Otwórz teraz (wybór sprintu)
 
@@ -26,9 +29,10 @@
 - [x] **UX sesji** — postęp %, chip Ostatnio, toast tonażu, wake lock
 
 **C — Integracje**
-- [ ] **Deploy + sekrety** (jeśli nowe środowisko)
+- [ ] **Deploy + sekrety** — uruchom `body_and_health.sql` + `JJ_WORKOUT_USER_ID` w importerze
 - [ ] *(Opcjonalnie)* sync na podsumowaniu / re-import w Historii
-- [ ] **Przyszłość:** OAuth Google / eksport CSV
+- [x] **Eksport CSV / kontekst AI** — Ustawienia
+- [ ] Hermes czyta Supabase/JSON zamiast tylko Sheets (`docs/jarvis/HERMES_SUPABASE.md`)
 
 ---
 
@@ -43,7 +47,7 @@
 5. [x] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu; wake lock
 6. [x] **Export / import JSON**
 
-**Pomijamy / później:** mezocykl+RIR jako rdzeń Home; obwody w apce (waga = openScale→Sheets); Firebase.
+**Pomijamy / później:** mezocykl+RIR jako rdzeń Home; Firebase; in-app AI Coach (epik).
 
 ---
 
@@ -57,19 +61,21 @@
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
-- [x] **Export / import JSON** — D019 §4
-- [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + kolumna Poprzednio / ghost)
+- [x] **Export / import JSON** — D019 §4 (+ v2 body/Garmin)
+- [x] **Pasek postępu sesji + ghost polish** — D019 §5
 - [x] **Sheet templates** — duplikowanie planów
-- [x] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
-- [x] **RIR / RPE opcjonalnie** — pref + per seria; kolumna Wysilek w Sheets
+- [x] **PR / rekordy + trend 1RM** — Stats
+- [x] **RIR / RPE opcjonalnie**
+- [x] **Profil / waga + dziennik zdrowia w Supabase**
 - [ ] **Scroll horizontally** — opcjonalnie
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN
-- [ ] **Data export** — CSV / PDF (po JSON)
+- [ ] **Data export** — PDF
 - [ ] **Multi-user assignments**
 - [ ] **Zakładka tab „Plany”** — tylko jeśli `/plans` niewystarczy
-- [ ] **Mezocykl / auto-awans** — epik (D019; nie mylić z prostym RIR/RPE)
+- [ ] **Mezocykl / auto-awans** — epik (D019)
+- [ ] **In-app AI Coach** — consent + apply/revert (po Hermesie na DB)
 
 ---
 
@@ -78,33 +84,3 @@
 - [x] Formularz: **Zbiorczo | Per seria** (pref + Ustawienia)
 - [x] Zapis różnych kg/powt. w `session_set_logs`
 - [x] Import: Volume = Σ serii; Ciezar/1RM = best Brzycki; PR = max kg
-- [x] GEM_INSTRUKCJA — Volume / rampa
-
----
-
-## Done (2026-09 — plany)
-
-- [x] Home: Freestyle | Wybierz plan
-- [x] `app/plans/index.tsx`, `app/sheet/[id].tsx`
-- [x] Import Split = nazwa planu albo `Freestyle`
-- [x] Cele serii/powt. w `exercise_sets`; reorder; duplikat planu
-
----
-
-## Done (2026-08 — freestyle sprint)
-
-- [x] Katalog PPL, freestyle, Est. 1RM (Epley), live stats, OverflowMenu, tab bar, usunięty seed PPL
-
----
-
-## Done (UI polish A–D — kod)
-
-- [x] UI-A…C; UI-D Toast/Badge (PR #4) — QA zamknięte 2026-09-22 (toast web+historia, badge plany/historia)
-- [x] UI-E Edge Function + Ustawienia Integracje
-
----
-
-## Done (wcześniej)
-
-- [x] Expo + NativeWind + Supabase + Vercel (**kappa**)
-- [x] Historia, Stats, rest timer w kodzie (UI wyłączone), hints, notes

@@ -6,6 +6,7 @@ from ..dates import combine_date_time
 from ..garmin import GarminClient
 from ..sheets import ImportResult, batch_update_rows, get_existing_rows_by_key
 from ..sort_sheets import sort_worksheet_by_name
+from ..supabase_journal import as_float, as_int, get_supabase, require_owner_user_id, upsert_rows
 from . import ImportContext
 
 
@@ -172,6 +173,47 @@ def get_activity_date(activity):
         return None
 
 
+def activity_to_supabase(user_id: str, activity: dict, note: str = "") -> dict | None:
+    activity_id = str(val(activity, "activityId"))
+    if not activity_id:
+        return None
+    start_date, start_time = parse_start(activity)
+    started_at = None
+    if start_date and start_time:
+        try:
+            started_at = datetime.fromisoformat(f"{start_date}T{start_time}").isoformat()
+        except ValueError:
+            started_at = None
+    elif start_date:
+        started_at = f"{start_date}T00:00:00"
+
+    duration = val(activity, "duration")
+    distance = val(activity, "distance")
+    return {
+        "user_id": user_id,
+        "activity_id": activity_id,
+        "started_at": started_at,
+        "activity_type": get_activity_type(activity) or None,
+        "activity_name": val(activity, "activityName") or None,
+        "duration_sec": as_int(duration),
+        "distance_m": as_float(distance),
+        "calories": as_int(val(activity, "calories")),
+        "elevation_gain_m": as_float(val(activity, "elevationGain")),
+        "elevation_loss_m": as_float(val(activity, "elevationLoss")),
+        "avg_hr": as_int(val(activity, "averageHR")),
+        "max_hr": as_int(val(activity, "maxHR")),
+        "min_hr": as_int(val(activity, "minHR")),
+        "avg_speed_mps": as_float(val(activity, "averageSpeed")),
+        "max_speed_mps": as_float(val(activity, "maxSpeed")),
+        "training_effect_aerobic": as_float(val(activity, "aerobicTrainingEffect")),
+        "training_effect_anaerobic": as_float(val(activity, "anaerobicTrainingEffect")),
+        "training_load": as_int(val(activity, "activityTrainingLoad")),
+        "vo2_max": as_float(val(activity, "vO2MaxValue")),
+        "device_label": get_device_label(activity) or None,
+        "note": note or None,
+    }
+
+
 def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     print(f"\n[AKTYWNOSCI] Zakres: {ctx.start_date} – {ctx.end_date}")
     api = garmin.api
@@ -201,6 +243,8 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     updated_count = 0
     appended_rows = []
     pending_updates: list[tuple[int, list]] = []
+    supabase_rows: list[dict] = []
+    user_id = require_owner_user_id(ctx.config)
 
     for activity in recent_activities:
         activity_id = str(val(activity, "activityId"))
@@ -216,6 +260,11 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
         else:
             appended_rows.append(row_values)
 
+        if user_id:
+            payload = activity_to_supabase(user_id, activity, existing_note)
+            if payload:
+                supabase_rows.append(payload)
+
         garmin.pause(0.2)
 
     batch_update_rows(worksheet, pending_updates, "AG")
@@ -225,5 +274,18 @@ def import_activities(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
     sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+
+    client = get_supabase(ctx.config)
+    if client and user_id and supabase_rows:
+        try:
+            n = upsert_rows(
+                client, "garmin_activities", supabase_rows, on_conflict="user_id,activity_id"
+            )
+            print(f"  Supabase garmin_activities: upsert {n}")
+        except Exception as error:
+            print(f"  UWAGA: upsert Supabase aktywnosci: {type(error).__name__}: {error}")
+    elif not user_id or not client:
+        print("  Supabase aktywnosci: pominięto (brak JJ_WORKOUT_USER_ID / SUPABASE_*)")
+
     print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult("aktywnosci", updated=updated_count, appended=len(appended_rows))
