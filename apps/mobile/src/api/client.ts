@@ -476,15 +476,13 @@ export const api = {
         reps: data.reps,
         weight_kg: data.weightKg,
       };
+      // Only send effort columns when set — keeps inserts working before SQL migration.
       if (data.effortScale === "rir" || data.effortScale === "rpe") {
         payload.effort_scale = data.effortScale;
         payload.effort_value =
           data.effortValue != null && Number.isFinite(data.effortValue)
             ? data.effortValue
             : null;
-      } else {
-        payload.effort_scale = null;
-        payload.effort_value = null;
       }
       const { data: result, error } = await supabase
         .from("session_set_logs")
