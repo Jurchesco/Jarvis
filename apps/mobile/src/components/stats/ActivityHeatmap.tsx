@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 import type { StatsDayAgg } from "../../lib/statsOverview";
 
-const CELL = 12;
+const CELL = 13;
 const GAP = 3;
 const LEVEL_COLORS = ["#1a2332", "#1e3a5f", "#2563eb", "#3b82f6", "#60a5fa"];
 
@@ -20,6 +20,17 @@ function levelFor(agg: StatsDayAgg | undefined, thresholds: number[]): number {
   return 1;
 }
 
+function formatDayPl(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString("pl-PL", {
+    weekday: "short",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 const MONTHS_PL = ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "paź", "lis", "gru"];
 
 export function ActivityHeatmap({
@@ -30,13 +41,13 @@ export function ActivityHeatmap({
   onDayPress?: (day: string, agg: StatsDayAgg) => void;
 }) {
   const scrollRef = useRef<ScrollView>(null);
+  const [selected, setSelected] = useState<{ day: string; agg: StatsDayAgg } | null>(null);
 
-  const { cols, months, thresholds, todayKey } = useMemo(() => {
+  const { cols, months, todayKey, activeDays } = useMemo(() => {
     const today = new Date();
     today.setHours(12, 0, 0, 0);
     const todayKey = isoOf(today);
 
-    // End = Monday of current week
     const end = new Date(today);
     const dow = end.getDay();
     end.setDate(end.getDate() - ((dow + 6) % 7));
@@ -55,6 +66,7 @@ export function ActivityHeatmap({
     const cols: { key: string; days: { key: string; level: number; agg?: StatsDayAgg }[] }[] = [];
     const months: { weekIndex: number; label: string }[] = [];
     let lastMonth = -1;
+    let activeDays = 0;
 
     for (let wk = 0; wk <= 52; wk++) {
       const colStart = new Date(start);
@@ -73,6 +85,7 @@ export function ActivityHeatmap({
         day.setDate(colStart.getDate() + d);
         const key = isoOf(day);
         const agg = dayAgg.get(key);
+        if (agg) activeDays += 1;
         const future = day > today;
         days.push({
           key,
@@ -83,7 +96,7 @@ export function ActivityHeatmap({
       cols.push({ key: `w${wk}`, days });
     }
 
-    return { cols, months, thresholds, todayKey };
+    return { cols, months, thresholds, todayKey, activeDays };
   }, [dayAgg]);
 
   useEffect(() => {
@@ -91,8 +104,18 @@ export function ActivityHeatmap({
     return () => clearTimeout(t);
   }, [cols.length]);
 
+  const handlePress = (day: string, agg: StatsDayAgg) => {
+    setSelected((prev) => (prev?.day === day ? null : { day, agg }));
+    onDayPress?.(day, agg);
+  };
+
   return (
     <View>
+      <Text className="text-text-muted text-xs mb-2 leading-5">
+        Każdy kwadrat = jeden dzień. Im jaśniejszy, tym dłuższy trening. Dotknij dnia z
+        treningiem, żeby zobaczyć szczegóły. ({activeDays} dni z sesją)
+      </Text>
+
       <ScrollView
         ref={scrollRef}
         horizontal
@@ -111,7 +134,10 @@ export function ActivityHeatmap({
             })}
           </View>
           <View className="flex-row">
-            <View className="mr-1 justify-between" style={{ height: 7 * (CELL + GAP) - GAP, width: 22 }}>
+            <View
+              className="mr-1 justify-between"
+              style={{ height: 7 * (CELL + GAP) - GAP, width: 22 }}
+            >
               <Text className="text-text-muted text-[9px]">Pn</Text>
               <Text className="text-text-muted text-[9px]">Śr</Text>
               <Text className="text-text-muted text-[9px]">Pt</Text>
@@ -121,24 +147,25 @@ export function ActivityHeatmap({
                 <View key={col.key} style={{ marginRight: GAP }}>
                   {col.days.map((day) => {
                     const isToday = day.key === todayKey;
+                    const isSelected = selected?.day === day.key;
                     return (
                       <Pressable
                         key={day.key}
                         disabled={!day.agg}
-                        onPress={() => day.agg && onDayPress?.(day.key, day.agg)}
+                        onPress={() => day.agg && handlePress(day.key, day.agg)}
                         style={{
                           width: CELL,
                           height: CELL,
                           marginBottom: GAP,
                           borderRadius: 2,
                           backgroundColor: LEVEL_COLORS[day.level],
-                          borderWidth: isToday ? 1 : 0,
-                          borderColor: "#93c5fd",
+                          borderWidth: isSelected ? 2 : isToday ? 1 : 0,
+                          borderColor: isSelected ? "#fbbf24" : "#93c5fd",
                           opacity: day.key > todayKey ? 0.25 : 1,
                         }}
                         accessibilityLabel={
                           day.agg
-                            ? `${day.key}: ${day.agg.sessions} trening(i)`
+                            ? `${day.key}: ${day.agg.sessions} trening(i), ${day.agg.minutes} min`
                             : day.key
                         }
                       />
@@ -150,25 +177,49 @@ export function ActivityHeatmap({
           </View>
         </View>
       </ScrollView>
-      <View className="mt-3 flex-row items-center justify-end">
-        <Text className="text-text-muted text-[10px] mr-1.5">Mniej</Text>
-        {LEVEL_COLORS.map((c, i) => (
-          <View
-            key={i}
-            style={{
-              width: CELL,
-              height: CELL,
-              borderRadius: 2,
-              backgroundColor: c,
-              marginLeft: 2,
-            }}
-          />
-        ))}
-        <Text className="text-text-muted text-[10px] ml-1.5">Więcej</Text>
+
+      <View className="mt-3 flex-row items-center justify-between">
+        <Text className="text-text-muted text-[10px]">Mniej czasu</Text>
+        <View className="flex-row items-center">
+          {LEVEL_COLORS.map((c, i) => (
+            <View
+              key={i}
+              style={{
+                width: CELL,
+                height: CELL,
+                borderRadius: 2,
+                backgroundColor: c,
+                marginLeft: 2,
+              }}
+            />
+          ))}
+        </View>
+        <Text className="text-text-muted text-[10px]">Więcej czasu</Text>
       </View>
-      {thresholds[0] === 0 && dayAgg.size === 0 ? null : (
-        <Text className="text-text-muted text-[10px] mt-1 text-right">
-          Intensywność wg czasu treningu
+
+      {selected ? (
+        <View className="mt-3 rounded-xl border border-border bg-surface-muted px-3 py-3">
+          <Text className="text-text-primary text-sm font-semibold">
+            {formatDayPl(selected.day)}
+          </Text>
+          <Text className="text-text-secondary text-xs mt-1 leading-5">
+            {selected.agg.sessions === 1
+              ? "1 trening"
+              : `${selected.agg.sessions} treningi`}
+            {selected.agg.minutes > 0 ? ` · ok. ${selected.agg.minutes} min łącznie` : ""}
+          </Text>
+          {selected.agg.names.length > 0 ? (
+            <Text className="text-text-primary text-xs mt-2 leading-5">
+              {selected.agg.names.join(" · ")}
+            </Text>
+          ) : null}
+          <Text className="text-text-muted text-[10px] mt-1">
+            Dotknij ponownie, żeby odznaczyć · Historia ma pełne szczegóły sesji
+          </Text>
+        </View>
+      ) : (
+        <Text className="text-text-muted text-[10px] mt-2">
+          Podpowiedź: przewiń w prawo do bieżącego tygodnia (mapa startuje od końca).
         </Text>
       )}
     </View>

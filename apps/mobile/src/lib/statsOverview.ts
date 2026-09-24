@@ -7,6 +7,7 @@ export type StatsDayAgg = {
   day: string;
   sessions: number;
   minutes: number;
+  names: string[];
 };
 
 function localDayKeyFromDate(d: Date): string {
@@ -58,8 +59,9 @@ export function aggregateSessionsByDay(
   for (const s of sessions) {
     if (!s.completedAt) continue;
     const day = localDayKey(s.completedAt);
-    const existing = map.get(day) ?? { day, sessions: 0, minutes: 0 };
+    const existing = map.get(day) ?? { day, sessions: 0, minutes: 0, names: [] };
     existing.sessions += 1;
+    if (s.sheetName) existing.names.push(s.sheetName);
     if (s.startedAt && s.completedAt) {
       const min = Math.max(
         0,
