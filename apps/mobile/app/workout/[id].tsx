@@ -43,6 +43,7 @@ import { ExercisePicker } from "../../src/components/ExercisePicker";
 import {
   createDraftFromLogs,
   createDraftFromPrevious,
+  createDraftFromTemplate,
   ExerciseLogForm,
   ExerciseLogSummary,
   type ExerciseLogDraft,
@@ -651,7 +652,16 @@ export default function WorkoutScreen() {
               const previousLogs = autofillPrevious ? rawPreviousLogs : [];
               const initialDraft = isSaved
                 ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-                : createDraftFromPrevious(previousLogs[0] ?? null, notesByExercise[exercise.id] ?? "", previousLogs);
+                : previousLogs.length > 0
+                  ? createDraftFromPrevious(
+                      previousLogs[0] ?? null,
+                      notesByExercise[exercise.id] ?? "",
+                      previousLogs,
+                    )
+                  : createDraftFromTemplate(
+                      exercise.sets,
+                      notesByExercise[exercise.id] ?? "",
+                    );
 
               return (
                 <Card key={exercise.id} className="mb-3" padding="md">

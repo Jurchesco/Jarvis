@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import type { SessionSetLog } from "@bhmt3wp/shared";
+import type { ExerciseSet, SessionSetLog } from "@bhmt3wp/shared";
 import {
   bestEpley1rmFromSets,
   exerciseVolumeFromSets,
@@ -104,6 +104,24 @@ export function createDraftFromPrevious(
     sets: logs.map((log) => ({
       weightKg: String(log.weightKg),
       reps: String(log.reps),
+    })),
+    notes,
+  };
+}
+
+/** Prefills from plan template sets when there is no previous session for this exercise. */
+export function createDraftFromTemplate(
+  templateSets: ExerciseSet[] | null | undefined,
+  notes = "",
+): ExerciseLogDraft {
+  if (!templateSets || templateSets.length === 0) {
+    return { ...DEFAULT_DRAFT, notes, sets: [{ ...DEFAULT_SET }] };
+  }
+  const sorted = [...templateSets].sort((a, b) => a.setNumber - b.setNumber);
+  return {
+    sets: sorted.map((set) => ({
+      weightKg: String(set.weightKg),
+      reps: String(set.reps),
     })),
     notes,
   };

@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useQuery, useMutation, useQueryClient, useQueries } from "@tanstack/react-query";
 import type { SessionDetailFull } from "@bhmt3wp/shared";
 import { api } from "./client";
+import { duplicateSheet } from "../lib/duplicateSheet";
 import type {
   CreateWorkoutSheetInput,
   UpdateWorkoutSheetInput,
@@ -57,6 +58,14 @@ export function useDeleteSheet() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => api.sheets.delete(id),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["sheets"] }),
+  });
+}
+
+export function useDuplicateSheet() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => duplicateSheet(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["sheets"] }),
   });
 }
