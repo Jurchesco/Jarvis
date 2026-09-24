@@ -60,7 +60,8 @@
 - [ ] **Export / import JSON** — D019 §4
 - [x] **Pasek postępu sesji + ghost polish** — D019 §5 (postęp + Ostatnio + toast; ghost później)
 - [x] **Sheet templates** — duplikowanie planów
-- [ ] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
+- [x] **PR / rekordy + trend 1RM** — Stats (Epley UI / Brzycki Sheets)
+- [x] **RIR / RPE opcjonalnie** — pref + per seria; kolumna Wysilek w Sheets
 - [ ] **Scroll horizontally** — opcjonalnie
 
 ### Niski priorytet
@@ -68,7 +69,7 @@
 - [ ] **Data export** — CSV / PDF (po JSON)
 - [ ] **Multi-user assignments**
 - [ ] **Zakładka tab „Plany”** — tylko jeśli `/plans` niewystarczy
-- [ ] **Mezocykl / RIR** — epik (D019)
+- [ ] **Mezocykl / auto-awans** — epik (D019; nie mylić z prostym RIR/RPE)
 
 ---
 
