@@ -40,6 +40,8 @@ jobs:
       GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      # Owner UUID — upsert wagi/Garmin do Supabase (bez tego tylko Sheets)
+      JJ_WORKOUT_USER_ID: ${{ secrets.JJ_WORKOUT_USER_ID }}
       OPENSCALE_DRIVE_FILE_ID: ${{ secrets.OPENSCALE_DRIVE_FILE_ID }}
       OPENSCALE_DRIVE_FOLDER_ID: ${{ secrets.OPENSCALE_DRIVE_FOLDER_ID }}
       GOOGLE_CREDENTIALS_FILE: google-service-account.json
