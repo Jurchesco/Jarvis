@@ -9,13 +9,16 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   AlertCircle,
   BellRing,
   BookOpen,
   CheckCircle2,
+  Download,
   Dumbbell,
   Globe,
+  HardDrive,
   Info,
   LogOut,
   Moon,
@@ -23,11 +26,13 @@ import {
   RefreshCw,
   Settings2,
   Sheet,
+  Upload,
   User,
 } from "lucide-react-native";
+import { parseJarvisBackupJson, summarizeBackup } from "@bhmt3wp/shared";
+import type { EffortScale } from "@bhmt3wp/shared";
 import { APP_NAME, APP_TAGLINE, APP_VERSION } from "../../../src/constants/branding";
 import { useAuth } from "../../../src/contexts/AuthContext";
-import type { EffortScale } from "@bhmt3wp/shared";
 import {
   DEFAULT_REST_OPTIONS,
   EFFORT_SCALE_PREF_OPTIONS,
@@ -51,6 +56,9 @@ import {
   type DefaultRestSec,
   type ExerciseLogFillMode,
 } from "../../../src/lib/appPreferences";
+import { buildJarvisBackup } from "../../../src/lib/backupExport";
+import { deliverBackupFile, pickBackupJsonFile } from "../../../src/lib/backupFile";
+import { importJarvisBackup } from "../../../src/lib/backupImport";
 import { useRestTimer } from "../../../src/lib/useRestTimer";
 import { RestTimerOverlay } from "../../../src/components/RestTimerOverlay";
 import * as notifications from "../../../src/lib/notifications";
@@ -127,6 +135,7 @@ function SettingSwitchRow({
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { user, signOut } = useAuth();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [notifEnabled, setNotifEnabled] = useState(true);
@@ -140,6 +149,8 @@ export default function SettingsScreen() {
   const [keepAwakeEnabled, setKeepAwakeEnabledState] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [exportingBackup, setExportingBackup] = useState(false);
+  const [importingBackup, setImportingBackup] = useState(false);
   const [lastSyncAt, setLastSyncAt] = useState<string | null>(null);
   const [lastSyncResult, setLastSyncResult] = useState<SheetSyncResult | null>(null);
   const restPreview = useRestTimer();
@@ -314,6 +325,81 @@ export default function SettingsScreen() {
       }
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleExportBackup = async () => {
+    setExportingBackup(true);
+    try {
+      const backup = await buildJarvisBackup();
+      const stats = summarizeBackup(backup);
+      const mode = await deliverBackupFile(backup);
+      Alert.alert(
+        mode === "downloaded" ? "Backup pobrany" : "Backup udostępniony",
+        `${stats.sheets} planów · ${stats.sessions} sesji · ${stats.logs} serii.`,
+      );
+    } catch (error) {
+      Alert.alert(
+        "Błąd eksportu",
+        error instanceof Error ? error.message : "Nie udało się utworzyć backupu.",
+      );
+    } finally {
+      setExportingBackup(false);
+    }
+  };
+
+  const runImportBackup = async (raw: string) => {
+    setImportingBackup(true);
+    try {
+      const backup = parseJarvisBackupJson(raw);
+      const preview = summarizeBackup(backup);
+      const result = await importJarvisBackup(backup);
+      await queryClient.invalidateQueries();
+      Alert.alert(
+        "Import zakończony",
+        `Dodano ${result.sheetsCreated} planów, ${result.sessionsCreated} sesji, ${result.logsCreated} serii` +
+          ` (w pliku: ${preview.sheets} / ${preview.sessions} / ${preview.logs}).`,
+      );
+    } catch (error) {
+      Alert.alert(
+        "Błąd importu",
+        error instanceof Error ? error.message : "Nie udało się wczytać backupu.",
+      );
+    } finally {
+      setImportingBackup(false);
+    }
+  };
+
+  const handleImportBackup = async () => {
+    try {
+      const raw = await pickBackupJsonFile();
+      const backup = parseJarvisBackupJson(raw);
+      const preview = summarizeBackup(backup);
+      const message =
+        `Plik: ${preview.sheets} planów, ${preview.sessions} sesji, ${preview.logs} serii.\n` +
+        "Dane zostaną dodane jako nowe (istniejące nie są kasowane).";
+
+      if (Platform.OS === "web" && typeof window !== "undefined") {
+        const ok = window.confirm(`Zaimportować backup?\n\n${message}`);
+        if (ok) await runImportBackup(raw);
+        return;
+      }
+
+      Alert.alert("Zaimportować backup?", message, [
+        { text: "Anuluj", style: "cancel" },
+        {
+          text: "Importuj",
+          onPress: () => {
+            void runImportBackup(raw);
+          },
+        },
+      ]);
+    } catch (error) {
+      if (error instanceof Error && /Nie wybrano pliku/i.test(error.message)) return;
+      Alert.alert(
+        "Błąd importu",
+        error instanceof Error ? error.message : "Nie udało się wczytać pliku.",
+      );
     }
   };
 
@@ -505,6 +591,35 @@ export default function SettingsScreen() {
           </View>
         </SettingsSection>
 
+        <SettingsSection title="Backup JSON" icon={HardDrive} iconColor="#60a5fa">
+          <Text className="text-text-muted text-xs leading-5 mb-4">
+            Lokalna kopia planów i historii treningów (nie zastępuje Google Sheets). Import
+            dodaje dane jako nowe — nic nie kasuje.
+          </Text>
+          <Button
+            label="Eksportuj backup"
+            icon={Download}
+            variant="secondary"
+            onPress={handleExportBackup}
+            loading={exportingBackup}
+            disabled={importingBackup}
+            className="mb-3"
+          />
+          <Button
+            label="Importuj backup"
+            icon={Upload}
+            variant="secondary"
+            onPress={handleImportBackup}
+            loading={importingBackup}
+            disabled={exportingBackup || Platform.OS !== "web"}
+          />
+          {Platform.OS !== "web" ? (
+            <Text className="text-text-muted text-xs mt-3 leading-5">
+              Import pliku działa w wersji webowej. Na telefonie użyj eksportu (Udostępnij).
+            </Text>
+          ) : null}
+        </SettingsSection>
+
         <SettingsSection title="Integracje" icon={Sheet} iconColor="#22c55e">
           <Text className="text-text-primary text-sm font-semibold leading-tight">
             Synchronizacja z Google Sheets
@@ -602,7 +717,7 @@ export default function SettingsScreen() {
           <Text className="text-text-secondary text-sm">{APP_NAME}</Text>
           <Text className="text-text-muted text-xs mt-1">Wersja {APP_VERSION}</Text>
           <Text className="text-text-muted text-xs mt-3 leading-5">
-            {APP_TAGLINE}. Eksport CSV / logowanie Google — w kolejnych wersjach.
+            {APP_TAGLINE}. Backup JSON w Ustawieniach; CSV / OAuth Google — później.
           </Text>
         </SettingsSection>
       </ScrollView>

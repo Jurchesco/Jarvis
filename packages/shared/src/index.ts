@@ -283,6 +283,23 @@ export {
 } from "./effort";
 export type { EffortScale, EffortValue } from "./effort";
 export {
+  BACKUP_FORMAT,
+  BACKUP_VERSION,
+  isJarvisBackup,
+  parseJarvisBackupJson,
+  summarizeBackup,
+} from "./backup";
+export type {
+  BackupExercise,
+  BackupExerciseNote,
+  BackupExerciseSet,
+  BackupSession,
+  BackupSetLog,
+  BackupSheet,
+  JarvisBackup,
+  JarvisBackupV1,
+} from "./backup";
+export {
   computeMonthBestStreak,
   computeWorkoutStreak,
 } from "./workoutStreak";
