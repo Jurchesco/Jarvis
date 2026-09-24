@@ -11,6 +11,7 @@ from ..dates import date_key, format_datetime, timestamp_ms_to_local, today_in_t
 from ..openscale_source import resolve_openscale_backup
 from ..sheets import ImportResult, batch_update_rows
 from ..sort_sheets import sort_worksheet_by_name
+from ..supabase_journal import as_float, get_supabase, require_owner_user_id, upsert_rows
 from . import ImportContext
 
 WORKSHEET_NAME = "Cialo"
@@ -495,6 +496,67 @@ def warn_if_backup_stale(rows: list[list], tz) -> None:
         )
 
 
+def sheet_datetime_to_iso(value: str, tz) -> str:
+    from datetime import datetime
+
+    raw = str(value).strip()
+    dt = datetime.strptime(raw[:19], "%Y-%m-%d %H:%M:%S").replace(tzinfo=tz)
+    return dt.isoformat()
+
+
+def row_to_supabase_payload(user_id: str, row: list, tz) -> dict | None:
+    weight = as_float(row[COL_WEIGHT] if len(row) > COL_WEIGHT else None)
+    if weight is None or weight <= 0:
+        return None
+    try:
+        measured_at = sheet_datetime_to_iso(row[COL_DATETIME], tz)
+    except ValueError:
+        return None
+
+    def cell(idx: int):
+        return as_float(row[idx]) if len(row) > idx else None
+
+    return {
+        "user_id": user_id,
+        "measured_at": measured_at,
+        "weight_kg": weight,
+        "bmi": cell(2),
+        "body_fat_pct": cell(3),
+        "muscle_mass_kg": cell(4),
+        "lbm_kg": cell(5),
+        "bone_mass_kg": cell(6),
+        "water_pct": cell(7),
+        "visceral_fat": cell(8),
+        "bmr": cell(9),
+        "protein_pct": cell(10),
+        "impedance": cell(11),
+        "comment": (str(row[12]).strip() if len(row) > 12 and row[12] else None) or None,
+        "source": "openscale",
+    }
+
+
+def upsert_body_measurements_supabase(ctx: ImportContext, rows: list[list]) -> int:
+    user_id = require_owner_user_id(ctx.config)
+    client = get_supabase(ctx.config)
+    if not user_id or client is None:
+        print("  Supabase body: pominięto (brak JJ_WORKOUT_USER_ID / SUPABASE_*)")
+        return 0
+    payloads = []
+    seen = set()
+    for row in rows:
+        payload = row_to_supabase_payload(user_id, row, ctx.config.timezone)
+        if not payload:
+            continue
+        key = (payload["measured_at"], payload["source"])
+        if key in seen:
+            continue
+        seen.add(key)
+        payloads.append(payload)
+    count = upsert_rows(client, "body_measurements", payloads, on_conflict="user_id,measured_at,source")
+    print(f"  Supabase body_measurements: upsert {count}")
+    return count
+
+
 def import_openscale(ctx: ImportContext) -> ImportResult:
     backup_path = resolve_openscale_backup(ctx.config)
     if backup_path is None:
@@ -565,6 +627,11 @@ def import_openscale(ctx: ImportContext) -> ImportResult:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
     sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+    try:
+        upsert_body_measurements_supabase(ctx, filtered_rows)
+    except Exception as error:
+        print(f"  UWAGA: upsert Supabase body nieudany: {type(error).__name__}: {error}")
+
     print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult(
         "cialo",

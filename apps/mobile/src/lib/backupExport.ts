@@ -1,10 +1,16 @@
 import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
+  type BackupBodyMeasurement,
+  type BackupBodyProfile,
   type BackupExercise,
+  type BackupGarminActivity,
+  type BackupGarminDaily,
+  type BackupGarminForma,
+  type BackupGarminSleep,
   type BackupSession,
   type BackupSheet,
-  type JarvisBackupV1,
+  type JarvisBackupV2,
 } from "@bhmt3wp/shared";
 import { supabase } from "./supabase";
 
@@ -53,8 +59,78 @@ async function fetchInChunks<T>(
   return rows;
 }
 
-/** Builds a full local backup of the signed-in user's plans + history. */
-export async function buildJarvisBackup(): Promise<JarvisBackupV1> {
+async function fetchProfile(userId: string): Promise<BackupBodyProfile | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("display_name, height_cm, sex, goal_weight_kg, birth_year")
+    .eq("id", userId)
+    .maybeSingle();
+  if (error) {
+    // Columns may not exist until body_and_health.sql is applied
+    if (/column|does not exist/i.test(error.message)) return null;
+    throw new Error(error.message);
+  }
+  if (!data) return null;
+  return {
+    displayName: (data.display_name as string | null) ?? null,
+    heightCm: (data.height_cm as number | null) ?? null,
+    sex:
+      data.sex === "male" || data.sex === "female" || data.sex === "other"
+        ? data.sex
+        : null,
+    goalWeightKg: (data.goal_weight_kg as number | null) ?? null,
+    birthYear: (data.birth_year as number | null) ?? null,
+  };
+}
+
+async function fetchBodyMeasurements(userId: string): Promise<BackupBodyMeasurement[]> {
+  try {
+    const rows = await fetchAllPages((from, to) =>
+      supabase
+        .from("body_measurements")
+        .select("*")
+        .eq("user_id", userId)
+        .order("measured_at", { ascending: false })
+        .range(from, to),
+    );
+    return rows.map((row) => ({
+      measuredAt: row.measured_at as string,
+      weightKg: Number(row.weight_kg),
+      bodyFatPct: (row.body_fat_pct as number | null) ?? null,
+      muscleMassKg: (row.muscle_mass_kg as number | null) ?? null,
+      waterPct: (row.water_pct as number | null) ?? null,
+      boneMassKg: (row.bone_mass_kg as number | null) ?? null,
+      bmi: (row.bmi as number | null) ?? null,
+      visceralFat: (row.visceral_fat as number | null) ?? null,
+      bmr: (row.bmr as number | null) ?? null,
+      lbmKg: (row.lbm_kg as number | null) ?? null,
+      proteinPct: (row.protein_pct as number | null) ?? null,
+      impedance: (row.impedance as number | null) ?? null,
+      comment: (row.comment as string | null) ?? null,
+      source: row.source === "openscale" ? "openscale" : "manual",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+async function softFetchTable<T>(
+  table: string,
+  userId: string,
+  map: (row: Record<string, unknown>) => T,
+): Promise<T[]> {
+  try {
+    const rows = await fetchAllPages((from, to) =>
+      supabase.from(table).select("*").eq("user_id", userId).range(from, to),
+    );
+    return rows.map((row) => map(row as Record<string, unknown>));
+  } catch {
+    return [];
+  }
+}
+
+/** Builds a full local backup of the signed-in user's plans + history + body/Garmin. */
+export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
   const userId = await getUserId();
 
   const sheetRows = await fetchAllPages((from, to) =>
@@ -182,11 +258,62 @@ export async function buildJarvisBackup(): Promise<JarvisBackupV1> {
     };
   });
 
+  const [profile, bodyMeasurements, garminDaily, garminSleep, garminForma, garminActivities] =
+    await Promise.all([
+      fetchProfile(userId),
+      fetchBodyMeasurements(userId),
+      softFetchTable<BackupGarminDaily>("garmin_daily_stats", userId, (row) => ({
+        day: String(row.day),
+        totalSteps: (row.total_steps as number | null) ?? null,
+        totalKilocalories: (row.total_kilocalories as number | null) ?? null,
+        activeKilocalories: (row.active_kilocalories as number | null) ?? null,
+        restingHeartRate: (row.resting_heart_rate as number | null) ?? null,
+        averageStress: (row.average_stress as number | null) ?? null,
+        bodyBatteryWake: (row.body_battery_wake as number | null) ?? null,
+        bodyBatteryHigh: (row.body_battery_high as number | null) ?? null,
+        bodyBatteryLow: (row.body_battery_low as number | null) ?? null,
+      })),
+      softFetchTable<BackupGarminSleep>("garmin_sleep_days", userId, (row) => ({
+        day: String(row.day),
+        sleepMinutes: (row.sleep_minutes as number | null) ?? null,
+        sleepScore: (row.sleep_score as number | null) ?? null,
+        deepMinutes: (row.deep_minutes as number | null) ?? null,
+        lightMinutes: (row.light_minutes as number | null) ?? null,
+        remMinutes: (row.rem_minutes as number | null) ?? null,
+        awakeMinutes: (row.awake_minutes as number | null) ?? null,
+        hrvLastNightAvg: (row.hrv_last_night_avg as number | null) ?? null,
+        hasData: Boolean(row.has_data ?? true),
+      })),
+      softFetchTable<BackupGarminForma>("garmin_forma_days", userId, (row) => ({
+        day: String(row.day),
+        hrvLastNightAvg: (row.hrv_last_night_avg as number | null) ?? null,
+        hrvStatus: (row.hrv_status as string | null) ?? null,
+        restingHeartRate: (row.resting_heart_rate as number | null) ?? null,
+        bodyBatteryWake: (row.body_battery_wake as number | null) ?? null,
+        averageStress: (row.average_stress as number | null) ?? null,
+      })),
+      softFetchTable<BackupGarminActivity>("garmin_activities", userId, (row) => ({
+        activityId: String(row.activity_id),
+        startedAt: (row.started_at as string | null) ?? null,
+        activityType: (row.activity_type as string | null) ?? null,
+        activityName: (row.activity_name as string | null) ?? null,
+        durationSec: (row.duration_sec as number | null) ?? null,
+        distanceM: (row.distance_m as number | null) ?? null,
+        calories: (row.calories as number | null) ?? null,
+      })),
+    ]);
+
   return {
     format: BACKUP_FORMAT,
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     sheets,
     sessions,
+    profile,
+    bodyMeasurements,
+    garminDaily,
+    garminSleep,
+    garminForma,
+    garminActivities,
   };
 }

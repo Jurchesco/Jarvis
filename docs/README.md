@@ -16,6 +16,7 @@ Pipeline danych, Gem, GitHub Actions, plan naprawczy po audycie.
 | [jarvis/SETUP.md](./jarvis/SETUP.md) | Konfiguracja krok po kroku |
 | [jarvis/GITHUB_ACTIONS.md](./jarvis/GITHUB_ACTIONS.md) | Automatyczny import w chmurze |
 | [jarvis/GEM_INSTRUKCJA.md](./jarvis/GEM_INSTRUKCJA.md) | Instrukcja systemowa Gema (zapas dla Hermesa, D017) |
+| [jarvis/HERMES_SUPABASE.md](./jarvis/HERMES_SUPABASE.md) | Supabase = SoT; eksport AI; ścieżka Hermes |
 | [**jarvis/PLAN_NAPRAWCZY.md**](./jarvis/PLAN_NAPRAWCZY.md) | **Plan naprawczy** — status zadań po audycie |
 
 Import (CLI): [Scripts/import/README.md](../Scripts/import/README.md)

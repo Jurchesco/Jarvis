@@ -6,6 +6,7 @@ from ..dates import IMPORT_TIMESTAMP_HEADER, date_key, format_day_with_time, now
 from ..garmin import GarminClient, iter_days
 from ..sheets import ImportResult, batch_update_rows, ensure_column_header, get_existing_rows_by_key
 from ..sort_sheets import sort_worksheet_by_name
+from ..supabase_journal import as_float, as_int, get_supabase, require_owner_user_id, upsert_rows
 from . import ImportContext
 
 
@@ -155,6 +156,63 @@ def build_row(day, sleep_data, hrv_data, stats, existing_note="", imported_at: d
     ]
 
 
+def sleep_to_supabase(user_id: str, day, sleep_data, hrv_data, stats, note: str = "") -> dict:
+    day_str = day.isoformat() if hasattr(day, "isoformat") else str(day)
+    daily_sleep_dto = (sleep_data or {}).get("dailySleepDTO") or {}
+    has_data = bool(daily_sleep_dto)
+    sleep_minutes = get_sleep_minutes(daily_sleep_dto) if has_data else {}
+    score, qualifier = get_sleep_scores(daily_sleep_dto) if has_data else ("", "")
+    hrv_summary = get_hrv_summary(hrv_data)
+
+    time_in_bed_minutes = None
+    if has_data and daily_sleep_dto.get("sleepStartTimestampGMT") and daily_sleep_dto.get("sleepEndTimestampGMT"):
+        time_in_bed_minutes = int(
+            (daily_sleep_dto["sleepEndTimestampGMT"] - daily_sleep_dto["sleepStartTimestampGMT"]) / 1000 / 60
+        )
+
+    restless_moments = 0
+    sleep_history = (sleep_data or {}).get("sleepMovement", []) or []
+    if isinstance(sleep_history, list):
+        restless_moments = sum(
+            1 for item in sleep_history
+            if isinstance(item, dict) and item.get("activityLevel") in ("HIGH", "ACTIVE", 4, 5, 6)
+        )
+
+    avg_hr = daily_sleep_dto.get("avgHeartRate") if has_data else None
+    avg_resp = daily_sleep_dto.get("averageRespirationValue") or stats.get("avgRespirationValue")
+    lowest_resp = stats.get("lowestRespirationValue") or daily_sleep_dto.get("lowestRespirationValue")
+
+    return {
+        "user_id": user_id,
+        "day": day_str,
+        "sleep_window": format_sleep_window(daily_sleep_dto) if has_data else None,
+        "sleep_minutes": sleep_minutes.get("sleep_minutes"),
+        "time_in_bed_minutes": time_in_bed_minutes,
+        "sleep_score": as_int(score) if score != "" else None,
+        "sleep_qualifier": qualifier or None,
+        "deep_minutes": sleep_minutes.get("deep_minutes"),
+        "light_minutes": sleep_minutes.get("light_minutes"),
+        "rem_minutes": sleep_minutes.get("rem_minutes"),
+        "awake_minutes": sleep_minutes.get("awake_minutes"),
+        "awake_count": as_int(daily_sleep_dto.get("awakeCount")) if has_data else None,
+        "restless_moments": restless_moments if has_data else None,
+        "average_stress": as_int(stats.get("averageStressLevel")),
+        "avg_sleep_hr": as_int(avg_hr),
+        "resting_hr": as_int(stats.get("restingHeartRate")),
+        "avg_respiration": as_float(avg_resp),
+        "lowest_respiration": as_float(lowest_resp),
+        "hrv_last_night_avg": as_float(hrv_summary.get("lastNightAvg")),
+        "hrv_status": hrv_summary.get("status"),
+        "hrv_weekly_avg": as_float(hrv_summary.get("weeklyAvg")),
+        "hrv_last_night_5min_high": as_float(hrv_summary.get("lastNight5MinHigh")),
+        "body_battery_wake": as_int(stats.get("bodyBatteryAtWakeTime")),
+        "body_battery_low": as_int(stats.get("bodyBatteryLowestValue")),
+        "body_battery_during_sleep": as_int(stats.get("bodyBatteryDuringSleep")),
+        "has_data": has_data,
+        "note": note or None,
+    }
+
+
 def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     print(f"\n[SEN] Zakres: {ctx.start_date} – {ctx.end_date}")
     worksheet = ctx.sheets.worksheet(WORKSHEET_NAME)
@@ -166,6 +224,8 @@ def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
     updated_count = 0
     appended_rows = []
     pending_updates: list[tuple[int, list]] = []
+    supabase_rows: list[dict] = []
+    user_id = require_owner_user_id(ctx.config)
 
     for day, _ in iter_days(ctx.start_date, ctx.end_date):
         print(f"  Pobieram {day}...")
@@ -182,6 +242,10 @@ def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
                 imported_at=now_in_tz(tz),
                 tz=tz,
             )
+            if user_id:
+                supabase_rows.append(
+                    sleep_to_supabase(user_id, day, sleep_data, hrv_data, stats, existing_note)
+                )
         except Exception as error:
             print(f"    Błąd: {type(error).__name__}: {error}")
             row_values = [""] * 28
@@ -202,5 +266,16 @@ def import_sleep(ctx: ImportContext, garmin: GarminClient) -> ImportResult:
         worksheet.append_rows(appended_rows, value_input_option="USER_ENTERED")
 
     sorted_rows = sort_worksheet_by_name(worksheet, WORKSHEET_NAME)
+
+    client = get_supabase(ctx.config)
+    if client and user_id and supabase_rows:
+        try:
+            n = upsert_rows(client, "garmin_sleep_days", supabase_rows, on_conflict="user_id,day")
+            print(f"  Supabase garmin_sleep_days: upsert {n}")
+        except Exception as error:
+            print(f"  UWAGA: upsert Supabase sen: {type(error).__name__}: {error}")
+    elif not user_id or not client:
+        print("  Supabase sen: pominięto (brak JJ_WORKOUT_USER_ID / SUPABASE_*)")
+
     print(f"  Gotowe: zaktualizowano {updated_count}, dopisano {len(appended_rows)}, posortowano {sorted_rows} wierszy")
     return ImportResult("sen", updated=updated_count, appended=len(appended_rows))

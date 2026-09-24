@@ -409,3 +409,5 @@ create unique index if not exists uq_session_set_logs_unique_set
 
 create unique index if not exists uq_session_exercise_notes_unique_pair
   on public.session_exercise_notes (session_id, exercise_id);
+
+-- Body / Garmin health journal: see body_and_health.sql (run after this file)

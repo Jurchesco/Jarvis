@@ -1,9 +1,10 @@
 /**
- * Lokalny backup JSON (D019 §4) — nie zastępuje Sheets.
+ * Lokalny backup JSON — treningi + opcjonalnie profil / waga / wycinek Garmin.
+ * v1 = tylko sheets+sessions; v2 = + body / health allowlist.
  */
 
 export const BACKUP_FORMAT = "jarvis-workout-backup" as const;
-export const BACKUP_VERSION = 1 as const;
+export const BACKUP_VERSION = 2 as const;
 
 export type BackupExerciseSet = {
   setNumber: number;
@@ -54,29 +55,112 @@ export type BackupSession = {
   exerciseNotes: BackupExerciseNote[];
 };
 
+export type BackupBodyProfile = {
+  displayName: string | null;
+  heightCm: number | null;
+  sex: "male" | "female" | "other" | null;
+  goalWeightKg: number | null;
+  birthYear: number | null;
+};
+
+export type BackupBodyMeasurement = {
+  measuredAt: string;
+  weightKg: number;
+  bodyFatPct?: number | null;
+  muscleMassKg?: number | null;
+  waterPct?: number | null;
+  boneMassKg?: number | null;
+  bmi?: number | null;
+  visceralFat?: number | null;
+  bmr?: number | null;
+  lbmKg?: number | null;
+  proteinPct?: number | null;
+  impedance?: number | null;
+  comment?: string | null;
+  source: "manual" | "openscale";
+};
+
+export type BackupGarminDaily = {
+  day: string;
+  totalSteps?: number | null;
+  totalKilocalories?: number | null;
+  activeKilocalories?: number | null;
+  restingHeartRate?: number | null;
+  averageStress?: number | null;
+  bodyBatteryWake?: number | null;
+  bodyBatteryHigh?: number | null;
+  bodyBatteryLow?: number | null;
+};
+
+export type BackupGarminSleep = {
+  day: string;
+  sleepMinutes?: number | null;
+  sleepScore?: number | null;
+  deepMinutes?: number | null;
+  lightMinutes?: number | null;
+  remMinutes?: number | null;
+  awakeMinutes?: number | null;
+  hrvLastNightAvg?: number | null;
+  hasData?: boolean;
+};
+
+export type BackupGarminForma = {
+  day: string;
+  hrvLastNightAvg?: number | null;
+  hrvStatus?: string | null;
+  restingHeartRate?: number | null;
+  bodyBatteryWake?: number | null;
+  averageStress?: number | null;
+};
+
+export type BackupGarminActivity = {
+  activityId: string;
+  startedAt: string | null;
+  activityType: string | null;
+  activityName: string | null;
+  durationSec: number | null;
+  distanceM: number | null;
+  calories: number | null;
+};
+
 export type JarvisBackupV1 = {
   format: typeof BACKUP_FORMAT;
-  version: typeof BACKUP_VERSION;
+  version: 1;
   exportedAt: string;
   sheets: BackupSheet[];
   sessions: BackupSession[];
 };
 
-export type JarvisBackup = JarvisBackupV1;
+export type JarvisBackupV2 = {
+  format: typeof BACKUP_FORMAT;
+  version: 2;
+  exportedAt: string;
+  sheets: BackupSheet[];
+  sessions: BackupSession[];
+  profile?: BackupBodyProfile | null;
+  bodyMeasurements?: BackupBodyMeasurement[];
+  garminDaily?: BackupGarminDaily[];
+  garminSleep?: BackupGarminSleep[];
+  garminForma?: BackupGarminForma[];
+  garminActivities?: BackupGarminActivity[];
+};
 
-export function isJarvisBackup(value: unknown): value is JarvisBackupV1 {
+export type JarvisBackup = JarvisBackupV1 | JarvisBackupV2;
+
+export function isJarvisBackup(value: unknown): value is JarvisBackup {
   if (!value || typeof value !== "object") return false;
   const obj = value as Record<string, unknown>;
+  const versionOk = obj.version === 1 || obj.version === 2;
   return (
     obj.format === BACKUP_FORMAT &&
-    obj.version === BACKUP_VERSION &&
+    versionOk &&
     typeof obj.exportedAt === "string" &&
     Array.isArray(obj.sheets) &&
     Array.isArray(obj.sessions)
   );
 }
 
-export function parseJarvisBackupJson(raw: string): JarvisBackupV1 {
+export function parseJarvisBackupJson(raw: string): JarvisBackup {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
@@ -84,23 +168,29 @@ export function parseJarvisBackupJson(raw: string): JarvisBackupV1 {
     throw new Error("Plik nie jest prawidłowym JSON.");
   }
   if (!isJarvisBackup(parsed)) {
-    throw new Error("To nie jest backup Jarvis (oczekiwany format jarvis-workout-backup v1).");
+    throw new Error("To nie jest backup Jarvis (oczekiwany format jarvis-workout-backup v1/v2).");
   }
   return parsed;
 }
 
-export function summarizeBackup(backup: JarvisBackupV1): {
+export function summarizeBackup(backup: JarvisBackup): {
   sheets: number;
   exercises: number;
   sessions: number;
   logs: number;
+  bodyMeasurements: number;
 } {
   const exercises = backup.sheets.reduce((sum, sheet) => sum + sheet.exercises.length, 0);
   const logs = backup.sessions.reduce((sum, session) => sum + session.logs.length, 0);
+  const bodyMeasurements =
+    backup.version === 2 && Array.isArray(backup.bodyMeasurements)
+      ? backup.bodyMeasurements.length
+      : 0;
   return {
     sheets: backup.sheets.length,
     exercises,
     sessions: backup.sessions.length,
     logs,
+    bodyMeasurements,
   };
 }
