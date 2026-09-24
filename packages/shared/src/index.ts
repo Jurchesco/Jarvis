@@ -252,6 +252,23 @@ export {
 } from "./workoutCalculations";
 export type { SessionLiveStats } from "./workoutCalculations";
 export {
+  EPLEY_MAX_REPS_FOR_1RM,
+  computeExerciseRecords,
+  detectSessionPrs,
+  epley1rmForRecord,
+  formatRecordDate,
+  sessionBestEst1rm,
+  sessionMaxWeightKg,
+} from "./exerciseRecords";
+export type {
+  ExerciseRecord,
+  ExerciseSetRecord,
+  RecordExerciseLike,
+  RecordSessionLike,
+  RecordSetLike,
+  SessionPrHit,
+} from "./exerciseRecords";
+export {
   computeMonthBestStreak,
   computeWorkoutStreak,
 } from "./workoutStreak";

@@ -4,7 +4,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   buildSessionSummaryInsights,
+  detectSessionPrs,
   formatVolumeKg,
+  formatWeightKg,
 } from "@bhmt3wp/shared";
 import type { WorkoutSessionWithSheet } from "@bhmt3wp/shared";
 import {
@@ -15,8 +17,12 @@ import {
   Trophy,
   TrendingUp,
 } from "lucide-react-native";
-import { useCompletedSessions, useSession } from "../../../src/api/hooks";
-import { Button, Card, ICON_SIZE, ICON_STROKE, StateBlock } from "../../../src/components/ui";
+import {
+  useCompletedSessions,
+  useSession,
+  useSessionsByIds,
+} from "../../../src/api/hooks";
+import { Badge, Button, Card, ICON_SIZE, ICON_STROKE, StateBlock } from "../../../src/components/ui";
 
 function HighlightCard({
   label,
@@ -56,15 +62,17 @@ export default function WorkoutSummaryScreen() {
   const { data: session, isLoading } = useSession(sessionId);
   const { data: completedSessions } = useCompletedSessions();
 
-  const previousSessionId = useMemo(() => {
-    if (!completedSessions || !session) return null;
-    const previous = completedSessions.find(
-      (item: WorkoutSessionWithSheet) => item.id !== session.id,
-    );
-    return previous?.id ?? null;
+  const previousSessionIds = useMemo(() => {
+    if (!completedSessions || !session) return [] as string[];
+    return completedSessions
+      .filter((item: WorkoutSessionWithSheet) => item.id !== session.id)
+      .slice(0, 20)
+      .map((item) => item.id);
   }, [completedSessions, session]);
 
+  const previousSessionId = previousSessionIds[0] ?? null;
   const { data: previousSession } = useSession(previousSessionId ?? "");
+  const { sessionsById: priorById } = useSessionsByIds(previousSessionIds);
 
   const insights = useMemo(() => {
     if (!session?.completedAt) return null;
@@ -73,6 +81,14 @@ export default function WorkoutSummaryScreen() {
       previousSession?.completedAt ? previousSession : null,
     );
   }, [session, previousSession]);
+
+  const sessionPrs = useMemo(() => {
+    if (!session?.completedAt) return [];
+    const priors = previousSessionIds
+      .map((id) => priorById.get(id))
+      .filter((item): item is NonNullable<typeof item> => !!item?.completedAt);
+    return detectSessionPrs(session, priors);
+  }, [session, previousSessionIds, priorById]);
 
   const handleClose = () => {
     if (router.canDismiss()) {
@@ -103,6 +119,11 @@ export default function WorkoutSummaryScreen() {
   }
 
   const completedDate = new Date(session.completedAt);
+  const headline = sessionPrs.length > 0 ? "Nowe rekordy!" : insights.headline;
+  const subheadline =
+    sessionPrs.length > 0
+      ? `${sessionPrs.length} PR w tej sesji — ciężar albo Est. 1RM powyżej historii.`
+      : insights.subheadline;
 
   return (
     <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
@@ -112,10 +133,10 @@ export default function WorkoutSummaryScreen() {
             <CheckCircle2 size={36} strokeWidth={ICON_STROKE} color="#22c55e" />
           </View>
           <Text className="text-text-primary text-3xl font-bold mt-4 text-center leading-tight">
-            {insights.headline}
+            {headline}
           </Text>
           <Text className="text-text-secondary text-base mt-2 text-center px-2">
-            {insights.subheadline}
+            {subheadline}
           </Text>
           <Text className="text-text-muted text-sm mt-2">
             {completedDate.toLocaleDateString("pl-PL", {
@@ -127,6 +148,42 @@ export default function WorkoutSummaryScreen() {
             })}
           </Text>
         </View>
+
+        {sessionPrs.length > 0 ? (
+          <Card padding="md" className="mb-4 border-emphasis/30 bg-emphasis/5">
+            <View className="flex-row items-center mb-3">
+              <Trophy size={ICON_SIZE} strokeWidth={ICON_STROKE} color="#22c55e" />
+              <Text className="ml-2 text-emphasis text-sm font-bold uppercase">Rekordy z tej sesji</Text>
+            </View>
+            {sessionPrs.slice(0, 6).map((hit) => (
+              <View
+                key={`${hit.kind}-${hit.exerciseName}`}
+                className="mb-2.5 rounded-xl border border-border bg-background px-3 py-2.5"
+              >
+                <View className="flex-row items-center justify-between gap-2">
+                  <Text className="flex-1 text-text-primary text-sm font-semibold" numberOfLines={1}>
+                    {hit.exerciseName}
+                  </Text>
+                  <Badge
+                    label={hit.kind === "e1rm" ? "Est. 1RM" : "Ciężar"}
+                    tone="accent"
+                    size="sm"
+                  />
+                </View>
+                <Text className="text-text-secondary text-xs mt-1">
+                  {hit.kind === "e1rm"
+                    ? `${formatWeightKg(hit.current.est1rm)} · ${hit.current.weightKg}×${hit.current.reps}`
+                    : `${hit.current.weightKg} kg × ${hit.current.reps}`}
+                  {hit.previous
+                    ? hit.kind === "e1rm"
+                      ? ` (było ${formatWeightKg(hit.previous.est1rm)})`
+                      : ` (było ${hit.previous.weightKg} kg)`
+                    : " · pierwszy wpis"}
+                </Text>
+              </View>
+            ))}
+          </Card>
+        ) : null}
 
         <View className="flex-row flex-wrap gap-2 mb-4">
           {insights.highlights.slice(0, 4).map((item) => (

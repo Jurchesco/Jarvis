@@ -6,12 +6,19 @@ import { BarChart3, Layers, LineChart, Target, Trophy } from "lucide-react-nativ
 import { useStatsData, type StatsRange } from "../../../src/api/hooks";
 import type { SessionDetailFull } from "@bhmt3wp/shared";
 import {
+  computeExerciseRecords,
   computeMuscleSetVolume,
   computeMuscleSetVolumeForWeek,
+  formatRecordDate,
+  formatWeightKg,
   formatWeightedSets,
+  sessionBestEst1rm,
+  sessionMaxWeightKg,
+  type ExerciseRecord,
   type MuscleVolumeRow,
 } from "@bhmt3wp/shared";
 import {
+  Badge,
   Card,
   ICON_STROKE,
   Pills,
@@ -33,27 +40,22 @@ const RANGE_OPTIONS: { value: StatsRange; label: string }[] = [
 ];
 
 type MuscleScope = "week" | "range";
+type TrendMetric = "weight" | "e1rm";
 
 const MUSCLE_SCOPE_OPTIONS: { value: MuscleScope; label: string }[] = [
   { value: "week", label: "Ten tydzień" },
   { value: "range", label: "W zakresie" },
 ];
 
+const TREND_METRIC_OPTIONS: { value: TrendMetric; label: string }[] = [
+  { value: "e1rm", label: "Est. 1RM" },
+  { value: "weight", label: "Ciężar max" },
+];
+
 function sessionVolume(session: SessionDetailFull): number {
   return session.exercises.reduce((total, group) => {
     return total + group.sets.reduce((setTotal, set) => setTotal + set.weightKg * set.reps, 0);
   }, 0);
-}
-
-function buildMaxWeightMap(sessions: SessionDetailFull[]): Map<string, number> {
-  const map = new Map<string, number>();
-  for (const session of sessions) {
-    for (const group of session.exercises) {
-      const maxInGroup = group.sets.reduce((m, set) => Math.max(m, set.weightKg), 0);
-      map.set(group.exerciseName, Math.max(map.get(group.exerciseName) ?? 0, maxInGroup));
-    }
-  }
-  return map;
 }
 
 function collectExerciseNames(sessions: SessionDetailFull[]): string[] {
@@ -66,12 +68,6 @@ function collectExerciseNames(sessions: SessionDetailFull[]): string[] {
   return [...counts.entries()]
     .sort((a, b) => b[1] - a[1])
     .map(([name]) => name);
-}
-
-function exerciseMaxWeightInSession(session: SessionDetailFull, exerciseName: string): number {
-  const group = session.exercises.find((item) => item.exerciseName === exerciseName);
-  if (!group) return 0;
-  return group.sets.reduce((max, set) => Math.max(max, set.weightKg), 0);
 }
 
 interface VolumeChartProps {
@@ -183,53 +179,6 @@ function TrendChart({ sessions, width, values, yLabel = "kg" }: VolumeChartProps
   );
 }
 
-function MaxWeightChart({ sessions, width }: { sessions: SessionDetailFull[]; width: number }) {
-  const maxWeightMap = buildMaxWeightMap(sessions);
-  const sorted = [...maxWeightMap.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-
-  if (sorted.length === 0) return null;
-
-  const LABEL_WIDTH = 110;
-  const VALUE_WIDTH = 36;
-  const BAR_AREA = width - LABEL_WIDTH - VALUE_WIDTH - 8;
-  const ROW_HEIGHT = 28;
-  const BAR_HEIGHT = 16;
-  const PADDING_TOP = 8;
-  const height = sorted.length * ROW_HEIGHT + PADDING_TOP * 2;
-
-  const maxVal = sorted[0][1];
-
-  return (
-    <Svg width={width} height={height}>
-      {sorted.map(([name, val], i) => {
-        const barW = maxVal > 0 ? (val / maxVal) * BAR_AREA : 0;
-        const y = PADDING_TOP + i * ROW_HEIGHT;
-        const barY = y + (ROW_HEIGHT - BAR_HEIGHT) / 2;
-        const displayName = name.length > 14 ? `${name.slice(0, 13)}…` : name;
-
-        return (
-          <G key={name}>
-            <SvgText x={0} y={y + ROW_HEIGHT / 2 + 4} fill={TEXT_SECONDARY} fontSize={11} textAnchor="start">
-              {displayName}
-            </SvgText>
-            <Rect x={LABEL_WIDTH} y={barY} width={BAR_AREA} height={BAR_HEIGHT} rx={4} fill={BAR_BG} />
-            <Rect x={LABEL_WIDTH} y={barY} width={barW} height={BAR_HEIGHT} rx={4} fill={ACCENT} />
-            <SvgText
-              x={LABEL_WIDTH + BAR_AREA + 6}
-              y={y + ROW_HEIGHT / 2 + 4}
-              fill={TEXT_SECONDARY}
-              fontSize={11}
-              textAnchor="start"
-            >
-              {val}
-            </SvgText>
-          </G>
-        );
-      })}
-    </Svg>
-  );
-}
-
 function MuscleVolumeChart({ rows, width }: { rows: MuscleVolumeRow[]; width: number }) {
   if (rows.length === 0) return null;
 
@@ -272,9 +221,85 @@ function MuscleVolumeChart({ rows, width }: { rows: MuscleVolumeRow[]; width: nu
   );
 }
 
+function RecordsList({ records }: { records: ExerciseRecord[] }) {
+  if (records.length === 0) {
+    return (
+      <Text className="text-text-secondary text-sm leading-5">
+        Brak rekordów w tym zakresie — zaloguj serie z ciężarem.
+      </Text>
+    );
+  }
+
+  return (
+    <View className="gap-3">
+      {records.map((row) => (
+        <View
+          key={row.exerciseName}
+          className="rounded-xl border border-border bg-surface-muted px-3 py-3"
+        >
+          <View className="flex-row items-start justify-between gap-2">
+            <Text className="flex-1 text-text-primary text-sm font-semibold leading-5" numberOfLines={2}>
+              {row.exerciseName}
+            </Text>
+            <Badge label={`${row.sessionCount}×`} tone="neutral" />
+          </View>
+
+          <View className="mt-2.5 flex-row flex-wrap gap-2">
+            <View className="rounded-lg border border-border bg-background px-2.5 py-1.5 min-w-[46%] flex-1">
+              <Text className="text-text-muted text-[10px] font-semibold uppercase tracking-wide">
+                PR ciężar
+              </Text>
+              <Text className="mt-0.5 text-text-primary text-base font-bold">
+                {row.maxWeight.weightKg} kg
+              </Text>
+              <Text className="text-text-muted text-xs mt-0.5">
+                {row.maxWeight.weightKg}×{row.maxWeight.reps} · {formatRecordDate(row.maxWeight.at)}
+              </Text>
+            </View>
+
+            <View className="rounded-lg border border-border bg-background px-2.5 py-1.5 min-w-[46%] flex-1">
+              <Text className="text-text-muted text-[10px] font-semibold uppercase tracking-wide">
+                Best Est. 1RM
+              </Text>
+              {row.bestEst1rm ? (
+                <>
+                  <Text className="mt-0.5 text-emphasis text-base font-bold">
+                    {formatWeightKg(row.bestEst1rm.est1rm)}
+                  </Text>
+                  <Text className="text-text-muted text-xs mt-0.5">
+                    {row.bestEst1rm.weightKg}×{row.bestEst1rm.reps} ·{" "}
+                    {formatRecordDate(row.bestEst1rm.at)}
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text className="mt-0.5 text-text-secondary text-base font-bold">—</Text>
+                  <Text className="text-text-muted text-xs mt-0.5">Brak serii ≤12 powt.</Text>
+                </>
+              )}
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function trendDeltaLabel(values: number[]): string | null {
+  const nonzero = values.map((v, i) => ({ v, i })).filter((x) => x.v > 0);
+  if (nonzero.length < 2) return null;
+  const first = nonzero[0].v;
+  const last = nonzero[nonzero.length - 1].v;
+  const delta = Math.round((last - first) * 10) / 10;
+  if (delta === 0) return "Bez zmian vs pierwsza sesja w zakresie";
+  const sign = delta > 0 ? "+" : "−";
+  return `${sign}${Math.abs(delta)} kg vs pierwsza sesja w zakresie`;
+}
+
 export default function StatsScreen() {
   const [range, setRange] = useState<StatsRange>("3m");
   const [muscleScope, setMuscleScope] = useState<MuscleScope>("week");
+  const [trendMetric, setTrendMetric] = useState<TrendMetric>("e1rm");
   const { sessions, isLoading, totalInRange } = useStatsData(range);
   const { width } = useWindowDimensions();
 
@@ -289,8 +314,19 @@ export default function StatsScreen() {
   const volumeValues = useMemo(() => sessions.map(sessionVolume), [sessions]);
   const exerciseTrendValues = useMemo(() => {
     if (!activeExercise) return [];
-    return sessions.map((session) => exerciseMaxWeightInSession(session, activeExercise));
-  }, [sessions, activeExercise]);
+    return sessions.map((session) =>
+      trendMetric === "e1rm"
+        ? sessionBestEst1rm(session, activeExercise)
+        : sessionMaxWeightKg(session, activeExercise),
+    );
+  }, [sessions, activeExercise, trendMetric]);
+
+  const exerciseTrendDelta = useMemo(
+    () => trendDeltaLabel(exerciseTrendValues),
+    [exerciseTrendValues],
+  );
+
+  const records = useMemo(() => computeExerciseRecords(sessions).slice(0, 10), [sessions]);
 
   const muscleRows = useMemo(() => {
     if (muscleScope === "week") return computeMuscleSetVolumeForWeek(sessions);
@@ -315,7 +351,7 @@ export default function StatsScreen() {
           title="Statystyki"
           subtitle={
             totalInRange > 0
-              ? `${totalInRange} sesji w zakresie ${rangeLabel} — trendy, partie i rekordy.`
+              ? `${totalInRange} sesji w zakresie ${rangeLabel} — partie, trendy i rekordy.`
               : "Zakończ trening, aby zobaczyć tutaj swoje trendy."
           }
           icon={BarChart3}
@@ -339,6 +375,20 @@ export default function StatsScreen() {
         ) : (
           <>
             <Card className="mt-6" padding="md">
+              <View className="mb-3 flex-row items-center">
+                <Trophy size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
+                <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
+                  Rekordy (PR)
+                </Text>
+              </View>
+              <Text className="mb-3 text-text-muted text-xs leading-4">
+                Najcięższa seria i najlepszy Est. 1RM (Epley, serie ≤12 powt.) w wybranym zakresie —
+                top 10 ćwiczeń.
+              </Text>
+              <RecordsList records={records} />
+            </Card>
+
+            <Card className="mt-5" padding="md">
               <View className="mb-3 flex-row items-center">
                 <Layers size={16} strokeWidth={ICON_STROKE} color="#a78bfa" />
                 <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
@@ -385,9 +435,18 @@ export default function StatsScreen() {
                     Trend ćwiczenia
                   </Text>
                 </View>
-                <Text className="mb-3 text-text-muted text-xs">
-                  Maksymalny ciężar (kg) w sesji — wybierz ćwiczenie
+                <Text className="mb-3 text-text-muted text-xs leading-4">
+                  {trendMetric === "e1rm"
+                    ? "Najlepszy Est. 1RM (Epley) w sesji — serie powyżej 12 powt. pomijane"
+                    : "Maksymalny ciężar (kg) w sesji"}
+                  {exerciseTrendDelta ? ` · ${exerciseTrendDelta}` : ""}
                 </Text>
+                <Pills
+                  options={TREND_METRIC_OPTIONS}
+                  value={trendMetric}
+                  onChange={setTrendMetric}
+                  className="mb-3"
+                />
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
                   <Pills
                     options={exerciseNames.slice(0, 12).map((name) => ({
@@ -402,23 +461,10 @@ export default function StatsScreen() {
                   sessions={sessions}
                   width={chartWidth}
                   values={exerciseTrendValues}
-                  yLabel="kg max"
+                  yLabel={trendMetric === "e1rm" ? "1RM" : "kg max"}
                 />
               </Card>
             ) : null}
-
-            <Card className="mt-5" padding="md">
-              <View className="mb-3 flex-row items-center">
-                <Trophy size={16} strokeWidth={ICON_STROKE} color="#22c55e" />
-                <Text className="ml-2 text-text-primary text-base font-bold leading-tight">
-                  Maksymalny ciężar dla ćwiczenia
-                </Text>
-              </View>
-              <Text className="mb-3 text-text-muted text-xs">
-                Najcięższy zarejestrowany zestaw (kg), top 8 w zakresie
-              </Text>
-              <MaxWeightChart sessions={sessions} width={chartWidth} />
-            </Card>
           </>
         )}
       </ScrollView>
