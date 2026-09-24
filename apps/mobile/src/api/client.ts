@@ -97,6 +97,12 @@ function mapLog(row: any): SessionSetLog {
     reps: row.reps,
     weightKg: row.weight_kg,
     completedAt: row.completed_at,
+    effortScale:
+      row.effort_scale === "rir" || row.effort_scale === "rpe" ? row.effort_scale : null,
+    effortValue:
+      row.effort_value != null && Number.isFinite(Number(row.effort_value))
+        ? Number(row.effort_value)
+        : null,
   };
 }
 
@@ -463,15 +469,24 @@ export const api = {
     },
 
     logSet: async (data: CreateSessionSetLogInput): Promise<SessionSetLog> => {
+      const payload: Record<string, unknown> = {
+        session_id: data.sessionId,
+        exercise_id: data.exerciseId,
+        set_number: data.setNumber,
+        reps: data.reps,
+        weight_kg: data.weightKg,
+      };
+      // Only send effort columns when set — keeps inserts working before SQL migration.
+      if (data.effortScale === "rir" || data.effortScale === "rpe") {
+        payload.effort_scale = data.effortScale;
+        payload.effort_value =
+          data.effortValue != null && Number.isFinite(data.effortValue)
+            ? data.effortValue
+            : null;
+      }
       const { data: result, error } = await supabase
         .from("session_set_logs")
-        .insert({
-          session_id: data.sessionId,
-          exercise_id: data.exerciseId,
-          set_number: data.setNumber,
-          reps: data.reps,
-          weight_kg: data.weightKg,
-        })
+        .insert(payload)
         .select()
         .single();
       if (error) throw new Error(error.message);

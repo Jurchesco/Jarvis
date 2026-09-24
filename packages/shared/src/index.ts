@@ -116,6 +116,10 @@ export interface SessionSetLog {
   reps: number;
   weightKg: number;
   completedAt: string;
+  /** Optional RIR/RPE scale for this set. */
+  effortScale?: "rir" | "rpe" | null;
+  /** RIR 0–10 or RPE 1–10. */
+  effortValue?: number | null;
 }
 
 export interface CreateSessionSetLogInput {
@@ -124,6 +128,8 @@ export interface CreateSessionSetLogInput {
   setNumber: number;
   reps: number;
   weightKg: number;
+  effortScale?: "rir" | "rpe" | null;
+  effortValue?: number | null;
 }
 
 export interface DeleteSessionSetLogInput {
@@ -268,6 +274,14 @@ export type {
   RecordSetLike,
   SessionPrHit,
 } from "./exerciseRecords";
+export {
+  EFFORT_SCALE_OPTIONS,
+  clampEffortValue,
+  effortFromLogFields,
+  formatEffortLabel,
+  parseEffortInput,
+} from "./effort";
+export type { EffortScale, EffortValue } from "./effort";
 export {
   computeMonthBestStreak,
   computeWorkoutStreak,

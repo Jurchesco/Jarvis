@@ -17,14 +17,17 @@ IN_FILTER_CHUNK = 200
 HEADERS = [
     "Data", "Split", "Cwiczenie", "Set", "Ciezar (kg)",
     "Powtorzenia", "Est. 1RM", "Volume", "PR", "Bol / Niggle", "Uwagi", "Czas serii",
-    "Session ID", "Exercise ID",
+    "Session ID", "Exercise ID", "Wysilek",
 ]
 
 COL_SESSION_ID = 12
 COL_EXERCISE_ID = 13
 LEGACY_HEADERS = HEADERS[:12]
 
-SET_LOG_SELECT = "session_id, exercise_id, set_number, reps, weight_kg, completed_at"
+SET_LOG_SELECT = (
+    "session_id, exercise_id, set_number, reps, weight_kg, completed_at, "
+    "effort_scale, effort_value"
+)
 SESSION_SELECT = "id, started_at, completed_at, notes, sheet_id, workout_sheets(name)"
 
 
@@ -32,6 +35,23 @@ def brzycki_1rm(weight: float, reps: int) -> float:
     if reps <= 0 or weight <= 0:
         return 0
     return round(weight / (1.0278 - 0.0278 * reps), 1)
+
+
+def format_effort_label(scale: str | None, value) -> str:
+    if scale not in ("rir", "rpe") or value is None:
+        return ""
+    try:
+        num = float(value)
+    except (TypeError, ValueError):
+        return ""
+    if not (num == num):  # NaN
+        return ""
+    if scale == "rir":
+        num = max(0.0, min(10.0, round(num * 2) / 2))
+    else:
+        num = max(1.0, min(10.0, round(num * 2) / 2))
+    text = str(int(num)) if num == int(num) else f"{num:.1f}"
+    return f"RIR {text}" if scale == "rir" else f"RPE {text}"
 
 
 def make_stable_key(session_id: str, exercise_id: str) -> str:
@@ -263,6 +283,10 @@ def import_workout(ctx: ImportContext) -> ImportResult:
                 best_log = log
         weight = best_log["weight_kg"] or 0
         reps = best_log["reps"] or 0
+        wysilek = format_effort_label(
+            best_log.get("effort_scale"),
+            best_log.get("effort_value"),
+        )
         exercise_id = group["exercise_id"]
         session_id = group["session_id"]
 
@@ -295,6 +319,7 @@ def import_workout(ctx: ImportContext) -> ImportResult:
             "",
             session_id,
             exercise_id,
+            wysilek,
         ])
 
     if not rows_to_upsert:
@@ -335,7 +360,7 @@ def import_workout(ctx: ImportContext) -> ImportResult:
         else:
             appended_rows.append(row)
 
-    batch_update_rows(worksheet, pending_updates, "N")
+    batch_update_rows(worksheet, pending_updates, "O")
     updated_count = len(pending_updates)
 
     if appended_rows:

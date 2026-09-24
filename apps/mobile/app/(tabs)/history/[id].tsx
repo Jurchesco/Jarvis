@@ -13,7 +13,7 @@ import {
   Trash2,
 } from "lucide-react-native";
 import type { CatalogExercise, ExerciseFull, SessionSetLog } from "@bhmt3wp/shared";
-import { isTimeBasedExercise } from "@bhmt3wp/shared";
+import { effortFromLogFields, formatEffortLabel, isTimeBasedExercise } from "@bhmt3wp/shared";
 import {
   useDeleteSession,
   useSession,
@@ -318,37 +318,63 @@ export default function SessionDetailScreen() {
                 ) : (
                   <>
                     <View className="items-center">
-                      <View className="w-64 max-w-full">
-                        <View className="mb-2 flex-row px-1">
-                          <Text className="w-16 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
-                            Seria
-                          </Text>
-                          <Text className="w-24 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
-                            Kg
-                          </Text>
-                          <Text className="w-24 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
-                            Powt.
-                          </Text>
-                        </View>
-                        {logs.map((set, index) => (
-                          <View
-                            key={`${set.exerciseId}-${set.setNumber}`}
-                            className={cx(
-                              "mb-1 flex-row items-center rounded-lg px-1 py-2.5",
-                              index % 2 === 0 ? "bg-surface-muted" : "bg-surface",
-                            )}
-                          >
-                            <Text className="w-16 text-center text-text-secondary text-base font-semibold">
-                              {set.setNumber}
-                            </Text>
-                            <Text className="w-24 text-center text-text-primary text-base font-semibold">
-                              {set.weightKg}
-                            </Text>
-                            <Text className="w-24 text-center text-text-primary text-base font-semibold">
-                              {set.reps}
-                            </Text>
-                          </View>
-                        ))}
+                      <View className="w-72 max-w-full">
+                        {(() => {
+                          const showEffort = logs.some(
+                            (set) =>
+                              effortFromLogFields(set.effortScale, set.effortValue) != null,
+                          );
+                          return (
+                            <>
+                              <View className="mb-2 flex-row px-1">
+                                <Text className="w-14 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
+                                  Seria
+                                </Text>
+                                <Text className="w-20 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
+                                  Kg
+                                </Text>
+                                <Text className="w-20 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
+                                  Powt.
+                                </Text>
+                                {showEffort ? (
+                                  <Text className="w-20 text-center text-text-muted text-sm font-bold uppercase tracking-wide">
+                                    Wysiłek
+                                  </Text>
+                                ) : null}
+                              </View>
+                              {logs.map((set, index) => {
+                                const effort = effortFromLogFields(
+                                  set.effortScale,
+                                  set.effortValue,
+                                );
+                                return (
+                                  <View
+                                    key={`${set.exerciseId}-${set.setNumber}`}
+                                    className={cx(
+                                      "mb-1 flex-row items-center rounded-lg px-1 py-2.5",
+                                      index % 2 === 0 ? "bg-surface-muted" : "bg-surface",
+                                    )}
+                                  >
+                                    <Text className="w-14 text-center text-text-secondary text-base font-semibold">
+                                      {set.setNumber}
+                                    </Text>
+                                    <Text className="w-20 text-center text-text-primary text-base font-semibold">
+                                      {set.weightKg}
+                                    </Text>
+                                    <Text className="w-20 text-center text-text-primary text-base font-semibold">
+                                      {set.reps}
+                                    </Text>
+                                    {showEffort ? (
+                                      <Text className="w-20 text-center text-text-secondary text-sm font-semibold">
+                                        {formatEffortLabel(effort) || "—"}
+                                      </Text>
+                                    ) : null}
+                                  </View>
+                                );
+                              })}
+                            </>
+                          );
+                        })()}
                       </View>
                     </View>
                     <ExerciseLogSummary

@@ -27,17 +27,23 @@ import {
 } from "lucide-react-native";
 import { APP_NAME, APP_TAGLINE, APP_VERSION } from "../../../src/constants/branding";
 import { useAuth } from "../../../src/contexts/AuthContext";
+import type { EffortScale } from "@bhmt3wp/shared";
 import {
   DEFAULT_REST_OPTIONS,
+  EFFORT_SCALE_PREF_OPTIONS,
   EXERCISE_LOG_FILL_MODE_OPTIONS,
   getAutofillPrevious,
   getDefaultRestSec,
+  getEffortLoggingEnabled,
+  getEffortScale,
   getExerciseLogFillMode,
   getHapticsEnabled,
   getKeepAwakeEnabled,
   getRestTimerEnabled,
   setAutofillPrevious,
   setDefaultRestSec,
+  setEffortLoggingEnabled,
+  setEffortScale,
   setExerciseLogFillMode,
   setHapticsEnabled,
   setKeepAwakeEnabled,
@@ -127,6 +133,8 @@ export default function SettingsScreen() {
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [autofillEnabled, setAutofillEnabled] = useState(true);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
+  const [effortLoggingEnabled, setEffortLoggingEnabledState] = useState(false);
+  const [effortScale, setEffortScaleState] = useState<EffortScale>("rir");
   const [defaultRestSec, setDefaultRestSecState] = useState<DefaultRestSec>(60);
   const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
   const [keepAwakeEnabled, setKeepAwakeEnabledState] = useState(true);
@@ -151,17 +159,33 @@ export default function SettingsScreen() {
       getRestTimerEnabled(),
       getKeepAwakeEnabled(),
       getExerciseLogFillMode(),
+      getEffortLoggingEnabled(),
+      getEffortScale(),
       refreshSyncStatus(),
-    ]).then(([notif, haptics, autofill, restSec, restEnabled, keepAwake, exerciseFillMode]) => {
-      setNotifEnabled(notif);
-      setHapticsEnabledState(haptics);
-      setAutofillEnabled(autofill);
-      setDefaultRestSecState(restSec);
-      setRestTimerEnabledState(restEnabled);
-      setKeepAwakeEnabledState(keepAwake);
-      setFillMode(exerciseFillMode);
-      setLoadingPrefs(false);
-    });
+    ]).then(
+      ([
+        notif,
+        haptics,
+        autofill,
+        restSec,
+        restEnabled,
+        keepAwake,
+        exerciseFillMode,
+        effortOn,
+        effortScalePref,
+      ]) => {
+        setNotifEnabled(notif);
+        setHapticsEnabledState(haptics);
+        setAutofillEnabled(autofill);
+        setDefaultRestSecState(restSec);
+        setRestTimerEnabledState(restEnabled);
+        setKeepAwakeEnabledState(keepAwake);
+        setFillMode(exerciseFillMode);
+        setEffortLoggingEnabledState(effortOn);
+        setEffortScaleState(effortScalePref);
+        setLoadingPrefs(false);
+      },
+    );
   }, []);
 
   const handleNotifToggle = async (value: boolean) => {
@@ -201,6 +225,26 @@ export default function SettingsScreen() {
       await setExerciseLogFillMode(mode);
     } catch {
       setFillMode(prev);
+    }
+  };
+
+  const handleEffortLoggingToggle = async (value: boolean) => {
+    setEffortLoggingEnabledState(value);
+    try {
+      await setEffortLoggingEnabled(value);
+    } catch {
+      setEffortLoggingEnabledState(!value);
+    }
+  };
+
+  const handleEffortScaleChange = async (value: string) => {
+    const scale = value as EffortScale;
+    const prev = effortScale;
+    setEffortScaleState(scale);
+    try {
+      await setEffortScale(scale);
+    } catch {
+      setEffortScaleState(prev);
     }
   };
 
@@ -366,6 +410,31 @@ export default function SettingsScreen() {
             value={fillMode}
             onChange={handleFillModeChange}
           />
+
+          <View className="mt-5 border-t border-border pt-4">
+            <SettingSwitchRow
+              title="Loguj RIR / RPE"
+              description="Pokaż opcjonalne pole wysiłku przy zapisie serii (RIR 0–10 lub RPE 1–10)."
+              value={effortLoggingEnabled}
+              onValueChange={handleEffortLoggingToggle}
+              disabled={loadingPrefs}
+            />
+            {effortLoggingEnabled ? (
+              <View className="mt-4">
+                <Text className="text-text-secondary text-sm font-semibold mb-2">
+                  Domyślna skala
+                </Text>
+                <Text className="text-text-muted text-xs mb-3 leading-5">
+                  RIR = powtórzenia w zapasie. RPE = odczuwany wysiłek. Możesz zmienić też w formularzu.
+                </Text>
+                <Pills
+                  options={EFFORT_SCALE_PREF_OPTIONS}
+                  value={effortScale}
+                  onChange={handleEffortScaleChange}
+                />
+              </View>
+            ) : null}
+          </View>
 
           <View className="mt-5 border-t border-border pt-4">
             <SettingSwitchRow

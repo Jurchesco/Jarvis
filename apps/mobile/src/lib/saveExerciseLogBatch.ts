@@ -1,11 +1,13 @@
 import type { ExerciseFull } from "@bhmt3wp/shared";
-import { isTimeBasedExercise } from "@bhmt3wp/shared";
+import { isTimeBasedExercise, parseEffortInput, type EffortScale } from "@bhmt3wp/shared";
 import { api } from "../api/client";
 import type { ExerciseLogDraft } from "../components/ExerciseLogForm";
 
 export type ParsedExerciseSet = {
   weightKg: number;
   reps: number;
+  effortScale: EffortScale | null;
+  effortValue: number | null;
 };
 
 export type ParsedExerciseLog = {
@@ -21,15 +23,20 @@ export function parseExerciseLogDraft(
   const timeBased = isTimeBasedExercise(exerciseName);
   const sets = (draft.sets.length > 0 ? draft.sets : [{ weightKg: "0", reps: "1" }]).map(
     (set) => {
-      if (timeBased) {
-        return {
-          weightKg: 0,
-          reps: Math.max(1, parseInt(set.reps, 10) || 1),
-        };
-      }
+      const effort = parseEffortInput(set.effortScale ?? null, set.effortValue);
+      const base = timeBased
+        ? {
+            weightKg: 0,
+            reps: Math.max(1, parseInt(set.reps, 10) || 1),
+          }
+        : {
+            weightKg: parseFloat(set.weightKg) || 0,
+            reps: Math.max(1, parseInt(set.reps, 10) || 1),
+          };
       return {
-        weightKg: parseFloat(set.weightKg) || 0,
-        reps: Math.max(1, parseInt(set.reps, 10) || 1),
+        ...base,
+        effortScale: effort?.scale ?? null,
+        effortValue: effort?.value ?? null,
       };
     },
   );
@@ -41,7 +48,7 @@ export function parseExerciseLogDraft(
   };
 }
 
-/** Zapisuje serie (mogą mieć różne kg/powt.) — tworzy/aktualizuje szablony i logi sesji. */
+/** Zapisuje serie (mogą mieć różne kg/powt./wysiłek) — tworzy/aktualizuje szablony i logi sesji. */
 export async function saveExerciseLogBatch(
   sessionId: string,
   exercise: ExerciseFull,
@@ -99,6 +106,8 @@ export async function saveExerciseLogBatch(
       setNumber,
       reps: parsedSet.reps,
       weightKg: parsedSet.weightKg,
+      effortScale: parsedSet.effortScale,
+      effortValue: parsedSet.effortValue,
     });
   }
 

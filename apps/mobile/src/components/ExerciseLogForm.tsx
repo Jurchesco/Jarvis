@@ -1,16 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
-import type { ExerciseSet, SessionSetLog } from "@bhmt3wp/shared";
+import type { EffortScale, ExerciseSet, SessionSetLog } from "@bhmt3wp/shared";
 import {
   bestEpley1rmFromSets,
+  EFFORT_SCALE_OPTIONS,
+  effortFromLogFields,
   exerciseVolumeFromSets,
+  formatEffortLabel,
   formatVolumeKg,
   formatWeightKg,
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
 import { ChevronRight, Minus, NotebookPen, Plus, Trash2 } from "lucide-react-native";
 import {
+  getEffortLoggingEnabled,
+  getEffortScale,
   getExerciseLogFillMode,
+  setEffortScale,
   setExerciseLogFillMode,
   type ExerciseLogFillMode,
 } from "../lib/appPreferences";
@@ -19,6 +25,8 @@ import { BottomSheet, Badge, Button, ICON_STROKE, Input, Pills, cx } from "./ui"
 export type ExerciseLogSetDraft = {
   weightKg: string;
   reps: string;
+  effortScale?: EffortScale | null;
+  effortValue?: string;
 };
 
 export type ExerciseLogDraft = {
@@ -42,7 +50,12 @@ type ExerciseLogFormProps = {
   saveLabel?: string;
 };
 
-const DEFAULT_SET: ExerciseLogSetDraft = { weightKg: "0", reps: "10" };
+const DEFAULT_SET: ExerciseLogSetDraft = {
+  weightKg: "0",
+  reps: "10",
+  effortScale: null,
+  effortValue: "",
+};
 
 const DEFAULT_DRAFT: ExerciseLogDraft = {
   sets: [{ ...DEFAULT_SET }],
@@ -62,6 +75,20 @@ function sanitizeInt(value: string): string {
   return value.replace(/[^\d]/g, "");
 }
 
+function sanitizeEffort(value: string): string {
+  return value.replace(/[^\d.,]/g, "").replace(",", ".");
+}
+
+function formatEffortDraftValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
+
+function effortFieldsFromLog(log: SessionSetLog): Pick<ExerciseLogSetDraft, "effortScale" | "effortValue"> {
+  const effort = effortFromLogFields(log.effortScale, log.effortValue);
+  if (!effort) return { effortScale: null, effortValue: "" };
+  return { effortScale: effort.scale, effortValue: formatEffortDraftValue(effort.value) };
+}
+
 function draftSetsAreUniform(sets: ExerciseLogSetDraft[]): boolean {
   if (sets.length <= 1) return true;
   const first = sets[0];
@@ -73,6 +100,14 @@ function expandUniformSets(count: number, template: ExerciseLogSetDraft): Exerci
   return Array.from({ length: n }, () => ({ ...template }));
 }
 
+function mapLogsToDraftSets(logs: SessionSetLog[]): ExerciseLogSetDraft[] {
+  return logs.map((log) => ({
+    weightKg: String(log.weightKg),
+    reps: String(log.reps),
+    ...effortFieldsFromLog(log),
+  }));
+}
+
 export function createDraftFromLogs(
   logs: SessionSetLog[],
   notes = "",
@@ -80,10 +115,7 @@ export function createDraftFromLogs(
   if (logs.length === 0) return { ...DEFAULT_DRAFT, notes, sets: [{ ...DEFAULT_SET }] };
 
   return {
-    sets: logs.map((log) => ({
-      weightKg: String(log.weightKg),
-      reps: String(log.reps),
-    })),
+    sets: mapLogsToDraftSets(logs),
     notes,
   };
 }
@@ -101,10 +133,7 @@ export function createDraftFromPrevious(
         : [];
   if (logs.length === 0) return { ...DEFAULT_DRAFT, notes, sets: [{ ...DEFAULT_SET }] };
   return {
-    sets: logs.map((log) => ({
-      weightKg: String(log.weightKg),
-      reps: String(log.reps),
-    })),
+    sets: mapLogsToDraftSets(logs),
     notes,
   };
 }
@@ -122,6 +151,8 @@ export function createDraftFromTemplate(
     sets: sorted.map((set) => ({
       weightKg: String(set.weightKg),
       reps: String(set.reps),
+      effortScale: null,
+      effortValue: "",
     })),
     notes,
   };
@@ -167,16 +198,22 @@ export function ExerciseLogForm({
   const [draft, setDraft] = useState<ExerciseLogDraft>(() => seed);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
   const [modeReady, setModeReady] = useState(false);
+  const [effortEnabled, setEffortEnabled] = useState(false);
+  const [effortScale, setEffortScaleState] = useState<EffortScale>("rir");
   const [notesSheetOpen, setNotesSheetOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
-    getExerciseLogFillMode().then((pref) => {
-      if (cancelled) return;
-      // Ramp already in draft → force per-set so values aren't collapsed.
-      setFillMode(draftSetsAreUniform(seed.sets) ? pref : "per-set");
-      setModeReady(true);
-    });
+    Promise.all([getExerciseLogFillMode(), getEffortLoggingEnabled(), getEffortScale()]).then(
+      ([pref, effortOn, scale]) => {
+        if (cancelled) return;
+        // Ramp already in draft → force per-set so values aren't collapsed.
+        setFillMode(draftSetsAreUniform(seed.sets) ? pref : "per-set");
+        setEffortEnabled(effortOn);
+        setEffortScaleState(scale);
+        setModeReady(true);
+      },
+    );
     return () => {
       cancelled = true;
     };
@@ -195,6 +232,8 @@ export function ExerciseLogForm({
 
   const setCount = draft.sets.length;
   const batchTemplate = draft.sets[0] ?? DEFAULT_SET;
+  const effortHint =
+    EFFORT_SCALE_OPTIONS.find((option) => option.value === effortScale)?.hint ?? "";
   const est1rm = useMemo(
     () => (!timeBased ? bestEpley1rmFromSets(parsedSets) : 0),
     [timeBased, parsedSets],
@@ -211,6 +250,18 @@ export function ExerciseLogForm({
   const canSave =
     setCount > 0 &&
     parsedSets.every((set) => (timeBased ? set.reps > 0 : set.weightKg > 0 && set.reps > 0));
+
+  const applyEffortScale = (scale: EffortScale) => {
+    setEffortScaleState(scale);
+    void setEffortScale(scale);
+    setDraft((prev) => ({
+      ...prev,
+      sets: prev.sets.map((set) => ({
+        ...set,
+        effortScale: (set.effortValue ?? "").trim() ? scale : set.effortScale ?? scale,
+      })),
+    }));
+  };
 
   const handleFillModeChange = (mode: ExerciseLogFillMode) => {
     setFillMode(mode);
@@ -236,6 +287,9 @@ export function ExerciseLogForm({
   const updateBatchField = (field: keyof ExerciseLogSetDraft, value: string) => {
     setDraft((prev) => {
       const template = { ...(prev.sets[0] ?? DEFAULT_SET), [field]: value };
+      if (field === "effortValue") {
+        template.effortScale = value.trim() ? effortScale : null;
+      }
       return {
         ...prev,
         sets: expandUniformSets(prev.sets.length, template),
@@ -246,7 +300,14 @@ export function ExerciseLogForm({
   const updateSetField = (index: number, field: keyof ExerciseLogSetDraft, value: string) => {
     setDraft((prev) => ({
       ...prev,
-      sets: prev.sets.map((set, i) => (i === index ? { ...set, [field]: value } : set)),
+      sets: prev.sets.map((set, i) => {
+        if (i !== index) return set;
+        const next = { ...set, [field]: value };
+        if (field === "effortValue") {
+          next.effortScale = value.trim() ? effortScale : null;
+        }
+        return next;
+      }),
     }));
   };
 
@@ -255,7 +316,15 @@ export function ExerciseLogForm({
       const last = prev.sets[prev.sets.length - 1] ?? DEFAULT_SET;
       return {
         ...prev,
-        sets: [...prev.sets, { weightKg: last.weightKg, reps: last.reps }],
+        sets: [
+          ...prev.sets,
+          {
+            weightKg: last.weightKg,
+            reps: last.reps,
+            effortScale: last.effortScale ?? null,
+            effortValue: last.effortValue ?? "",
+          },
+        ],
       };
     });
   };
@@ -292,66 +361,102 @@ export function ExerciseLogForm({
         </Text>
       )}
 
-      {fillMode === "batch" ? (
-        <View className="flex-row gap-3 min-w-0">
-          <View className="flex-1 min-w-0">
-            <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
-              Serie
-            </Text>
-            <Input
-              value={String(setCount)}
-              onChangeText={updateBatchSetCount}
-              keyboardType="number-pad"
-              placeholder="3"
-              inputClassName="text-center font-bold"
-              fontSize={20}
-            />
-          </View>
+      {effortEnabled ? (
+        <View className="mb-3">
+          <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">
+            Wysiłek (opcjonalnie)
+          </Text>
+          <Pills
+            options={EFFORT_SCALE_OPTIONS.map((option) => ({
+              value: option.value,
+              label: option.label,
+            }))}
+            value={effortScale}
+            onChange={(value) => applyEffortScale(value as EffortScale)}
+            className="mb-1.5"
+          />
+          <Text className="text-text-muted text-xs leading-5">{effortHint}</Text>
+        </View>
+      ) : null}
 
-          {timeBased ? (
-            <View className="flex-[2] min-w-0">
+      {fillMode === "batch" ? (
+        <View className="gap-3 min-w-0">
+          <View className="flex-row gap-3 min-w-0">
+            <View className="flex-1 min-w-0">
               <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
-                Czas (sekundy)
+                Serie
               </Text>
               <Input
-                value={batchTemplate.reps}
-                onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
+                value={String(setCount)}
+                onChangeText={updateBatchSetCount}
                 keyboardType="number-pad"
-                placeholder="60"
+                placeholder="3"
                 inputClassName="text-center font-bold"
                 fontSize={20}
               />
             </View>
-          ) : (
-            <>
-              <View className="flex-1 min-w-0">
+
+            {timeBased ? (
+              <View className="flex-[2] min-w-0">
                 <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
-                  Ciężar (kg)
-                </Text>
-                <Input
-                  value={batchTemplate.weightKg}
-                  onChangeText={(value) => updateBatchField("weightKg", sanitizeWeight(value))}
-                  keyboardType="decimal-pad"
-                  placeholder="0"
-                  inputClassName="text-center font-bold"
-                  fontSize={20}
-                />
-              </View>
-              <View className="flex-1 min-w-0">
-                <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
-                  Powtórzenia
+                  Czas (sekundy)
                 </Text>
                 <Input
                   value={batchTemplate.reps}
                   onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
                   keyboardType="number-pad"
-                  placeholder="10"
+                  placeholder="60"
                   inputClassName="text-center font-bold"
                   fontSize={20}
                 />
               </View>
-            </>
-          )}
+            ) : (
+              <>
+                <View className="flex-1 min-w-0">
+                  <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                    Ciężar (kg)
+                  </Text>
+                  <Input
+                    value={batchTemplate.weightKg}
+                    onChangeText={(value) => updateBatchField("weightKg", sanitizeWeight(value))}
+                    keyboardType="decimal-pad"
+                    placeholder="0"
+                    inputClassName="text-center font-bold"
+                    fontSize={20}
+                  />
+                </View>
+                <View className="flex-1 min-w-0">
+                  <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                    Powtórzenia
+                  </Text>
+                  <Input
+                    value={batchTemplate.reps}
+                    onChangeText={(value) => updateBatchField("reps", sanitizeInt(value))}
+                    keyboardType="number-pad"
+                    placeholder="10"
+                    inputClassName="text-center font-bold"
+                    fontSize={20}
+                  />
+                </View>
+              </>
+            )}
+          </View>
+
+          {effortEnabled ? (
+            <View className="min-w-0">
+              <Text className="text-text-muted text-xs font-semibold uppercase mb-1.5" numberOfLines={1}>
+                {effortScale === "rir" ? "RIR" : "RPE"}
+              </Text>
+              <Input
+                value={batchTemplate.effortValue ?? ""}
+                onChangeText={(value) => updateBatchField("effortValue", sanitizeEffort(value))}
+                keyboardType="decimal-pad"
+                placeholder={effortScale === "rir" ? "0–10" : "1–10"}
+                inputClassName="text-center font-bold"
+                fontSize={20}
+              />
+            </View>
+          ) : null}
         </View>
       ) : (
         <>
@@ -373,6 +478,11 @@ export function ExerciseLogForm({
                 </Text>
               </>
             )}
+            {effortEnabled ? (
+              <Text className="w-14 text-center text-text-muted text-[10px] font-semibold uppercase">
+                {effortScale === "rir" ? "RIR" : "RPE"}
+              </Text>
+            ) : null}
             <View className="w-10" />
           </View>
 
@@ -416,6 +526,20 @@ export function ExerciseLogForm({
                   </View>
                 </>
               )}
+              {effortEnabled ? (
+                <View className="w-14 min-w-0">
+                  <Input
+                    value={set.effortValue ?? ""}
+                    onChangeText={(value) =>
+                      updateSetField(index, "effortValue", sanitizeEffort(value))
+                    }
+                    keyboardType="decimal-pad"
+                    placeholder="—"
+                    inputClassName="text-center font-bold"
+                    fontSize={16}
+                  />
+                </View>
+              ) : null}
               <TouchableOpacity
                 onPress={() => removeSet(index)}
                 disabled={draft.sets.length <= 1}
@@ -457,7 +581,10 @@ export function ExerciseLogForm({
           )}
           numberOfLines={2}
         >
-          {draft.notes.trim() || "Uwagi (RPE, technika, ustawienie…)"}
+          {draft.notes.trim() ||
+            (effortEnabled
+              ? "Uwagi (technika, ustawienie…)"
+              : "Uwagi (RPE, technika, ustawienie…)")}
         </Text>
         <ChevronRight size={18} strokeWidth={ICON_STROKE} color="#7c8aa5" />
       </TouchableOpacity>
@@ -472,7 +599,11 @@ export function ExerciseLogForm({
           value={draft.notes}
           onChangeText={(value) => setDraft((prev) => ({ ...prev, notes: value }))}
           leftIcon={NotebookPen}
-          placeholder="RPE, technika, ustawienie maszyny…"
+          placeholder={
+            effortEnabled
+              ? "Technika, ustawienie maszyny…"
+              : "RPE, technika, ustawienie maszyny…"
+          }
           multiline
           autoFocus
           inputClassName="min-h-[120px]"
@@ -614,6 +745,9 @@ export function ExerciseLogSummary({
     setRows.every(
       (set) => set.weightKg === setRows[0].weightKg && set.reps === setRows[0].reps,
     );
+  const showEffort =
+    hasLogs &&
+    sortedLogs.some((log) => effortFromLogFields(log.effortScale, log.effortValue) != null);
 
   return (
     <View className={layout === "afterSets" ? "mt-3 pt-3 border-t border-border" : undefined}>
@@ -631,28 +765,41 @@ export function ExerciseLogSummary({
                 Powt.
               </Text>
             ) : null}
+            {showEffort ? (
+              <Text className="w-16 text-center text-text-muted text-[10px] font-semibold uppercase">
+                Wysiłek
+              </Text>
+            ) : null}
           </View>
-          {sortedLogs.map((log, index) => (
-            <View
-              key={`${log.exerciseId}-${log.setNumber}`}
-              className={cx(
-                "mb-1 flex-row items-center rounded-lg px-1 py-2",
-                index % 2 === 0 ? "bg-surface-muted" : "bg-surface",
-              )}
-            >
-              <Text className="w-12 text-center text-text-secondary text-sm font-semibold">
-                {log.setNumber}
-              </Text>
-              <Text className="flex-1 text-center text-text-primary text-sm font-semibold">
-                {isTime ? `${log.reps}s` : log.weightKg}
-              </Text>
-              {!isTime ? (
-                <Text className="flex-1 text-center text-text-primary text-sm font-semibold">
-                  {log.reps}
+          {sortedLogs.map((log, index) => {
+            const effort = effortFromLogFields(log.effortScale, log.effortValue);
+            return (
+              <View
+                key={`${log.exerciseId}-${log.setNumber}`}
+                className={cx(
+                  "mb-1 flex-row items-center rounded-lg px-1 py-2",
+                  index % 2 === 0 ? "bg-surface-muted" : "bg-surface",
+                )}
+              >
+                <Text className="w-12 text-center text-text-secondary text-sm font-semibold">
+                  {log.setNumber}
                 </Text>
-              ) : null}
-            </View>
-          ))}
+                <Text className="flex-1 text-center text-text-primary text-sm font-semibold">
+                  {isTime ? `${log.reps}s` : log.weightKg}
+                </Text>
+                {!isTime ? (
+                  <Text className="flex-1 text-center text-text-primary text-sm font-semibold">
+                    {log.reps}
+                  </Text>
+                ) : null}
+                {showEffort ? (
+                  <Text className="w-16 text-center text-text-secondary text-xs font-semibold">
+                    {formatEffortLabel(effort) || "—"}
+                  </Text>
+                ) : null}
+              </View>
+            );
+          })}
         </View>
       ) : layout === "standalone" ? (
         <View className="flex-row gap-2 mb-2">
