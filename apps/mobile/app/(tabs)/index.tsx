@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Alert, Platform, ScrollView, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -17,8 +17,15 @@ import {
   useCreateSession,
   useDeleteSession,
   useSession,
+  useSheets,
+  useSheet,
 } from "../../src/api/hooks";
-import { ensureFreestyleSheet } from "../../src/lib/ensureFreestyleSheet";
+import { WeekPlanStrip } from "../../src/components/WeekPlanStrip";
+import { ensureFreestyleSheet, isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
+import {
+  todayWeekIndex,
+  type WeekSlots,
+} from "../../src/lib/weekPlan";
 import {
   Badge,
   Button,
@@ -33,13 +40,29 @@ export default function HomeScreen() {
   const createSession = useCreateSession();
   const deleteSession = useDeleteSession();
   const { data: completedSessions } = useCompletedSessions();
+  const { data: sheets } = useSheets();
   const [isStarting, setIsStarting] = useState(false);
   const [elapsedSinceStart, setElapsedSinceStart] = useState(0);
+  const [weekSlots, setWeekSlots] = useState<WeekSlots | null>(null);
 
   const lastSessionId = completedSessions?.[0]?.id ?? null;
   const { data: lastSession } = useSession(lastSessionId ?? "");
 
   const { data: incompleteSession } = useAnyIncompleteSession();
+
+  const todayIndex = todayWeekIndex();
+  const todaySheetId = weekSlots?.[todayIndex] ?? null;
+  const { data: todaySheet } = useSheet(todaySheetId ?? "");
+
+  const todayPlan = useMemo(() => {
+    if (!todaySheetId || !todaySheet) return null;
+    if (isFreestyleSheetName(todaySheet.name)) return null;
+    return todaySheet;
+  }, [todaySheetId, todaySheet]);
+
+  const handleSlotsChange = useCallback((slots: WeekSlots) => {
+    setWeekSlots(slots);
+  }, []);
 
   useEffect(() => {
     if (!incompleteSession?.startedAt) return;
@@ -67,13 +90,9 @@ export default function HomeScreen() {
     return { stats, duration };
   }, [lastSession]);
 
-  const handleStartWorkout = async (force = false) => {
+  const startSessionForSheet = async (sheetId: string, force = false) => {
     setIsStarting(true);
     try {
-      const { sheetId } = await ensureFreestyleSheet();
-
-      // Guard against creating a duplicate session if one is already in progress
-      // (e.g. incompleteSession hadn't loaded yet when this was pressed).
       const existing = incompleteSession ?? (await api.sessions.findIncomplete(sheetId));
       if (existing && !force) {
         router.push(`/workout/${existing.id}?sheetId=${sheetId}`);
@@ -106,6 +125,30 @@ export default function HomeScreen() {
     }
   };
 
+  const handleStartFreestyle = async (force = false) => {
+    try {
+      const { sheetId } = await ensureFreestyleSheet();
+      await startSessionForSheet(sheetId, force);
+    } catch (err) {
+      setIsStarting(false);
+      const msg = err instanceof Error ? err.message : "Nie można przygotować treningu";
+      if (Platform.OS === "web") window.alert(msg);
+      else Alert.alert("Błąd", msg);
+    }
+  };
+
+  const handleStartTodayPlan = async () => {
+    if (!todayPlan) return;
+    if ((todayPlan.exercises?.length ?? 0) === 0) {
+      const msg = "Ten plan nie ma jeszcze ćwiczeń — uzupełnij go albo wybierz inny dzień.";
+      if (Platform.OS === "web") window.alert(msg);
+      else Alert.alert("Pusty plan", msg);
+      router.push(`/sheet/${todayPlan.id}`);
+      return;
+    }
+    await startSessionForSheet(todayPlan.id);
+  };
+
   const handleResumeWorkout = () => {
     if (!incompleteSession) return;
     router.push(`/workout/${incompleteSession.id}?sheetId=${incompleteSession.sheetId}`);
@@ -134,8 +177,8 @@ export default function HomeScreen() {
           title={APP_NAME}
           subtitle={
             thisMonthCount > 0
-              ? `${thisMonthCount} ${thisMonthCount === 1 ? "trening" : "treningi"} w tym miesiącu — freestyle albo plan.`
-              : "Wybierz: ćwiczenia na bieżąco albo przygotowany plan."
+              ? `${thisMonthCount} ${thisMonthCount === 1 ? "trening" : "treningi"} w tym miesiącu — freestyle albo plan z tygodnia.`
+              : "Ułóż tydzień albo odpal Freestyle / plan z katalogu."
           }
           icon={Dumbbell}
         />
@@ -179,7 +222,7 @@ export default function HomeScreen() {
                 const title = "Nowy trening";
                 const message =
                   "Obecna sesja zostanie usunięta (wraz z zapisanymi ćwiczeniami) i zacznie się nowa. Kontynuować?";
-                const run = () => handleStartWorkout(true);
+                const run = () => handleStartFreestyle(true);
                 if (Platform.OS === "web") {
                   if (window.confirm(`${title}\n\n${message}`)) run();
                 } else {
@@ -209,25 +252,52 @@ export default function HomeScreen() {
               </View>
               <View className="ml-3 flex-1">
                 <Text className="text-text-primary text-xl font-bold leading-tight">Gotowy do treningu?</Text>
-                <Text className="text-text-muted text-xs mt-0.5">Freestyle albo plan z katalogu</Text>
+                <Text className="text-text-muted text-xs mt-0.5">
+                  {todayPlan
+                    ? `Dziś w tygodniu: ${todayPlan.name}`
+                    : "Dziś bez planu — Freestyle albo wybierz układ"}
+                </Text>
               </View>
             </View>
 
             <Text className="text-text-secondary text-sm mt-2 leading-5">
-              Freestyle — dobierasz ćwiczenia w trakcie. Plan — odpalasz gotowy układ z katalogu.
+              Tydzień to tylko podpowiedź startu. Freestyle i inne plany zostają dostępne zawsze.
             </Text>
 
-            <Button
-              label="Freestyle"
-              icon={Play}
-              onPress={() => handleStartWorkout()}
-              loading={isStarting || createSession.isPending}
-              className="mt-5"
-            />
+            {todayPlan ? (
+              <Button
+                label={`Dziś · ${todayPlan.name}`}
+                icon={Play}
+                onPress={() => void handleStartTodayPlan()}
+                loading={isStarting || createSession.isPending}
+                className="mt-5"
+              />
+            ) : (
+              <Button
+                label="Freestyle"
+                icon={Play}
+                onPress={() => void handleStartFreestyle()}
+                loading={isStarting || createSession.isPending}
+                className="mt-5"
+              />
+            )}
+
+            {todayPlan ? (
+              <Button
+                label="Freestyle zamiast tego"
+                icon={Play}
+                variant="secondary"
+                onPress={() => void handleStartFreestyle()}
+                loading={isStarting || createSession.isPending}
+                className="mt-3"
+              />
+            ) : null}
+
             <Button
               label="Wybierz plan"
               icon={ClipboardList}
-              variant="secondary"
+              variant={todayPlan ? "ghost" : "secondary"}
+              size={todayPlan ? "sm" : "md"}
               onPress={() => router.push("/plans")}
               className="mt-3"
             />
@@ -241,6 +311,14 @@ export default function HomeScreen() {
             />
           </Card>
         )}
+
+        <View className="mt-4">
+          <WeekPlanStrip
+            sheets={sheets}
+            disabled={!!incompleteSession}
+            onSlotsChange={handleSlotsChange}
+          />
+        </View>
 
         {lastSessionStats ? (
           <Card padding="md" className="mt-4">
@@ -262,7 +340,6 @@ export default function HomeScreen() {
             </View>
           </Card>
         ) : null}
-
       </ScrollView>
     </SafeAreaView>
   );
