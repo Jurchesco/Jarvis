@@ -146,7 +146,7 @@ function MuscleVolumeChart({ rows, width }: { rows: MuscleVolumeRow[]; width: nu
 function RecordsList({ records }: { records: ExerciseRecord[] }) {
   if (records.length === 0) {
     return (
-      <Text className="text-text-secondary text-sm leading-5">
+      <Text className="text-text-muted text-sm leading-5">
         Brak rekordów w tym zakresie — zaloguj serie z ciężarem.
       </Text>
     );
@@ -278,7 +278,7 @@ export default function StatsScreen() {
   const rangeLabel = RANGE_OPTIONS.find((option) => option.value === range)?.label ?? range;
 
   return (
-    <SafeAreaView className="flex-1 bg-background" edges={["top", "bottom"]}>
+    <SafeAreaView className="flex-1 bg-background" edges={["top"]}>
       <ScrollView
         contentContainerStyle={{ padding: 20, paddingBottom: 120 }}
         showsVerticalScrollIndicator={false}
@@ -348,10 +348,10 @@ export default function StatsScreen() {
                 className="mb-4"
               />
               {muscleRows.length === 0 ? (
-                <Text className="text-text-secondary text-sm leading-5">
+                <Text className="text-text-muted text-sm leading-5">
                   {muscleScope === "week"
-                    ? "Brak serii z katalogu w tym tygodniu."
-                    : "Brak serii z katalogu w zakresie."}
+                    ? "Brak serii z katalogu w tym tygodniu — zaloguj trening z ćwiczeniami z bazy."
+                    : "Brak serii z katalogu w tym zakresie."}
                 </Text>
               ) : (
                 <>

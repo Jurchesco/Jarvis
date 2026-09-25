@@ -163,7 +163,9 @@ export default function ExerciseLibraryScreen() {
           </View>
         }
         ListEmptyComponent={
-          <Text className="py-12 text-center text-text-muted">Brak wyników</Text>
+          <Text className="py-12 text-center text-text-muted text-sm leading-5 px-6">
+            Brak ćwiczeń dla tych filtrów — wyczyść wyszukiwanie albo sprzęt.
+          </Text>
         }
         renderItem={({ item }) => (
           <TouchableOpacity

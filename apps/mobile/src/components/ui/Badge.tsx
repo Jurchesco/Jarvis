@@ -28,8 +28,8 @@ const TONE_ICON: Record<BadgeTone, string> = {
 };
 
 const SIZE_CLASS: Record<BadgeSize, string> = {
-  sm: "h-6 px-2 gap-1",
-  md: "h-7 px-2.5 gap-1.5",
+  sm: "min-h-6 px-2 py-0.5 gap-1",
+  md: "min-h-7 px-2.5 py-0.5 gap-1.5",
 };
 
 const TEXT_SIZE_CLASS: Record<BadgeSize, string> = {
@@ -43,6 +43,8 @@ type BadgeProps = {
   size?: BadgeSize;
   icon?: LucideIcon;
   className?: string;
+  /** Truncate long labels (e.g. multi-set Cel chips). Default 1. */
+  numberOfLines?: number;
 };
 
 export function Badge({
@@ -51,11 +53,12 @@ export function Badge({
   size = "sm",
   icon: Icon,
   className,
+  numberOfLines = 1,
 }: BadgeProps) {
   return (
     <View
       className={cx(
-        "flex-row items-center self-start rounded-full border",
+        "flex-row items-center self-start rounded-full border max-w-full",
         TONE_SURFACE[tone],
         SIZE_CLASS[size],
         className,
@@ -68,7 +71,12 @@ export function Badge({
           color={TONE_ICON[tone]}
         />
       ) : null}
-      <Text className={cx(TEXT_SIZE_CLASS[size], TONE_TEXT[tone])}>{label}</Text>
+      <Text
+        className={cx(TEXT_SIZE_CLASS[size], TONE_TEXT[tone], "shrink")}
+        numberOfLines={numberOfLines}
+      >
+        {label}
+      </Text>
     </View>
   );
 }

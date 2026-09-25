@@ -375,7 +375,7 @@ export default function HistoryScreen() {
                       value={monthSummary.totalVolume > 0 ? formatVolumeKg(monthSummary.totalVolume) : "—"}
                     />
                     <MonthStat
-                      label="Seria"
+                      label="Passa"
                       value={
                         monthSummary.monthBestStreak > 0
                           ? `${monthSummary.monthBestStreak} dni`

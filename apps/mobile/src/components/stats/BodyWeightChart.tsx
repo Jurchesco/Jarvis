@@ -78,7 +78,7 @@ export function BodyWeightChart({
       </View>
 
       {points.length === 0 ? (
-        <Text className="text-text-secondary text-sm leading-5">
+        <Text className="text-text-muted text-sm leading-5">
           Brak pomiarów wagi. Dodaj weigh-in w Ustawieniach albo zaimportuj openScale.
         </Text>
       ) : (
