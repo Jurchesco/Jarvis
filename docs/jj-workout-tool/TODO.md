@@ -49,7 +49,7 @@
 5. [x] **UX sesji** — pasek % serii; chip „Ostatnio…”; toast tonażu; wake lock
 6. [x] **Export / import JSON**
 
-**Pomijamy / później:** mezocykl+RIR jako rdzeń Home; Firebase; in-app AI Coach (epik).
+**Pomijamy / później:** pełny mezocykl FORGE na Home; Firebase; in-app AI Coach (epik). Auto-awans planów = **D021** (MVP linear/double).
 
 ---
 
@@ -69,14 +69,16 @@
 - [x] **PR / rekordy + trend 1RM** — Stats
 - [x] **RIR / RPE opcjonalnie**
 - [x] **Profil / waga + dziennik zdrowia w Supabase**
+- [x] **Auto-progresja planów (D021)** — linear / double / Greyskull / time + deload + Cel w sesji
 - [ ] **Scroll horizontally** — opcjonalnie
+- [ ] Warm-up poza progresją / bodyweight reps (rozszerzenie D021)
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN
 - [ ] **Data export** — PDF
 - [ ] **Multi-user assignments**
 - [ ] **Zakładka tab „Plany”** — tylko jeśli `/plans` niewystarczy
-- [ ] **Mezocykl / auto-awans** — epik (D019)
+- [x] **Mezocykl / auto-awans** — MVP D021 (linear + double na planach; Greyskull/time później)
 - [ ] **In-app AI Coach** — consent + apply/revert (po Hermesie na DB)
 
 ---

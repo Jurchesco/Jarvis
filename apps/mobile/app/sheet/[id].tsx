@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Alert, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ChevronDown,
@@ -11,7 +11,8 @@ import {
   Plus,
   Trash2,
 } from "lucide-react-native";
-import type { CatalogExercise, ExerciseFull } from "@bhmt3wp/shared";
+import type { CatalogExercise, ExerciseFull, ProgressionRule } from "@bhmt3wp/shared";
+import { PROGRESSION_RULE_OPTIONS } from "@bhmt3wp/shared";
 import {
   useCreateSession,
   useDeleteExercise,
@@ -25,6 +26,13 @@ import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
 import { duplicateSheet } from "../../src/lib/duplicateSheet";
 import { isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
 import {
+  getSheetProgressionConfig,
+  setExerciseProgressionOverride,
+  setSheetDefaultProgressionRule,
+  setSheetProgressionDeload,
+  type SheetProgressionConfig,
+} from "../../src/lib/progressionPrefs";
+import {
   syncExerciseTargets,
   targetsFromSets,
 } from "../../src/lib/syncExerciseTargets";
@@ -33,6 +41,7 @@ import {
   Card,
   ICON_STROKE,
   Input,
+  Pills,
   StateBlock,
 } from "../../src/components/ui";
 
@@ -67,6 +76,20 @@ export default function PlanDetailScreen() {
   const [isStarting, setIsStarting] = useState(false);
   const [isDuplicating, setIsDuplicating] = useState(false);
   const [savingExerciseId, setSavingExerciseId] = useState<string | null>(null);
+  const [progression, setProgression] = useState<SheetProgressionConfig>({
+    defaultRule: "linear",
+    exercises: {},
+  });
+
+  useEffect(() => {
+    let cancelled = false;
+    getSheetProgressionConfig(sheetId).then((cfg) => {
+      if (!cancelled) setProgression(cfg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sheetId]);
 
   const existingNames = useMemo(
     () => (sheet?.exercises ?? []).map((exercise) => exercise.name),
@@ -181,6 +204,49 @@ export default function PlanDetailScreen() {
       else Alert.alert("Błąd", msg);
     } finally {
       setSavingExerciseId(null);
+    }
+  };
+
+  const handleDefaultProgressionChange = async (rule: ProgressionRule) => {
+    const prev = progression;
+    setProgression({ ...prev, defaultRule: rule });
+    try {
+      await setSheetDefaultProgressionRule(sheetId, rule);
+    } catch {
+      setProgression(prev);
+    }
+  };
+
+  const handleDeloadToggle = async () => {
+    const prev = progression;
+    const next = !prev.deload;
+    setProgression({ ...prev, deload: next });
+    try {
+      await setSheetProgressionDeload(sheetId, next);
+    } catch {
+      setProgression(prev);
+    }
+  };
+
+  const handleExerciseRuleChange = async (exerciseId: string, rule: ProgressionRule) => {
+    const prev = progression;
+    const exercises = { ...(prev.exercises ?? {}) };
+    if (rule === prev.defaultRule) {
+      const { rule: _r, ...rest } = exercises[exerciseId] ?? {};
+      if (Object.keys(rest).length === 0) delete exercises[exerciseId];
+      else exercises[exerciseId] = rest;
+    } else {
+      exercises[exerciseId] = { ...exercises[exerciseId], rule };
+    }
+    setProgression({ ...prev, exercises });
+    try {
+      if (rule === prev.defaultRule) {
+        await setExerciseProgressionOverride(sheetId, exerciseId, null);
+      } else {
+        await setExerciseProgressionOverride(sheetId, exerciseId, { rule });
+      }
+    } catch {
+      setProgression(prev);
     }
   };
 
@@ -302,6 +368,46 @@ export default function PlanDetailScreen() {
           </View>
         )}
 
+        <Card padding="md" className="mb-4">
+          <Text className="text-text-primary text-sm font-semibold mb-1">Progresja</Text>
+          <Text className="text-text-muted text-xs mb-3 leading-5">
+            Po zalogowaniu pełnych serii następna sesja dostanie cele. Timed → reguła Czas.
+            Greyskull: ostatnia seria = AMRAP.
+          </Text>
+          <Pills
+            options={PROGRESSION_RULE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+            value={progression.defaultRule}
+            onChange={handleDefaultProgressionChange}
+          />
+          <Text className="text-text-muted text-[10px] mt-2 leading-4">
+            {PROGRESSION_RULE_OPTIONS.find((o) => o.value === progression.defaultRule)?.hint}
+          </Text>
+          <Pressable
+            onPress={handleDeloadToggle}
+            className="mt-4 flex-row items-center justify-between rounded-xl border border-border bg-surface-muted px-3 py-3"
+            accessibilityRole="switch"
+            accessibilityState={{ checked: !!progression.deload }}
+          >
+            <View className="flex-1 pr-3">
+              <Text className="text-text-primary text-sm font-semibold">Tydzień deload</Text>
+              <Text className="text-text-muted text-xs mt-0.5 leading-4">
+                Bez auto-awansu — cele z poprzedniej sesji / szablonu.
+              </Text>
+            </View>
+            <View
+              className={`h-7 w-12 rounded-full justify-center px-0.5 ${
+                progression.deload ? "bg-action-primary" : "bg-border"
+              }`}
+            >
+              <View
+                className={`h-6 w-6 rounded-full bg-white ${
+                  progression.deload ? "self-end" : "self-start"
+                }`}
+              />
+            </View>
+          </Pressable>
+        </Card>
+
         {sheet.exercises.length === 0 ? (
           <StateBlock
             className="mt-6"
@@ -353,9 +459,24 @@ export default function PlanDetailScreen() {
                       </TouchableOpacity>
                     </View>
 
-                    <Text className="text-text-muted text-xs mt-1 mb-3">
+                    <Text className="text-text-muted text-xs mt-1 mb-2">
                       Cel: {formatTargetLabel(exercise)}
                     </Text>
+
+                    <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">
+                      Progresja
+                    </Text>
+                    <Pills
+                      options={PROGRESSION_RULE_OPTIONS.map((o) => ({
+                        value: o.value,
+                        label: o.label,
+                      }))}
+                      value={
+                        progression.exercises?.[exercise.id]?.rule ?? progression.defaultRule
+                      }
+                      onChange={(rule) => handleExerciseRuleChange(exercise.id, rule)}
+                      className="mb-3"
+                    />
 
                     <View className="flex-row flex-wrap gap-3">
                       <View className="flex-row items-center rounded-xl border border-border bg-action-secondary overflow-hidden">

@@ -539,7 +539,50 @@ export const api = {
         .select("*")
         .eq("session_id", lastSession.id);
 
-      return { session: lastSession, logs: (logRows ?? []).map(mapLog) };
+      return {
+        session: lastSession,
+        logs: (logRows ?? [])
+          .map(mapLog)
+          .sort((a, b) => a.setNumber - b.setNumber),
+      };
+    },
+
+    /** Newest-first completed sessions with logs (for Greyskull stall detection). */
+    lastNBySheet: async (
+      sheetId: string,
+      limit = 5,
+    ): Promise<{ session: WorkoutSession; logs: SessionSetLog[] }[]> => {
+      const n = Math.max(1, Math.min(limit, 12));
+      const { data: sessions, error } = await supabase
+        .from("workout_sessions")
+        .select("*")
+        .eq("sheet_id", sheetId)
+        .not("completed_at", "is", null)
+        .order("completed_at", { ascending: false })
+        .limit(n);
+      if (error) throw new Error(error.message);
+      if (!sessions || sessions.length === 0) return [];
+
+      const mapped = sessions.map(mapSession);
+      const ids = mapped.map((s) => s.id);
+      const { data: logRows, error: logError } = await supabase
+        .from("session_set_logs")
+        .select("*")
+        .in("session_id", ids);
+      if (logError) throw new Error(logError.message);
+
+      const bySession = new Map<string, SessionSetLog[]>();
+      for (const row of logRows ?? []) {
+        const log = mapLog(row);
+        const list = bySession.get(log.sessionId) ?? [];
+        list.push(log);
+        bySession.set(log.sessionId, list);
+      }
+
+      return mapped.map((session) => ({
+        session,
+        logs: (bySession.get(session.id) ?? []).sort((a, b) => a.setNumber - b.setNumber),
+      }));
     },
 
     /** Latest unfinished session on any sheet — Home resume for freestyle and plans. */

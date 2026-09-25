@@ -287,6 +287,22 @@ export {
 } from "./effort";
 export type { EffortScale, EffortValue } from "./effort";
 export {
+  PROGRESSION_RULE_OPTIONS,
+  computeNextTargets,
+  defaultStepKgForExercise,
+  formatProgressionTargetChip,
+  isProgressionRule,
+  resolveStepKg,
+  sessionMissedTargets,
+} from "./progression";
+export type {
+  ProgressionConfig,
+  ProgressionResult,
+  ProgressionRule,
+  ProgressionSetLike,
+  ProgressionTarget,
+} from "./progression";
+export {
   BACKUP_FORMAT,
   BACKUP_VERSION,
   isJarvisBackup,

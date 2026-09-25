@@ -15,17 +15,19 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useCompleteSession,
   useDeleteSession,
-  useLastSessionBySheet,
+  useLastNSessionsBySheet,
   useSession,
   useSessionExerciseNotes,
   useSheet,
   useUpdateSession,
 } from "../../src/api/hooks";
-import type { CatalogExercise, ExerciseFull, SessionSetLog } from "@bhmt3wp/shared";
+import type { CatalogExercise, ExerciseFull, SessionSetLog, ProgressionResult } from "@bhmt3wp/shared";
 import {
+  computeNextTargets,
   computeSessionLiveStats,
   exerciseVolumeFromSets,
   formatDuration,
+  formatProgressionTargetChip,
   formatVolumeKg,
   formatWeightKg,
   isTimeBasedExercise,
@@ -48,6 +50,13 @@ import {
   ExerciseLogSummary,
   type ExerciseLogDraft,
 } from "../../src/components/ExerciseLogForm";
+import { createDraftFromProgression, plannedSetsFromTemplate } from "../../src/lib/progressionDraft";
+import {
+  getProgressionEnabled,
+  getSheetProgressionConfig,
+  resolveExerciseProgressionConfig,
+  type SheetProgressionConfig,
+} from "../../src/lib/progressionPrefs";
 import { addCatalogExerciseToSheet } from "../../src/lib/addCatalogExercise";
 import { isFreestyleSheetName } from "../../src/lib/ensureFreestyleSheet";
 import { getAutofillPrevious, getDefaultRestSec, getKeepAwakeEnabled, getRestTimerEnabled } from "../../src/lib/appPreferences";
@@ -223,7 +232,8 @@ export default function WorkoutScreen() {
   const updateSession = useUpdateSession();
   const deleteSession = useDeleteSession();
   const [showEditStart, setShowEditStart] = useState(false);
-  const { data: lastSessionData } = useLastSessionBySheet(sheetId!);
+  const { data: recentSessions = [] } = useLastNSessionsBySheet(sheetId!, 5);
+  const lastSessionData = recentSessions[0] ?? null;
   const { data: exerciseNotes } = useSessionExerciseNotes(sessionId);
 
   const [sessionExerciseIds, setSessionExerciseIds] = useState<Set<string>>(new Set());
@@ -235,6 +245,11 @@ export default function WorkoutScreen() {
   const [savingExerciseId, setSavingExerciseId] = useState<string | null>(null);
   const [discardingExerciseId, setDiscardingExerciseId] = useState<string | null>(null);
   const [autofillPrevious, setAutofillPrevious] = useState(true);
+  const [progressionEnabled, setProgressionEnabled] = useState(true);
+  const [sheetProgression, setSheetProgression] = useState<SheetProgressionConfig>({
+    defaultRule: "linear",
+    exercises: {},
+  });
   const [restTimerEnabled, setRestTimerEnabledState] = useState(true);
   const [keepAwakeEnabled, setKeepAwakeEnabledState] = useState(true);
   const [defaultRestSec, setDefaultRestSecState] = useState(60);
@@ -259,13 +274,26 @@ export default function WorkoutScreen() {
       getRestTimerEnabled(),
       getDefaultRestSec(),
       getKeepAwakeEnabled(),
-    ]).then(([autofill, restEnabled, restSec, keepAwake]) => {
+      getProgressionEnabled(),
+    ]).then(([autofill, restEnabled, restSec, keepAwake, progressionOn]) => {
       setAutofillPrevious(autofill);
       setRestTimerEnabledState(restEnabled);
       setDefaultRestSecState(restSec);
       setKeepAwakeEnabledState(keepAwake);
+      setProgressionEnabled(progressionOn);
     });
   }, []);
+
+  useEffect(() => {
+    if (!sheetId) return;
+    let cancelled = false;
+    getSheetProgressionConfig(sheetId).then((cfg) => {
+      if (!cancelled) setSheetProgression(cfg);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [sheetId]);
 
   useEffect(() => {
     const wasActive = prevRestActiveRef.current;
@@ -296,6 +324,30 @@ export default function WorkoutScreen() {
     }
     return map;
   }, [lastSessionData]);
+
+  /** Newest-first per-exercise log history across recent sessions (Greyskull stalls). */
+  const recentLogsByExercise = useMemo(() => {
+    const map: Record<string, { setNumber: number; weightKg: number; reps: number }[][]> = {};
+    for (const row of recentSessions) {
+      const byEx: Record<string, SessionSetLog[]> = {};
+      for (const log of row.logs) {
+        if (!byEx[log.exerciseId]) byEx[log.exerciseId] = [];
+        byEx[log.exerciseId].push(log);
+      }
+      for (const [exerciseId, logs] of Object.entries(byEx)) {
+        const sorted = [...logs]
+          .sort((a, b) => a.setNumber - b.setNumber)
+          .map((log) => ({
+            setNumber: log.setNumber,
+            weightKg: log.weightKg,
+            reps: log.reps,
+          }));
+        if (!map[exerciseId]) map[exerciseId] = [];
+        map[exerciseId].push(sorted);
+      }
+    }
+    return map;
+  }, [recentSessions]);
 
   const notesByExercise = useMemo(() => {
     const map: Record<string, string> = {};
@@ -662,19 +714,53 @@ export default function WorkoutScreen() {
               const isSaved = savedExerciseIds.has(exercise.id) && logs.length > 0;
               const isEditing = editingExerciseId === exercise.id || !isSaved;
               const rawPreviousLogs = previousSetsByExercise[exercise.id] ?? [];
-              // Ghost / chip always; autofill only seeds the draft when pref is on.
-              const initialDraft = isSaved
-                ? createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "")
-                : autofillPrevious && rawPreviousLogs.length > 0
-                  ? createDraftFromPrevious(
-                      rawPreviousLogs[0] ?? null,
-                      notesByExercise[exercise.id] ?? "",
-                      rawPreviousLogs,
-                    )
-                  : createDraftFromTemplate(
-                      exercise.sets,
-                      notesByExercise[exercise.id] ?? "",
-                    );
+              const isFreestyle = isFreestyleSheetName(sheet?.name ?? "");
+              const progressionOn = progressionEnabled && !isFreestyle;
+              const progressionConfig = resolveExerciseProgressionConfig(
+                sheetProgression,
+                exercise.id,
+              );
+              const progression: ProgressionResult | null = progressionOn
+                ? computeNextTargets({
+                    exerciseName: exercise.name,
+                    config: progressionConfig,
+                    plannedSets: plannedSetsFromTemplate(exercise.sets),
+                    previousLogs: rawPreviousLogs.map((log) => ({
+                      setNumber: log.setNumber,
+                      weightKg: log.weightKg,
+                      reps: log.reps,
+                    })),
+                    recentSessionsNewestFirst: recentLogsByExercise[exercise.id],
+                    enabled: true,
+                    deload: !!sheetProgression.deload,
+                  })
+                : null;
+              const showProgressionUi =
+                !!progression &&
+                progression.targets.length > 0 &&
+                (progression.appliedRule !== "none" || !!sheetProgression.deload);
+
+              let initialDraft: ExerciseLogDraft;
+              if (isSaved) {
+                initialDraft = createDraftFromLogs(logs, notesByExercise[exercise.id] ?? "");
+              } else if (showProgressionUi && autofillPrevious) {
+                initialDraft = createDraftFromProgression(
+                  progression!.targets,
+                  notesByExercise[exercise.id] ?? "",
+                  rawPreviousLogs,
+                );
+              } else if (autofillPrevious && rawPreviousLogs.length > 0) {
+                initialDraft = createDraftFromPrevious(
+                  rawPreviousLogs[0] ?? null,
+                  notesByExercise[exercise.id] ?? "",
+                  rawPreviousLogs,
+                );
+              } else {
+                initialDraft = createDraftFromTemplate(
+                  exercise.sets,
+                  notesByExercise[exercise.id] ?? "",
+                );
+              }
 
               return (
                 <Card key={exercise.id} className="mb-3" padding="md">
@@ -714,6 +800,15 @@ export default function WorkoutScreen() {
                       exerciseName={exercise.name}
                       timeBased={isTimeBasedExercise(exercise.name)}
                       previousLogs={rawPreviousLogs}
+                      progressionChip={
+                        showProgressionUi
+                          ? formatProgressionTargetChip(
+                              progression!.targets,
+                              isTimeBasedExercise(exercise.name),
+                            )
+                          : null
+                      }
+                      progressionReason={showProgressionUi ? progression!.reason : null}
                       initialDraft={initialDraft}
                       onSave={(draft) => handleSaveExercise(exercise, draft)}
                       onCancel={

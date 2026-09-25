@@ -63,6 +63,10 @@ import {
   type DefaultRestSec,
   type ExerciseLogFillMode,
 } from "../../../src/lib/appPreferences";
+import {
+  getProgressionEnabled,
+  setProgressionEnabled,
+} from "../../../src/lib/progressionPrefs";
 import { exportAiContextFile } from "../../../src/lib/aiContextExport";
 import { buildJarvisBackup } from "../../../src/lib/backupExport";
 import { deliverBackupFile, deliverDownloadableText, pickBackupJsonFile } from "../../../src/lib/backupFile";
@@ -158,6 +162,7 @@ export default function SettingsScreen() {
   const [notifEnabled, setNotifEnabled] = useState(true);
   const [hapticsEnabled, setHapticsEnabledState] = useState(true);
   const [autofillEnabled, setAutofillEnabled] = useState(true);
+  const [progressionEnabled, setProgressionEnabledState] = useState(true);
   const [fillMode, setFillMode] = useState<ExerciseLogFillMode>("per-set");
   const [effortLoggingEnabled, setEffortLoggingEnabledState] = useState(false);
   const [effortScale, setEffortScaleState] = useState<EffortScale>("rir");
@@ -212,6 +217,7 @@ export default function SettingsScreen() {
       notifications.getEnabled(),
       getHapticsEnabled(),
       getAutofillPrevious(),
+      getProgressionEnabled(),
       getDefaultRestSec(),
       getRestTimerEnabled(),
       getKeepAwakeEnabled(),
@@ -225,6 +231,7 @@ export default function SettingsScreen() {
         notif,
         haptics,
         autofill,
+        progressionOn,
         restSec,
         restEnabled,
         keepAwake,
@@ -235,6 +242,7 @@ export default function SettingsScreen() {
         setNotifEnabled(notif);
         setHapticsEnabledState(haptics);
         setAutofillEnabled(autofill);
+        setProgressionEnabledState(progressionOn);
         setDefaultRestSecState(restSec);
         setRestTimerEnabledState(restEnabled);
         setKeepAwakeEnabledState(keepAwake);
@@ -272,6 +280,15 @@ export default function SettingsScreen() {
       await setAutofillPrevious(value);
     } catch {
       setAutofillEnabled(!value);
+    }
+  };
+
+  const handleProgressionToggle = async (value: boolean) => {
+    setProgressionEnabledState(value);
+    try {
+      await setProgressionEnabled(value);
+    } catch {
+      setProgressionEnabledState(!value);
     }
   };
 
@@ -789,6 +806,16 @@ export default function SettingsScreen() {
               description="Podpowiedzi ciężaru i powtórzeń na formularzu ćwiczenia."
               value={autofillEnabled}
               onValueChange={handleAutofillToggle}
+              disabled={loadingPrefs}
+            />
+          </View>
+
+          <View className="mt-4 border-t border-border pt-4">
+            <SettingSwitchRow
+              title="Automatyczna progresja"
+              description="W planach: po pełnych seriach następna sesja dostaje cele (+kg / zakres powt.). Freestyle bez awansu."
+              value={progressionEnabled}
+              onValueChange={handleProgressionToggle}
               disabled={loadingPrefs}
             />
           </View>
