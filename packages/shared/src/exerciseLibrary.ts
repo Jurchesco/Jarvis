@@ -184,7 +184,7 @@ export function isBodyweightExercise(name: string): boolean {
   }
   const n = name.trim().toLocaleLowerCase("pl-PL");
   return (
-    /\b(pompk|push[\s-]?up|podciągan|pull[\s-]?up|chin[\s-]?up|dipy|dip\b|brzuszk|sit[\s-]?up|przysiad bez|air squat|burpee|mountain climber)\b/.test(
+    /\b(pompk\w*|push[\s-]?ups?|podciągan\w*|pull[\s-]?ups?|chin[\s-]?ups?|dipy|dips?\b|brzuszk\w*|sit[\s-]?ups?|przysiad bez|air squats?|burpees?|mountain climbers?)\b/.test(
       n,
     )
   );
