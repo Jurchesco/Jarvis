@@ -5,6 +5,7 @@ import {
   getSheetProgressionConfig,
   setExerciseProgressionOverride,
   setSheetDefaultProgressionRule,
+  setSheetProgressionDeload,
 } from "./progressionPrefs";
 
 function copyName(sourceName: string, existingNames: string[]): string {
@@ -66,6 +67,7 @@ export async function duplicateSheet(sheetId: string): Promise<WorkoutSheetFull>
 
   const progression = await getSheetProgressionConfig(sheetId);
   await setSheetDefaultProgressionRule(created.id, progression.defaultRule);
+  await setSheetProgressionDeload(created.id, !!progression.deload);
   for (const [oldId, override] of Object.entries(progression.exercises ?? {})) {
     const newId = idMap.get(oldId);
     if (!newId) continue;

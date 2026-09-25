@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ChevronDown,
@@ -29,6 +29,7 @@ import {
   getSheetProgressionConfig,
   setExerciseProgressionOverride,
   setSheetDefaultProgressionRule,
+  setSheetProgressionDeload,
   type SheetProgressionConfig,
 } from "../../src/lib/progressionPrefs";
 import {
@@ -216,6 +217,17 @@ export default function PlanDetailScreen() {
     }
   };
 
+  const handleDeloadToggle = async () => {
+    const prev = progression;
+    const next = !prev.deload;
+    setProgression({ ...prev, deload: next });
+    try {
+      await setSheetProgressionDeload(sheetId, next);
+    } catch {
+      setProgression(prev);
+    }
+  };
+
   const handleExerciseRuleChange = async (exerciseId: string, rule: ProgressionRule) => {
     const prev = progression;
     const exercises = { ...(prev.exercises ?? {}) };
@@ -359,8 +371,8 @@ export default function PlanDetailScreen() {
         <Card padding="md" className="mb-4">
           <Text className="text-text-primary text-sm font-semibold mb-1">Progresja</Text>
           <Text className="text-text-muted text-xs mb-3 leading-5">
-            Po zalogowaniu pełnych serii następna sesja tego planu dostanie cele (+kg / zakres
-            powtórzeń). Freestyle bez auto-awansu.
+            Po zalogowaniu pełnych serii następna sesja dostanie cele. Timed → reguła Czas.
+            Greyskull: ostatnia seria = AMRAP.
           </Text>
           <Pills
             options={PROGRESSION_RULE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
@@ -370,6 +382,30 @@ export default function PlanDetailScreen() {
           <Text className="text-text-muted text-[10px] mt-2 leading-4">
             {PROGRESSION_RULE_OPTIONS.find((o) => o.value === progression.defaultRule)?.hint}
           </Text>
+          <Pressable
+            onPress={handleDeloadToggle}
+            className="mt-4 flex-row items-center justify-between rounded-xl border border-border bg-surface-muted px-3 py-3"
+            accessibilityRole="switch"
+            accessibilityState={{ checked: !!progression.deload }}
+          >
+            <View className="flex-1 pr-3">
+              <Text className="text-text-primary text-sm font-semibold">Tydzień deload</Text>
+              <Text className="text-text-muted text-xs mt-0.5 leading-4">
+                Bez auto-awansu — cele z poprzedniej sesji / szablonu.
+              </Text>
+            </View>
+            <View
+              className={`h-7 w-12 rounded-full justify-center px-0.5 ${
+                progression.deload ? "bg-action-primary" : "bg-border"
+              }`}
+            >
+              <View
+                className={`h-6 w-6 rounded-full bg-white ${
+                  progression.deload ? "self-end" : "self-start"
+                }`}
+              />
+            </View>
+          </Pressable>
         </Card>
 
         {sheet.exercises.length === 0 ? (

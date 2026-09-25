@@ -15,7 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
   useCompleteSession,
   useDeleteSession,
-  useLastSessionBySheet,
+  useLastNSessionsBySheet,
   useSession,
   useSessionExerciseNotes,
   useSheet,
@@ -232,7 +232,8 @@ export default function WorkoutScreen() {
   const updateSession = useUpdateSession();
   const deleteSession = useDeleteSession();
   const [showEditStart, setShowEditStart] = useState(false);
-  const { data: lastSessionData } = useLastSessionBySheet(sheetId!);
+  const { data: recentSessions = [] } = useLastNSessionsBySheet(sheetId!, 5);
+  const lastSessionData = recentSessions[0] ?? null;
   const { data: exerciseNotes } = useSessionExerciseNotes(sessionId);
 
   const [sessionExerciseIds, setSessionExerciseIds] = useState<Set<string>>(new Set());
@@ -323,6 +324,30 @@ export default function WorkoutScreen() {
     }
     return map;
   }, [lastSessionData]);
+
+  /** Newest-first per-exercise log history across recent sessions (Greyskull stalls). */
+  const recentLogsByExercise = useMemo(() => {
+    const map: Record<string, { setNumber: number; weightKg: number; reps: number }[][]> = {};
+    for (const row of recentSessions) {
+      const byEx: Record<string, SessionSetLog[]> = {};
+      for (const log of row.logs) {
+        if (!byEx[log.exerciseId]) byEx[log.exerciseId] = [];
+        byEx[log.exerciseId].push(log);
+      }
+      for (const [exerciseId, logs] of Object.entries(byEx)) {
+        const sorted = [...logs]
+          .sort((a, b) => a.setNumber - b.setNumber)
+          .map((log) => ({
+            setNumber: log.setNumber,
+            weightKg: log.weightKg,
+            reps: log.reps,
+          }));
+        if (!map[exerciseId]) map[exerciseId] = [];
+        map[exerciseId].push(sorted);
+      }
+    }
+    return map;
+  }, [recentSessions]);
 
   const notesByExercise = useMemo(() => {
     const map: Record<string, string> = {};
@@ -705,13 +730,15 @@ export default function WorkoutScreen() {
                       weightKg: log.weightKg,
                       reps: log.reps,
                     })),
+                    recentSessionsNewestFirst: recentLogsByExercise[exercise.id],
                     enabled: true,
+                    deload: !!sheetProgression.deload,
                   })
                 : null;
               const showProgressionUi =
                 !!progression &&
-                progression.appliedRule !== "none" &&
-                progression.targets.length > 0;
+                progression.targets.length > 0 &&
+                (progression.appliedRule !== "none" || !!sheetProgression.deload);
 
               let initialDraft: ExerciseLogDraft;
               if (isSaved) {

@@ -69,9 +69,9 @@
 - [x] **PR / rekordy + trend 1RM** — Stats
 - [x] **RIR / RPE opcjonalnie**
 - [x] **Profil / waga + dziennik zdrowia w Supabase**
-- [x] **Auto-progresja planów (D021)** — linear / double + Cel w sesji
+- [x] **Auto-progresja planów (D021)** — linear / double / Greyskull / time + deload + Cel w sesji
 - [ ] **Scroll horizontally** — opcjonalnie
-- [ ] Greyskull LP / +time / planned deload (rozszerzenie D021)
+- [ ] Warm-up poza progresją / bodyweight reps (rozszerzenie D021)
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN

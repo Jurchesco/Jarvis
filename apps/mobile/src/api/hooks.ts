@@ -324,6 +324,15 @@ export function useLastSessionBySheet(sheetId: string) {
   });
 }
 
+/** Newest-first completed sessions (default 5) — Greyskull stall / progression history. */
+export function useLastNSessionsBySheet(sheetId: string, limit = 5) {
+  return useQuery({
+    queryKey: ["sessions", "last-n-by-sheet", sheetId, limit],
+    queryFn: () => api.sessions.lastNBySheet(sheetId, limit),
+    enabled: !!sheetId,
+  });
+}
+
 export function useAnyIncompleteSession() {
   return useQuery({
     queryKey: ["sessions", "incomplete", "any"],

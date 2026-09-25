@@ -22,6 +22,8 @@ export type ExerciseProgressionOverride = {
 
 export type SheetProgressionConfig = {
   defaultRule: ProgressionRule;
+  /** Planned deload week — no auto-advance on this sheet. */
+  deload?: boolean;
   exercises?: Record<string, ExerciseProgressionOverride>;
 };
 
@@ -61,6 +63,7 @@ export async function getSheetProgressionConfig(
   }
   return {
     defaultRule: row.defaultRule,
+    deload: !!row.deload,
     exercises: row.exercises ?? {},
   };
 }
@@ -71,7 +74,27 @@ export async function setSheetDefaultProgressionRule(
 ): Promise<void> {
   const map = await readMap();
   const prev = map[sheetId] ?? { defaultRule: "linear", exercises: {} };
-  map[sheetId] = { ...prev, defaultRule: rule, exercises: prev.exercises ?? {} };
+  map[sheetId] = {
+    ...prev,
+    defaultRule: rule,
+    deload: prev.deload,
+    exercises: prev.exercises ?? {},
+  };
+  await writeMap(map);
+}
+
+export async function setSheetProgressionDeload(
+  sheetId: string,
+  deload: boolean,
+): Promise<void> {
+  const map = await readMap();
+  const prev = map[sheetId] ?? { defaultRule: "linear", exercises: {} };
+  map[sheetId] = {
+    ...prev,
+    defaultRule: isProgressionRule(prev.defaultRule) ? prev.defaultRule : "linear",
+    deload,
+    exercises: prev.exercises ?? {},
+  };
   await writeMap(map);
 }
 
