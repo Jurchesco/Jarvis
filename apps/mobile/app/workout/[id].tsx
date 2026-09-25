@@ -341,6 +341,7 @@ export default function WorkoutScreen() {
             setNumber: log.setNumber,
             weightKg: log.weightKg,
             reps: log.reps,
+            isWarmup: log.isWarmup,
           }));
         if (!map[exerciseId]) map[exerciseId] = [];
         map[exerciseId].push(sorted);
@@ -729,6 +730,7 @@ export default function WorkoutScreen() {
                       setNumber: log.setNumber,
                       weightKg: log.weightKg,
                       reps: log.reps,
+                      isWarmup: log.isWarmup,
                     })),
                     recentSessionsNewestFirst: recentLogsByExercise[exercise.id],
                     enabled: true,

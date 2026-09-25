@@ -8,6 +8,7 @@ export type ParsedExerciseSet = {
   reps: number;
   effortScale: EffortScale | null;
   effortValue: number | null;
+  isWarmup: boolean;
 };
 
 export type ParsedExerciseLog = {
@@ -37,6 +38,7 @@ export function parseExerciseLogDraft(
         ...base,
         effortScale: effort?.scale ?? null,
         effortValue: effort?.value ?? null,
+        isWarmup: !!set.isWarmup,
       };
     },
   );
@@ -108,6 +110,7 @@ export async function saveExerciseLogBatch(
       weightKg: parsedSet.weightKg,
       effortScale: parsedSet.effortScale,
       effortValue: parsedSet.effortValue,
+      isWarmup: parsedSet.isWarmup || undefined,
     });
   }
 

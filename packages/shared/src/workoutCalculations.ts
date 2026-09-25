@@ -74,15 +74,18 @@ export type SessionLiveStats = {
 };
 
 export function computeSessionLiveStats(
-  logs: { exerciseId: string; weightKg: number; reps: number }[],
+  logs: { exerciseId: string; weightKg: number; reps: number; isWarmup?: boolean }[],
 ): SessionLiveStats {
   const exerciseIds = new Set<string>();
   let totalVolume = 0;
   let bestEst1rm = 0;
   let totalReps = 0;
+  let setCount = 0;
 
   for (const log of logs) {
     exerciseIds.add(log.exerciseId);
+    if (log.isWarmup) continue;
+    setCount += 1;
     if (log.weightKg > 0 && log.reps > 0) {
       totalVolume += setVolume(log.weightKg, log.reps);
       bestEst1rm = Math.max(bestEst1rm, epley1rm(log.weightKg, log.reps));
@@ -94,7 +97,7 @@ export function computeSessionLiveStats(
 
   return {
     exerciseCount: exerciseIds.size,
-    setCount: logs.length,
+    setCount,
     totalVolume,
     bestEst1rm,
     totalReps,

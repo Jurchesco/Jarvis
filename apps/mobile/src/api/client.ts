@@ -43,7 +43,12 @@ async function getUserId(): Promise<string> {
   return user.id;
 }
 
+function isSchemaMissingError(message: string): boolean {
+  return /relation|does not exist|column|schema cache/i.test(message);
+}
+
 function mapSheet(row: any): WorkoutSheet {
+  const rule = row.default_progression_rule;
   return {
     id: row.id,
     userId: row.user_id,
@@ -52,6 +57,19 @@ function mapSheet(row: any): WorkoutSheet {
     orderIndex: row.order_index ?? 0,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    // undefined = column not migrated yet; null/rule = SQL present
+    defaultProgressionRule:
+      rule === undefined
+        ? undefined
+        : rule === "none" ||
+            rule === "linear" ||
+            rule === "double" ||
+            rule === "greyskull" ||
+            rule === "time"
+          ? rule
+          : null,
+    progressionDeload:
+      typeof row.progression_deload === "boolean" ? row.progression_deload : undefined,
   };
 }
 
@@ -103,6 +121,7 @@ function mapLog(row: any): SessionSetLog {
       row.effort_value != null && Number.isFinite(Number(row.effort_value))
         ? Number(row.effort_value)
         : null,
+    isWarmup: row.is_warmup === true,
   };
 }
 
@@ -197,6 +216,12 @@ export const api = {
       if (data.name !== undefined) updates.name = data.name;
       if (data.description !== undefined) updates.description = data.description;
       if (data.orderIndex !== undefined) updates.order_index = data.orderIndex;
+      if (data.defaultProgressionRule !== undefined) {
+        updates.default_progression_rule = data.defaultProgressionRule;
+      }
+      if (data.progressionDeload !== undefined) {
+        updates.progression_deload = data.progressionDeload;
+      }
 
       const { data: result, error } = await supabase
         .from("workout_sheets")
@@ -476,7 +501,7 @@ export const api = {
         reps: data.reps,
         weight_kg: data.weightKg,
       };
-      // Only send effort columns when set — keeps inserts working before SQL migration.
+      // Only send effort / warmup columns when set — works before SQL migration.
       if (data.effortScale === "rir" || data.effortScale === "rpe") {
         payload.effort_scale = data.effortScale;
         payload.effort_value =
@@ -484,12 +509,28 @@ export const api = {
             ? data.effortValue
             : null;
       }
+      if (data.isWarmup === true) {
+        payload.is_warmup = true;
+      }
       const { data: result, error } = await supabase
         .from("session_set_logs")
         .insert(payload)
         .select()
         .single();
-      if (error) throw new Error(error.message);
+      if (error) {
+        // Retry without is_warmup if column not migrated yet.
+        if (payload.is_warmup != null && isSchemaMissingError(error.message)) {
+          delete payload.is_warmup;
+          const { data: retry, error: retryErr } = await supabase
+            .from("session_set_logs")
+            .insert(payload)
+            .select()
+            .single();
+          if (retryErr) throw new Error(retryErr.message);
+          return mapLog(retry);
+        }
+        throw new Error(error.message);
+      }
       return mapLog(result);
     },
 
@@ -654,6 +695,83 @@ export const api = {
         if (error) throw new Error(error.message);
         return mapNote(result);
       }
+    },
+  },
+
+  /** D021 per-exercise progression overrides (requires progression_and_warmup.sql). */
+  exerciseProgression: {
+    listBySheet: async (
+      sheetId: string,
+    ): Promise<
+      {
+        exerciseId: string;
+        rule: "none" | "linear" | "double" | "greyskull" | "time";
+        stepKg: number | null;
+        repsMin: number | null;
+        repsMax: number | null;
+        stepSec: number | null;
+        greyskullAmrapBonus: number | null;
+      }[]
+    > => {
+      const { data: exercises, error: exErr } = await supabase
+        .from("exercises")
+        .select("id")
+        .eq("sheet_id", sheetId);
+      if (exErr) throw new Error(exErr.message);
+      const ids = (exercises ?? []).map((row) => row.id as string);
+      if (ids.length === 0) return [];
+
+      const { data, error } = await supabase
+        .from("exercise_progression")
+        .select("*")
+        .in("exercise_id", ids);
+      if (error) throw new Error(error.message);
+
+      return (data ?? []).map((row: any) => ({
+        exerciseId: row.exercise_id as string,
+        rule: row.rule as "none" | "linear" | "double" | "greyskull" | "time",
+        stepKg: row.step_kg != null ? Number(row.step_kg) : null,
+        repsMin: row.reps_min != null ? Number(row.reps_min) : null,
+        repsMax: row.reps_max != null ? Number(row.reps_max) : null,
+        stepSec: row.step_sec != null ? Number(row.step_sec) : null,
+        greyskullAmrapBonus:
+          row.greyskull_amrap_bonus != null ? Number(row.greyskull_amrap_bonus) : null,
+      }));
+    },
+
+    upsert: async (
+      exerciseId: string,
+      data: {
+        rule: "none" | "linear" | "double" | "greyskull" | "time";
+        stepKg?: number | null;
+        repsMin?: number | null;
+        repsMax?: number | null;
+        stepSec?: number | null;
+        greyskullAmrapBonus?: number | null;
+      },
+    ): Promise<void> => {
+      const { error } = await supabase.from("exercise_progression").upsert(
+        {
+          exercise_id: exerciseId,
+          rule: data.rule,
+          step_kg: data.stepKg ?? null,
+          reps_min: data.repsMin ?? null,
+          reps_max: data.repsMax ?? null,
+          step_sec: data.stepSec ?? null,
+          greyskull_amrap_bonus: data.greyskullAmrapBonus ?? null,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "exercise_id" },
+      );
+      if (error) throw new Error(error.message);
+    },
+
+    delete: async (exerciseId: string): Promise<void> => {
+      const { error } = await supabase
+        .from("exercise_progression")
+        .delete()
+        .eq("exercise_id", exerciseId);
+      if (error) throw new Error(error.message);
     },
   },
 };

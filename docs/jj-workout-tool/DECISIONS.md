@@ -354,26 +354,27 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 ## D021: Automatyczna progresja na planach
 
 **Date**: 2026-09-25  
-**Status**: Active (MVP)
+**Status**: Active (complete)
 
 **Context**: OpenGym ma reguły progresji (linear, Greyskull LP, double, time) z targetami na starcie sesji i wyjaśnieniem „dlaczego”. Jarvis miał tylko ghost/autofill z poprzedniej sesji. AGPL — inspiracja UX, własny kod.
 
-**Decision (MVP + epik 2)**:
+**Decision**:
 - Reguły: **none | linear | double | greyskull | time**.
-- Domyślna reguła **per plan** + override **per ćwiczenie** (prefs lokalne `pref_sheet_progression_v1`).
+- Domyślna reguła **per plan** + override **per ćwiczenie** — w Postgres (`workout_sheets.default_progression_rule`, `progression_deload`, tabela `exercise_progression`); AsyncStorage tylko jako fallback przed migracją `progression_and_warmup.sql` (migrate-on-read).
 - **Tydzień deload** na planie — bez awansu; cele z poprzedniej sesji / szablonu.
 - Globalny toggle **Automatyczna progresja** (domyślnie ON).
 - **Freestyle** zawsze bez auto-awansu.
 - Timed: tylko reguła **time** awansuje sekundy (+5s domyślnie); inne reguły → none.
+- **Bodyweight** (katalog / heurystyka): przy kg=0 progresja w **powtórzeniach**; przy obciążeniu zewnętrznym — reguły wagowe.
+- **Warm-up** (`session_set_logs.is_warmup`): poza Cel / Est. 1RM / PR / objętością mięśniową; UI toggle **WU** w trybie Per seria.
 - **Greyskull**: serie stałe + AMRAP (ostatnia); mocny AMRAP (≥ cel+2) → 2× skok; 3× miss z rzędu → −10% (historia `lastNBySheet`).
 - Silnik pure: `packages/shared/src/progression.ts` — **missed never advances**.
 - Skok kg: 2.5 upper / 5 lower (tagi partii) lub override.
 - Sesja: chip **Cel · …** + reason; seed draftu gdy autofill ON.
+- Backup JSON **v3**: reguły progresji + `isWarmup` na logach.
 - Template planu (serie×powt.) ≠ prescription kg — kg/czas liczy silnik z historii.
 
-**Konsekwencje**: Użytkownik ustawia regułę w edytorze planu. Następna sesja planu otwiera się z celami. Gem/Hermes nadal oceniają progres z Sheets; apka pomaga wykonać regułę przy sztandze.
-
-**Później**: warm-up poza progresją; bodyweight w reps; SQL sync reguł.
+**Konsekwencje**: Reguły synchronizują się między urządzeniami po migracji SQL. Gem/Hermes nadal oceniają progres z Sheets; apka pomaga wykonać regułę przy sztandze.
 
 ---
 

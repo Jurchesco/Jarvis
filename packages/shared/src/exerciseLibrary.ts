@@ -173,6 +173,23 @@ export function isLibraryTimeBased(ex: LibraryExercise): boolean {
   return /\bplank\b|\bhold\b|\bisometric\b/.test(n);
 }
 
+/** Bodyweight / calisthenics — progress in reps when external load is 0. */
+export function isBodyweightExercise(name: string): boolean {
+  const fromLibrary = getLibraryExerciseByName(name);
+  if (fromLibrary) {
+    const eq = fromLibrary.equipment.trim().toLowerCase();
+    if (eq === "body weight" || eq === "assisted") return true;
+    // "weighted" dips/pull-ups still use external load when kg > 0
+    if (eq === "weighted") return true;
+  }
+  const n = name.trim().toLocaleLowerCase("pl-PL");
+  return (
+    /\b(pompk|push[\s-]?up|podciągan|pull[\s-]?up|chin[\s-]?up|dipy|dip\b|brzuszk|sit[\s-]?up|przysiad bez|air squat|burpee|mountain climber)\b/.test(
+      n,
+    )
+  );
+}
+
 export function equipmentOf(list: LibraryExercise[]): string[] {
   const counts: Record<string, number> = {};
   for (const e of list) {
