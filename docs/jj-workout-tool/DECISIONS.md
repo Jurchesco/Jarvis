@@ -351,6 +351,28 @@ Role is kept in schema to avoid breaking existing data and to support future mul
 
 ---
 
+## D021: Automatyczna progresja na planach
+
+**Date**: 2026-09-25  
+**Status**: Active (MVP)
+
+**Context**: OpenGym ma reguły progresji (linear, Greyskull LP, double, time) z targetami na starcie sesji i wyjaśnieniem „dlaczego”. Jarvis miał tylko ghost/autofill z poprzedniej sesji. AGPL — inspiracja UX, własny kod.
+
+**Decision (MVP)**:
+- Reguły: **none | linear | double** (Greyskull / +time / deload = później).
+- Domyślna reguła **per plan** + override **per ćwiczenie** (prefs lokalne `pref_sheet_progression_v1`; SQL sync opcjonalnie później).
+- Globalny toggle **Automatyczna progresja** (domyślnie ON).
+- **Freestyle** zawsze bez auto-awansu.
+- Timed sets → traktowane jak none (bez +kg).
+- Silnik pure: `packages/shared/src/progression.ts` — czyta logi + szablon serii; **missed never advances**.
+- Skok kg: 2.5 upper / 5 lower (tagi partii) lub override.
+- Sesja: chip **Cel · …** + reason; seed draftu gdy autofill ON.
+- Template planu (serie×powt.) ≠ prescription kg — kg liczy silnik z historii.
+
+**Konsekwencje**: Użytkownik ustawia regułę w edytorze planu. Następna sesja planu otwiera się z celami. Gem/Hermes nadal oceniają progres z Sheets; apka pomaga wykonać regułę przy sztandze.
+
+---
+
 ## Future Decisions (TODO)
 
 - **Objętość per partia**: tagi mięśniowe w katalogu / exercises (D019) ✅ — patrz sekcja D019 powyżej

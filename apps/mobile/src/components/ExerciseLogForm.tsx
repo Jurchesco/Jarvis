@@ -41,6 +41,10 @@ type ExerciseLogFormProps = {
   previousLogs?: SessionSetLog[] | null;
   /** @deprecated prefer previousLogs — kept for single-set callers */
   previousLog?: SessionSetLog | null;
+  /** Progression target chip (D021), e.g. "Cel · 70×8". */
+  progressionChip?: string | null;
+  /** One-line reason from the progression engine. */
+  progressionReason?: string | null;
   initialDraft?: ExerciseLogDraft;
   onSave: (draft: ExerciseLogDraft) => void;
   onCancel?: () => void;
@@ -203,6 +207,8 @@ export function ExerciseLogForm({
   timeBased: timeBasedProp,
   previousLogs,
   previousLog,
+  progressionChip,
+  progressionReason,
   initialDraft,
   onSave,
   onCancel,
@@ -392,8 +398,19 @@ export function ExerciseLogForm({
 
   return (
     <View className="min-w-0">
+      {progressionChip ? (
+        <Badge label={progressionChip} tone="accent" size="sm" className="mb-2 max-w-full" />
+      ) : null}
+      {progressionReason ? (
+        <Text className="text-text-muted text-xs mb-3 leading-5">{progressionReason}</Text>
+      ) : null}
       {previousChip && !(showGhostColumn && fillMode === "per-set") ? (
-        <Badge label={previousChip} tone="accent" size="sm" className="mb-3 max-w-full" />
+        <Badge
+          label={previousChip}
+          tone={progressionChip ? "outline" : "accent"}
+          size="sm"
+          className="mb-3 max-w-full"
+        />
       ) : null}
 
       <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">
