@@ -11,6 +11,8 @@ export const EPLEY_MAX_REPS_FOR_1RM = 12;
 export type RecordSetLike = {
   weightKg: number;
   reps: number;
+  /** Warm-up sets are excluded from PR / Est. 1RM. */
+  isWarmup?: boolean;
 };
 
 export type RecordExerciseLike = {
@@ -66,6 +68,7 @@ function bestWeightInExercise(
 ): ExerciseSetRecord | null {
   let best: ExerciseSetRecord | null = null;
   for (const set of exercise.sets) {
+    if (set.isWarmup) continue;
     if (set.weightKg <= 0 || set.reps <= 0) continue;
     if (!best || set.weightKg > best.weightKg) {
       best = {
@@ -86,6 +89,7 @@ function bestE1rmInExercise(
 ): ExerciseSetRecord | null {
   let best: ExerciseSetRecord | null = null;
   for (const set of exercise.sets) {
+    if (set.isWarmup) continue;
     const est = epley1rmForRecord(set.weightKg, set.reps);
     if (est <= 0) continue;
     if (
@@ -112,7 +116,11 @@ export function sessionMaxWeightKg(
 ): number {
   const group = session.exercises.find((ex) => ex.exerciseName === exerciseName);
   if (!group) return 0;
-  return group.sets.reduce((max, set) => Math.max(max, set.weightKg > 0 ? set.weightKg : 0), 0);
+  return group.sets.reduce(
+    (max, set) =>
+      set.isWarmup ? max : Math.max(max, set.weightKg > 0 ? set.weightKg : 0),
+    0,
+  );
 }
 
 /** Najlepszy est. 1RM w sesji dla ćwiczenia (0 gdy brak / tylko >12 powt.). */
@@ -124,6 +132,7 @@ export function sessionBestEst1rm(
   if (!group) return 0;
   let best = 0;
   for (const set of group.sets) {
+    if (set.isWarmup) continue;
     best = Math.max(best, epley1rmForRecord(set.weightKg, set.reps));
   }
   return best;

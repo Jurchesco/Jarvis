@@ -1,16 +1,19 @@
 import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
+  isProgressionRule,
   type BackupBodyMeasurement,
   type BackupBodyProfile,
   type BackupExercise,
+  type BackupExerciseProgression,
   type BackupGarminActivity,
   type BackupGarminDaily,
   type BackupGarminForma,
   type BackupGarminSleep,
   type BackupSession,
   type BackupSheet,
-  type JarvisBackupV2,
+  type JarvisBackupV3,
+  type ProgressionRule,
 } from "@bhmt3wp/shared";
 import { supabase } from "./supabase";
 
@@ -130,7 +133,7 @@ async function softFetchTable<T>(
 }
 
 /** Builds a full local backup of the signed-in user's plans + history + body/Garmin. */
-export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
+export async function buildJarvisBackup(): Promise<JarvisBackupV3> {
   const userId = await getUserId();
 
   const sheetRows = await fetchAllPages((from, to) =>
@@ -157,6 +160,29 @@ export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
       .range(from, to),
   );
 
+  let progressionByExercise = new Map<string, BackupExerciseProgression>();
+  if (exerciseIds.length > 0) {
+    try {
+      const progRows = await fetchInChunks(exerciseIds, (chunk, from, to) =>
+        supabase.from("exercise_progression").select("*").in("exercise_id", chunk).range(from, to),
+      );
+      for (const row of progRows) {
+        if (!isProgressionRule(row.rule)) continue;
+        progressionByExercise.set(row.exercise_id as string, {
+          rule: row.rule as ProgressionRule,
+          stepKg: row.step_kg != null ? Number(row.step_kg) : null,
+          repsMin: row.reps_min != null ? Number(row.reps_min) : null,
+          repsMax: row.reps_max != null ? Number(row.reps_max) : null,
+          stepSec: row.step_sec != null ? Number(row.step_sec) : null,
+          greyskullAmrapBonus:
+            row.greyskull_amrap_bonus != null ? Number(row.greyskull_amrap_bonus) : null,
+        });
+      }
+    } catch {
+      progressionByExercise = new Map();
+    }
+  }
+
   const setsByExercise = new Map<string, typeof setRows>();
   for (const set of setRows) {
     const list = setsByExercise.get(set.exercise_id as string) ?? [];
@@ -172,25 +198,32 @@ export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
       weightKg: Number(set.weight_kg ?? 0),
       restTimeSec: set.rest_time_sec as number,
     }));
+    const progression = progressionByExercise.get(ex.id as string) ?? null;
     const backupEx: BackupExercise = {
       id: ex.id as string,
       name: ex.name as string,
       notes: (ex.notes as string | null) ?? null,
       orderIndex: ex.order_index as number,
       sets,
+      progression,
     };
     const list = exercisesBySheet.get(ex.sheet_id as string) ?? [];
     list.push(backupEx);
     exercisesBySheet.set(ex.sheet_id as string, list);
   }
 
-  const sheets: BackupSheet[] = sheetRows.map((row) => ({
-    id: row.id as string,
-    name: row.name as string,
-    description: (row.description as string | null) ?? null,
-    orderIndex: row.order_index as number,
-    exercises: exercisesBySheet.get(row.id as string) ?? [],
-  }));
+  const sheets: BackupSheet[] = sheetRows.map((row) => {
+    const rule = row.default_progression_rule;
+    return {
+      id: row.id as string,
+      name: row.name as string,
+      description: (row.description as string | null) ?? null,
+      orderIndex: row.order_index as number,
+      exercises: exercisesBySheet.get(row.id as string) ?? [],
+      defaultProgressionRule: isProgressionRule(rule) ? rule : null,
+      progressionDeload: row.progression_deload === true,
+    };
+  });
 
   const sessionRows = await fetchAllPages((from, to) =>
     supabase
@@ -242,6 +275,7 @@ export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
         log.effort_value != null && Number.isFinite(Number(log.effort_value))
           ? Number(log.effort_value)
           : null,
+      isWarmup: log.is_warmup === true,
     }));
     const exerciseNotes = (notesBySession.get(row.id as string) ?? []).map((note) => ({
       exerciseId: note.exercise_id as string,
@@ -317,3 +351,4 @@ export async function buildJarvisBackup(): Promise<JarvisBackupV2> {
     garminActivities,
   };
 }
+

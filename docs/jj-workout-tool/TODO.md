@@ -63,7 +63,7 @@
 - [ ] **PowerSync** — offline-first
 
 ### Średni priorytet
-- [x] **Export / import JSON** — D019 §4 (+ v2 body/Garmin)
+- [x] **Export / import JSON** — D019 §4 (+ v2 body/Garmin; v3 progression/warmup)
 - [x] **Pasek postępu sesji + ghost polish** — D019 §5
 - [x] **Sheet templates** — duplikowanie planów
 - [x] **PR / rekordy + trend 1RM** — Stats
@@ -71,7 +71,7 @@
 - [x] **Profil / waga + dziennik zdrowia w Supabase**
 - [x] **Auto-progresja planów (D021)** — linear / double / Greyskull / time + deload + Cel w sesji
 - [ ] **Scroll horizontally** — opcjonalnie
-- [ ] Warm-up poza progresją / bodyweight reps (rozszerzenie D021)
+- [x] Warm-up poza progresją / bodyweight reps + SQL/backup (D021 complete)
 
 ### Niski priorytet
 - [ ] **i18n** — IT / EN

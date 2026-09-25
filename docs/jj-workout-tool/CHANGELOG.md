@@ -16,6 +16,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **D021 complete** — warm-up (`is_warmup`) poza Cel/1RM/PR; bodyweight progresja w reps; reguły w SQL (`progression_and_warmup.sql`) + backup JSON v3; prefs lokalne tylko jako fallback
 - **Auto-progresja planów (D021)** — linear / double / Greyskull / time + tydzień deload; chip Cel + reason w sesji
 - **Stats charts readable** — daty na osi, Best, lista ostatnich sesji; heatmapa z panelem dnia
 - **Health hub (Supabase)** — profil ciała + `body_measurements`; Garmin (`garmin_*`); importer openScale/Garmin upsert do bazy (Sheets = mirror); eksport CSV/JSON kontekstu AI (allowlista 30 dni); docs `HERMES_SUPABASE.md`

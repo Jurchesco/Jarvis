@@ -73,7 +73,14 @@ const TREND_METRIC_OPTIONS: { value: TrendMetric; label: string }[] = [
 
 function sessionVolume(session: SessionDetailFull): number {
   return session.exercises.reduce((total, group) => {
-    return total + group.sets.reduce((setTotal, set) => setTotal + set.weightKg * set.reps, 0);
+    return (
+      total +
+      group.sets.reduce(
+        (setTotal, set) =>
+          set.isWarmup ? setTotal : setTotal + set.weightKg * set.reps,
+        0,
+      )
+    );
   }, 0);
 }
 
@@ -82,6 +89,7 @@ function sessionTopSetKg(session: SessionDetailFull, exerciseName: string): numb
   if (!group) return 0;
   let best = 0;
   for (const set of group.sets) {
+    if (set.isWarmup) continue;
     const score = set.weightKg * set.reps;
     const candidate = set.weightKg;
     if (score > 0 && candidate > best) best = candidate;

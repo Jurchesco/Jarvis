@@ -16,7 +16,7 @@ export type MuscleVolumeSessionLike = {
   startedAt: string;
   exercises: Array<{
     exerciseName: string;
-    sets: unknown[];
+    sets: Array<{ isWarmup?: boolean } | unknown>;
   }>;
 };
 
@@ -65,6 +65,7 @@ function addSetCredit(
 /**
  * Sum weighted sets per muscle for the given sessions.
  * Exercises without catalog tags are skipped (custom / renamed names).
+ * Warm-up sets do not count toward volume.
  */
 export function computeMuscleSetVolume(sessions: MuscleVolumeSessionLike[]): MuscleVolumeRow[] {
   const totals = new Map<MuscleGroup, number>();
@@ -73,7 +74,12 @@ export function computeMuscleSetVolume(sessions: MuscleVolumeSessionLike[]): Mus
     for (const group of session.exercises) {
       const tags = getMuscleTagsForExercise(group.exerciseName);
       if (!tags) continue;
-      const setCount = group.sets.length;
+      const setCount = group.sets.filter((set) => {
+        if (set && typeof set === "object" && "isWarmup" in set) {
+          return !(set as { isWarmup?: boolean }).isWarmup;
+        }
+        return true;
+      }).length;
       if (setCount <= 0) continue;
       addSetCredit(totals, tags.primary, setCount * PRIMARY_SET_WEIGHT);
       if (tags.secondary) {

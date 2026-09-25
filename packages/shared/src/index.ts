@@ -2,6 +2,8 @@
 // Shared types for JJ Workout Tool
 // ============================================
 
+import type { ProgressionRule } from "./progression";
+
 // --- User / Auth ---
 export type UserRole = "coach" | "allievo";
 
@@ -29,6 +31,10 @@ export interface WorkoutSheet {
   updatedAt: string;
   /** Present on list responses (`sheets.list`) for plan-card badges. */
   exerciseCount?: number;
+  /** D021 default progression rule (null = treat as linear when progression on). */
+  defaultProgressionRule?: ProgressionRule | null;
+  /** D021 planned deload week. */
+  progressionDeload?: boolean;
 }
 
 export interface CreateWorkoutSheetInput {
@@ -40,6 +46,8 @@ export interface UpdateWorkoutSheetInput {
   name?: string;
   description?: string;
   orderIndex?: number;
+  defaultProgressionRule?: ProgressionRule | null;
+  progressionDeload?: boolean;
 }
 
 // --- Exercise ---
@@ -124,6 +132,8 @@ export interface SessionSetLog {
   effortScale?: "rir" | "rpe" | null;
   /** RIR 0–10 or RPE 1–10. */
   effortValue?: number | null;
+  /** Warm-up — excluded from progression and Est. 1RM / PR. */
+  isWarmup?: boolean;
 }
 
 export interface CreateSessionSetLogInput {
@@ -134,6 +144,7 @@ export interface CreateSessionSetLogInput {
   weightKg: number;
   effortScale?: "rir" | "rpe" | null;
   effortValue?: number | null;
+  isWarmup?: boolean;
 }
 
 export interface DeleteSessionSetLogInput {
@@ -220,6 +231,7 @@ export {
   equipmentOf,
   getLibraryExerciseById,
   getLibraryExerciseByName,
+  isBodyweightExercise,
   isLibraryTimeBased,
   libraryDisplayName,
   libraryExerciseCount,
@@ -293,7 +305,9 @@ export {
   formatProgressionTargetChip,
   isProgressionRule,
   resolveStepKg,
+  resolveStepSec,
   sessionMissedTargets,
+  workingSetsOnly,
 } from "./progression";
 export type {
   ProgressionConfig,
@@ -314,6 +328,7 @@ export type {
   BackupBodyProfile,
   BackupExercise,
   BackupExerciseNote,
+  BackupExerciseProgression,
   BackupExerciseSet,
   BackupGarminActivity,
   BackupGarminDaily,
@@ -325,6 +340,7 @@ export type {
   JarvisBackup,
   JarvisBackupV1,
   JarvisBackupV2,
+  JarvisBackupV3,
 } from "./backup";
 export {
   BODY_SEX_OPTIONS,

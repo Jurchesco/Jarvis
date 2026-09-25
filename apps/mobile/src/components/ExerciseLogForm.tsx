@@ -9,6 +9,7 @@ import {
   formatEffortLabel,
   formatVolumeKg,
   formatWeightKg,
+  isBodyweightExercise,
   isTimeBasedExercise,
 } from "@bhmt3wp/shared";
 import { ChevronRight, Minus, NotebookPen, Play, Plus, Trash2 } from "lucide-react-native";
@@ -27,6 +28,8 @@ export type ExerciseLogSetDraft = {
   reps: string;
   effortScale?: EffortScale | null;
   effortValue?: string;
+  /** Warm-up — excluded from Cel / 1RM / PR. */
+  isWarmup?: boolean;
 };
 
 export type ExerciseLogDraft = {
@@ -70,6 +73,7 @@ const DEFAULT_SET: ExerciseLogSetDraft = {
   reps: "10",
   effortScale: null,
   effortValue: "",
+  isWarmup: false,
 };
 
 const DEFAULT_DRAFT: ExerciseLogDraft = {
@@ -119,6 +123,7 @@ function mapLogsToDraftSets(logs: SessionSetLog[]): ExerciseLogSetDraft[] {
   return logs.map((log) => ({
     weightKg: String(log.weightKg),
     reps: String(log.reps),
+    isWarmup: !!log.isWarmup,
     ...effortFieldsFromLog(log),
   }));
 }
@@ -168,6 +173,7 @@ export function createDraftFromTemplate(
       reps: String(set.reps),
       effortScale: null,
       effortValue: "",
+      isWarmup: false,
     })),
     notes,
   };
@@ -220,6 +226,7 @@ export function ExerciseLogForm({
   holdDisabled = false,
 }: ExerciseLogFormProps) {
   const timeBased = timeBasedProp ?? isTimeBasedExercise(exerciseName);
+  const bodyweight = !timeBased && isBodyweightExercise(exerciseName);
   const resolvedPrevious = useMemo(() => {
     if (previousLogs && previousLogs.length > 0) return previousLogs;
     if (previousLog) return [previousLog];
@@ -262,8 +269,14 @@ export function ExerciseLogForm({
       draft.sets.map((set) => ({
         weightKg: parseFloat(set.weightKg) || 0,
         reps: parseInt(set.reps, 10) || 0,
+        isWarmup: !!set.isWarmup,
       })),
     [draft.sets],
+  );
+
+  const workingParsedSets = useMemo(
+    () => parsedSets.filter((set) => !set.isWarmup),
+    [parsedSets],
   );
 
   const setCount = draft.sets.length;
@@ -271,12 +284,12 @@ export function ExerciseLogForm({
   const effortHint =
     EFFORT_SCALE_OPTIONS.find((option) => option.value === effortScale)?.hint ?? "";
   const est1rm = useMemo(
-    () => (!timeBased ? bestEpley1rmFromSets(parsedSets) : 0),
-    [timeBased, parsedSets],
+    () => (!timeBased ? bestEpley1rmFromSets(workingParsedSets) : 0),
+    [timeBased, workingParsedSets],
   );
   const volume = useMemo(
-    () => (!timeBased ? exerciseVolumeFromSets(parsedSets) : 0),
-    [timeBased, parsedSets],
+    () => (!timeBased ? exerciseVolumeFromSets(workingParsedSets) : 0),
+    [timeBased, workingParsedSets],
   );
   const totalTimeSec = useMemo(
     () => (timeBased ? parsedSets.reduce((sum, set) => sum + set.reps, 0) : 0),
@@ -285,7 +298,11 @@ export function ExerciseLogForm({
 
   const canSave =
     setCount > 0 &&
-    parsedSets.every((set) => (timeBased ? set.reps > 0 : set.weightKg > 0 && set.reps > 0));
+    parsedSets.every((set) => {
+      if (timeBased) return set.reps > 0;
+      if (bodyweight) return set.reps > 0;
+      return set.weightKg > 0 && set.reps > 0;
+    });
 
   const applyEffortScale = (scale: EffortScale) => {
     setEffortScaleState(scale);
@@ -347,6 +364,15 @@ export function ExerciseLogForm({
     }));
   };
 
+  const toggleSetWarmup = (index: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      sets: prev.sets.map((set, i) =>
+        i === index ? { ...set, isWarmup: !set.isWarmup } : set,
+      ),
+    }));
+  };
+
   const addSet = () => {
     setDraft((prev) => {
       const last = prev.sets[prev.sets.length - 1] ?? DEFAULT_SET;
@@ -359,6 +385,7 @@ export function ExerciseLogForm({
             reps: last.reps,
             effortScale: last.effortScale ?? null,
             effortValue: last.effortValue ?? "",
+            isWarmup: false,
           },
         ],
       };
@@ -420,11 +447,11 @@ export function ExerciseLogForm({
       />
       {!modeReady ? null : fillMode === "batch" ? (
         <Text className="text-text-muted text-xs mb-3 leading-5">
-          Jedna wartość kg/powt. dla wszystkich serii — szybki wpis.
+          Jedna wartość kg/powt. dla wszystkich serii — warm-up oznaczysz w trybie Per seria (WU).
         </Text>
       ) : (
         <Text className="text-text-muted text-xs mb-3 leading-5">
-          Osobny ciężar i powtórzenia na każdą serię — rampa.
+          Osobny ciężar i powtórzenia na każdą serię — WU = warm-up (poza Cel / 1RM).
         </Text>
       )}
 
@@ -583,7 +610,7 @@ export function ExerciseLogForm({
             ) : (
               <>
                 <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
-                  Ciężar (kg)
+                  {bodyweight ? "Kg (0=BW)" : "Ciężar (kg)"}
                 </Text>
                 <Text className="flex-1 text-center text-text-muted text-[10px] font-semibold uppercase">
                   Powt.
@@ -595,6 +622,9 @@ export function ExerciseLogForm({
                 {effortScale === "rir" ? "RIR" : "RPE"}
               </Text>
             ) : null}
+            <Text className="w-10 text-center text-text-muted text-[10px] font-semibold uppercase">
+              WU
+            </Text>
             {timeBased && onStartHold ? <View className="w-10" /> : null}
             <View className="w-10" />
           </View>
@@ -696,6 +726,30 @@ export function ExerciseLogForm({
                   />
                 </View>
               ) : null}
+              <TouchableOpacity
+                onPress={() => toggleSetWarmup(index)}
+                className={cx(
+                  "h-10 w-10 items-center justify-center rounded-xl border",
+                  set.isWarmup
+                    ? "border-amber-500/50 bg-amber-500/20"
+                    : "border-border bg-action-secondary",
+                )}
+                accessibilityLabel={
+                  set.isWarmup
+                    ? `Seria ${index + 1}: warm-up włączony`
+                    : `Seria ${index + 1}: oznacz jako warm-up`
+                }
+                accessibilityState={{ selected: !!set.isWarmup }}
+              >
+                <Text
+                  className={cx(
+                    "text-[10px] font-bold",
+                    set.isWarmup ? "text-amber-400" : "text-text-muted",
+                  )}
+                >
+                  WU
+                </Text>
+              </TouchableOpacity>
               {timeBased && onStartHold ? (
                 <TouchableOpacity
                   onPress={() => startHoldForSet(index)}
@@ -909,19 +963,25 @@ export function ExerciseLogSummary({
 
   const resolvedSetCount = hasLogs ? sortedLogs.length : (setCount ?? 0);
   const setRows = hasLogs
-    ? sortedLogs.map((log) => ({ weightKg: log.weightKg, reps: log.reps }))
+    ? sortedLogs.map((log) => ({
+        weightKg: log.weightKg,
+        reps: log.reps,
+        isWarmup: !!log.isWarmup,
+      }))
     : Array.from({ length: resolvedSetCount }, () => ({
         weightKg: weightKg ?? 0,
         reps: reps ?? 0,
+        isWarmup: false,
       }));
 
-  const est1rm = !isTime ? bestEpley1rmFromSets(setRows) : 0;
-  const volume = !isTime ? exerciseVolumeFromSets(setRows) : 0;
-  const totalReps = setRows.reduce((sum, set) => sum + set.reps, 0);
+  const workingRows = setRows.filter((set) => !set.isWarmup);
+  const est1rm = !isTime ? bestEpley1rmFromSets(workingRows) : 0;
+  const volume = !isTime ? exerciseVolumeFromSets(workingRows) : 0;
+  const totalReps = workingRows.reduce((sum, set) => sum + set.reps, 0);
   const uniform =
-    setRows.length > 0 &&
-    setRows.every(
-      (set) => set.weightKg === setRows[0].weightKg && set.reps === setRows[0].reps,
+    workingRows.length > 0 &&
+    workingRows.every(
+      (set) => set.weightKg === workingRows[0].weightKg && set.reps === workingRows[0].reps,
     );
   const showEffort =
     hasLogs &&
@@ -948,6 +1008,9 @@ export function ExerciseLogSummary({
                 Wysiłek
               </Text>
             ) : null}
+            <Text className="w-10 text-center text-text-muted text-[10px] font-semibold uppercase">
+              WU
+            </Text>
           </View>
           {sortedLogs.map((log, index) => {
             const effort = effortFromLogFields(log.effortScale, log.effortValue);
@@ -957,6 +1020,7 @@ export function ExerciseLogSummary({
                 className={cx(
                   "mb-1 flex-row items-center rounded-lg px-1 py-2",
                   index % 2 === 0 ? "bg-surface-muted" : "bg-surface",
+                  log.isWarmup ? "opacity-70" : null,
                 )}
               >
                 <Text className="w-12 text-center text-text-secondary text-sm font-semibold">
@@ -975,6 +1039,9 @@ export function ExerciseLogSummary({
                     {formatEffortLabel(effort) || "—"}
                   </Text>
                 ) : null}
+                <Text className="w-10 text-center text-text-muted text-[10px] font-semibold">
+                  {log.isWarmup ? "WU" : ""}
+                </Text>
               </View>
             );
           })}

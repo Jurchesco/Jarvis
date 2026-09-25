@@ -1,5 +1,5 @@
 import type { JarvisBackup } from "@bhmt3wp/shared";
-import { summarizeBackup } from "@bhmt3wp/shared";
+import { isProgressionRule, summarizeBackup } from "@bhmt3wp/shared";
 import { supabase } from "./supabase";
 
 export type BackupImportResult = {
@@ -29,6 +29,10 @@ async function getUserId(): Promise<string> {
   return user.id;
 }
 
+function isSchemaMissingError(message: string): boolean {
+  return /relation|does not exist|column|schema cache/i.test(message);
+}
+
 /**
  * Imports a backup as **new** rows (IDs remapped).
  * Does not delete existing data — safe merge / restore onto empty or existing account.
@@ -51,13 +55,26 @@ export async function importJarvisBackup(backup: JarvisBackup): Promise<BackupIm
     const newSheetId = newId();
     sheetIdMap.set(sheet.id, newSheetId);
 
-    const { error: sheetError } = await supabase.from("workout_sheets").insert({
+    const sheetPayload: Record<string, unknown> = {
       id: newSheetId,
       user_id: userId,
       name: sheet.name,
       description: sheet.description,
       order_index: sheet.orderIndex,
-    });
+    };
+    if (isProgressionRule(sheet.defaultProgressionRule)) {
+      sheetPayload.default_progression_rule = sheet.defaultProgressionRule;
+    }
+    if (typeof sheet.progressionDeload === "boolean") {
+      sheetPayload.progression_deload = sheet.progressionDeload;
+    }
+
+    let { error: sheetError } = await supabase.from("workout_sheets").insert(sheetPayload);
+    if (sheetError && isSchemaMissingError(sheetError.message)) {
+      delete sheetPayload.default_progression_rule;
+      delete sheetPayload.progression_deload;
+      ({ error: sheetError } = await supabase.from("workout_sheets").insert(sheetPayload));
+    }
     if (sheetError) throw new Error(`Plan „${sheet.name}”: ${sheetError.message}`);
     sheetsCreated += 1;
 
@@ -87,10 +104,25 @@ export async function importJarvisBackup(backup: JarvisBackup): Promise<BackupIm
         const { error: setError } = await supabase.from("exercise_sets").insert(setPayload);
         if (setError) throw new Error(`Serie „${exercise.name}”: ${setError.message}`);
       }
+
+      if (exercise.progression && isProgressionRule(exercise.progression.rule)) {
+        const { error: progError } = await supabase.from("exercise_progression").upsert({
+          exercise_id: newExerciseId,
+          rule: exercise.progression.rule,
+          step_kg: exercise.progression.stepKg ?? null,
+          reps_min: exercise.progression.repsMin ?? null,
+          reps_max: exercise.progression.repsMax ?? null,
+          step_sec: exercise.progression.stepSec ?? null,
+          greyskull_amrap_bonus: exercise.progression.greyskullAmrapBonus ?? null,
+          updated_at: new Date().toISOString(),
+        });
+        if (progError && !isSchemaMissingError(progError.message)) {
+          throw new Error(`Progresja „${exercise.name}”: ${progError.message}`);
+        }
+      }
     }
   }
 
-  // Sessions that reference sheets not in this backup (orphan) are skipped.
   for (const session of backup.sessions) {
     const mappedSheetId = sheetIdMap.get(session.sheetId);
     if (!mappedSheetId) continue;
@@ -124,16 +156,26 @@ export async function importJarvisBackup(backup: JarvisBackup): Promise<BackupIm
           row.effort_value =
             log.effortValue != null && Number.isFinite(log.effortValue) ? log.effortValue : null;
         }
+        if (log.isWarmup === true) {
+          row.is_warmup = true;
+        }
         return row;
       })
       .filter((row): row is Record<string, unknown> => row != null);
 
     if (logPayload.length > 0) {
-      // Chunk inserts to stay under PostgREST limits
       const CHUNK = 200;
       for (let i = 0; i < logPayload.length; i += CHUNK) {
         const chunk = logPayload.slice(i, i + CHUNK);
-        const { error: logError } = await supabase.from("session_set_logs").insert(chunk);
+        let { error: logError } = await supabase.from("session_set_logs").insert(chunk);
+        if (logError && isSchemaMissingError(logError.message)) {
+          const stripped = chunk.map((row) => {
+            const next = { ...row };
+            delete next.is_warmup;
+            return next;
+          });
+          ({ error: logError } = await supabase.from("session_set_logs").insert(stripped));
+        }
         if (logError) throw new Error(`Serie sesji: ${logError.message}`);
         logsCreated += chunk.length;
       }

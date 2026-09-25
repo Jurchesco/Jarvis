@@ -5,6 +5,7 @@
 
 import { getMuscleTagsForExercise, type MuscleGroup } from "./muscleGroups";
 import { isTimeBasedExercise } from "./exerciseCatalog";
+import { isBodyweightExercise } from "./exerciseLibrary";
 
 export type ProgressionRule = "none" | "linear" | "double" | "greyskull" | "time";
 
@@ -28,6 +29,8 @@ export type ProgressionSetLike = {
   setNumber: number;
   weightKg: number;
   reps: number;
+  /** Warm-up sets are ignored for targets / advance decisions. */
+  isWarmup?: boolean;
 };
 
 export type ProgressionConfig = {
@@ -100,6 +103,11 @@ function roundKg(value: number): number {
 
 function sortBySetNumber<T extends { setNumber: number }>(rows: T[]): T[] {
   return [...rows].sort((a, b) => a.setNumber - b.setNumber);
+}
+
+/** Drop warm-ups; renumber is NOT applied — setNumber stays for matching. */
+export function workingSetsOnly<T extends { isWarmup?: boolean }>(sets: T[]): T[] {
+  return sets.filter((s) => !s.isWarmup);
 }
 
 function normalizeDoubleRange(
@@ -405,6 +413,89 @@ function computeGreyskull(input: {
   };
 }
 
+function computeBodyweightRepsProgression(input: {
+  planned: ProgressionSetLike[];
+  logged: ProgressionSetLike[];
+  config: ProgressionConfig;
+}): ProgressionResult {
+  const { planned, logged, config } = input;
+  const floorReps =
+    planned[0]?.reps > 0
+      ? planned[0].reps
+      : logged.reduce((min, row) => Math.min(min, row.reps), logged[0]?.reps ?? 8);
+  const weight = 0;
+  const stepReps = 1;
+
+  const structure =
+    planned.length > 0
+      ? planned.map((row, i) => ({
+          setNumber: row.setNumber,
+          weightKg: 0,
+          reps: row.reps > 0 ? row.reps : floorReps,
+        }))
+      : logged.map((row) => ({
+          setNumber: row.setNumber,
+          weightKg: 0,
+          reps: floorReps,
+        }));
+
+  if (config.rule === "double") {
+    const { min, max } = normalizeDoubleRange(config.repsMin, config.repsMax, floorReps);
+    const doublePlan = structure.map((row) => ({ ...row, reps: min }));
+    if (sessionMissedTargets(doublePlan, logged)) {
+      return {
+        targets: buildTargetsFromWeightReps(doublePlan, weight, min),
+        reason: `Bodyweight · zakres ${min}–${max} niezaliczony — zostań przy ${min} powt.`,
+        advanced: false,
+        appliedRule: "double",
+      };
+    }
+    if (allSetsHitReps(doublePlan, logged, max)) {
+      // At top of range: add a set rather than inventing load
+      const next = [
+        ...buildTargetsFromWeightReps(doublePlan, weight, min),
+        {
+          setNumber: doublePlan.length + 1,
+          weightKg: 0,
+          reps: min,
+        },
+      ];
+      return {
+        targets: next,
+        reason: `Bodyweight · ${max} powt. — dodaj serię (wróć do ${min} powt.).`,
+        advanced: true,
+        appliedRule: "double",
+      };
+    }
+    const lowest = logged.reduce((m, row) => Math.min(m, row.reps), logged[0].reps);
+    const nextReps = Math.min(max, Math.max(min, lowest + stepReps));
+    return {
+      targets: buildTargetsFromWeightReps(doublePlan, weight, nextReps),
+      reason: `Bodyweight · zakres ${min}–${max}: cel ${nextReps} powt.`,
+      advanced: true,
+      appliedRule: "double",
+    };
+  }
+
+  // linear / greyskull / none-like for BW: +reps when all sets hit floor
+  if (sessionMissedTargets(structure, logged)) {
+    return {
+      targets: buildTargetsFromWeightReps(structure, weight, floorReps),
+      reason: `Bodyweight · niepełne powtórzenia — zostań przy ${floorReps} powt.`,
+      advanced: false,
+      appliedRule: config.rule === "none" ? "linear" : config.rule,
+    };
+  }
+
+  const nextReps = floorReps + stepReps;
+  return {
+    targets: buildTargetsFromWeightReps(structure, weight, nextReps),
+    reason: `Bodyweight · zaliczone ${floorReps} powt. — cel ${nextReps} powt.`,
+    advanced: true,
+    appliedRule: config.rule === "none" ? "linear" : config.rule,
+  };
+}
+
 /**
  * Compute next-session targets for one exercise.
  * Reads previous logs + optional plan templates; never mutates storage.
@@ -436,9 +527,16 @@ export function computeNextTargets(input: {
     deload = false,
   } = input;
 
-  const planned = sortBySetNumber(plannedSets);
-  const logged = sortBySetNumber(previousLogs);
+  const planned = sortBySetNumber(workingSetsOnly(plannedSets));
+  const logged = sortBySetNumber(workingSetsOnly(previousLogs));
+  const recentWorking = recentSessionsNewestFirst?.map((session) =>
+    sortBySetNumber(workingSetsOnly(session)),
+  );
   const timed = isTimeBasedExercise(exerciseName);
+  const bodyweight =
+    !timed &&
+    isBodyweightExercise(exerciseName) &&
+    (logged.length === 0 || logged.every((s) => s.weightKg <= 0));
 
   if (deload) {
     if (logged.length > 0) {
@@ -503,6 +601,10 @@ export function computeNextTargets(input: {
     };
   }
 
+  if (bodyweight) {
+    return computeBodyweightRepsProgression({ planned, logged, config });
+  }
+
   const baselineReps =
     planned[0]?.reps > 0
       ? planned[0].reps
@@ -538,7 +640,7 @@ export function computeNextTargets(input: {
       logged,
       step,
       amrapBonus: bonus,
-      recentSessionsNewestFirst,
+      recentSessionsNewestFirst: recentWorking,
     });
   }
 
