@@ -399,18 +399,14 @@ export function ExerciseLogForm({
   return (
     <View className="min-w-0">
       {progressionChip ? (
-        <Badge label={progressionChip} tone="accent" size="sm" className="mb-2 max-w-full" />
+        <Badge label={progressionChip} tone="accent" size="sm" className="mb-1.5" />
       ) : null}
       {progressionReason ? (
-        <Text className="text-text-muted text-xs mb-3 leading-5">{progressionReason}</Text>
+        <Text className="text-text-muted text-xs mb-2 leading-5">{progressionReason}</Text>
       ) : null}
-      {previousChip && !(showGhostColumn && fillMode === "per-set") ? (
-        <Badge
-          label={previousChip}
-          tone={progressionChip ? "outline" : "accent"}
-          size="sm"
-          className="mb-3 max-w-full"
-        />
+      {/* When Cel is shown, skip Ostatnio chip — Poprzednio column still covers history. */}
+      {!progressionChip && previousChip && !(showGhostColumn && fillMode === "per-set") ? (
+        <Badge label={previousChip} tone="accent" size="sm" className="mb-3" />
       ) : null}
 
       <Text className="text-text-muted text-[10px] font-semibold uppercase mb-1.5">
@@ -568,7 +564,10 @@ export function ExerciseLogForm({
               #
             </Text>
             {showGhostColumn ? (
-              <Text className="w-[4.5rem] text-center text-text-muted text-[10px] font-semibold uppercase">
+              <Text
+                className={`${timeBased ? "w-[5.75rem]" : "w-[4.75rem]"} text-center text-text-muted text-[10px] font-semibold uppercase`}
+                numberOfLines={1}
+              >
                 Poprzednio
               </Text>
             ) : null}
@@ -609,8 +608,8 @@ export function ExerciseLogForm({
               </View>
               {showGhostColumn ? (
                 <Text
-                  className="w-[4.5rem] text-center text-text-muted text-xs font-medium"
-                  numberOfLines={1}
+                  className={`${timeBased ? "w-[5.75rem]" : "w-[4.75rem]"} text-center text-text-muted text-xs font-medium`}
+                  numberOfLines={2}
                   accessibilityLabel={`Poprzednio seria ${index + 1}: ${ghost}`}
                 >
                   {ghost}

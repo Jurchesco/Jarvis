@@ -605,14 +605,21 @@ export function formatProgressionTargetChip(
   timeBased = false,
 ): string {
   if (targets.length === 0) return "";
-  const parts = targets.slice(0, 4).map((t) =>
+  const formatOne = (t: ProgressionTarget) =>
     timeBased
       ? t.weightKg > 0
         ? `${t.weightKg}kg · ${t.reps}s`
         : `${t.reps}s`
-      : `${t.weightKg}×${t.reps}`,
-  );
-  const extra = targets.length > 4 ? ` +${targets.length - 4}` : "";
+      : `${t.weightKg}×${t.reps}`;
+
+  const first = formatOne(targets[0]);
+  const uniform = targets.every((t) => formatOne(t) === first);
+  if (uniform) {
+    return targets.length > 1 ? `Cel · ${first} ×${targets.length}` : `Cel · ${first}`;
+  }
+
+  const parts = targets.slice(0, 3).map(formatOne);
+  const extra = targets.length > 3 ? ` +${targets.length - 3}` : "";
   return `Cel · ${parts.join(" · ")}${extra}`;
 }
 

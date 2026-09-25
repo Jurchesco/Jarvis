@@ -16,6 +16,8 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 ## [Unreleased]
 
 ### Added
+- **Auto-progresja planów (D021)** — linear / double / Greyskull / time + tydzień deload; chip Cel + reason w sesji
+- **Stats charts readable** — daty na osi, Best, lista ostatnich sesji; heatmapa z panelem dnia
 - **Health hub (Supabase)** — profil ciała + `body_measurements`; Garmin (`garmin_*`); importer openScale/Garmin upsert do bazy (Sheets = mirror); eksport CSV/JSON kontekstu AI (allowlista 30 dni); docs `HERMES_SUPABASE.md`
 - **Gotowość dziś (Home)** — pasek Sen / HRV / Body Battery / waga z Supabase (bez klonu Garmin Connect)
 - **Stats OpenGym-style** — tiles, heatmapa 12 mies., masa ciała + cel, missed partie, effort, ostatnie treningi
@@ -42,6 +44,7 @@ Oficjalna pierwsza wersja **JJ Workout Tool** — spersonalizowane narzędzie (f
 - `vercel.json`, `docs/`, `.gitignore` entries, `LICENSE` (wcześniejsze)
 
 ### Changed
+- **UI polish pass** — Cel vs Ostatnio (bez duplikacji), Badge truncate, szerszy ghost timed, copy Ustawienia/Historia („Passa”), SafeArea Stats = top only, czytelniejsze empty states
 - **UI-D QA (2026-09-22)** — toast błędów zapisu też na web (nie tylko Alert); toast sukcesu/błędu przy edycji w Historii; Badge liczby ćwiczeń na `/plans`; Badge ćwiczeń/serii na liście Historii (zgodne z Home)
 - **Model produktu** — freestyle-first (**D009**) + plany obok freestyle (**D018**); bez seed PPL / auto-splitów; plany **nie** są zakładką tab bara
 - **D016 / import Silownia** — Volume = suma serii; Ciezar/Powt./1RM = seria z najlepszym Brzycki; PR = max ciężar w sesji

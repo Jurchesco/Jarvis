@@ -803,7 +803,7 @@ export default function SettingsScreen() {
           <View className="mt-5 border-t border-border pt-4">
             <SettingSwitchRow
               title="Autouzupełniaj z poprzedniego treningu"
-              description="Podpowiedzi ciężaru i powtórzeń na formularzu ćwiczenia."
+              description="Wstawia kg/powt. do pól. Kolumna «Poprzednio» i chip Cel działają niezależnie."
               value={autofillEnabled}
               onValueChange={handleAutofillToggle}
               disabled={loadingPrefs}
@@ -983,7 +983,7 @@ export default function SettingsScreen() {
           <Text className="text-text-secondary text-sm">{APP_NAME}</Text>
           <Text className="text-text-muted text-xs mt-1">Wersja {APP_VERSION}</Text>
           <Text className="text-text-muted text-xs mt-3 leading-5">
-            {APP_TAGLINE}. Backup JSON w Ustawieniach; CSV / OAuth Google — później.
+            {APP_TAGLINE}. Backup JSON i eksport kontekstu AI (CSV) w Ustawieniach.
           </Text>
         </SettingsSection>
       </ScrollView>
